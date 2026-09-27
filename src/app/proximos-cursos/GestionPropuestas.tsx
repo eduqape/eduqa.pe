@@ -12,12 +12,44 @@ import {
 } from "lucide-react";
 import { Icono } from "@/components/Iconos";
 import { claseInput, claseInputBase } from "@/components/ui";
-import { ICONOS_CURSO } from "@/lib/iconos-curso";
-import {
-  ESTADOS_PROPUESTA,
-  ETIQUETA_ESTADO,
-  type PropuestaInterna,
-} from "@/lib/proximos-cursos";
+import { ICONOS_CURSO, type IconoNombre } from "@/lib/iconos-curso";
+
+const ESTADOS_PROPUESTA = [
+  "borrador",
+  "en_votacion",
+  "priorizado",
+  "en_desarrollo",
+  "publicado",
+  "descartado",
+] as const;
+
+type EstadoPropuesta = (typeof ESTADOS_PROPUESTA)[number];
+
+const ETIQUETA_ESTADO: Record<EstadoPropuesta, string> = {
+  borrador: "Borrador",
+  en_votacion: "En votación",
+  priorizado: "Priorizado",
+  en_desarrollo: "En desarrollo",
+  publicado: "Publicado",
+  descartado: "Descartado",
+};
+
+type PropuestaInterna = {
+  id: string;
+  titulo: string;
+  subtitulo: string;
+  precio: number;
+  icono: IconoNombre;
+  nivel: string;
+  area: string;
+  estado: EstadoPropuesta;
+  cursoSlug: string | null;
+  creadaEn: string;
+  votos: number;
+  prioridadInterna: number;
+  creadoPor: string;
+  actualizadaEn: string;
+};
 import { actualizarPropuesta, crearPropuesta } from "./gestion-acciones";
 
 const NIVELES = ["INTRODUCCIÓN", "INTERMEDIO", "AVANZADO"] as const;
