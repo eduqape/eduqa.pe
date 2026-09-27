@@ -323,6 +323,17 @@ input.buscador-cursos[type="search"]::-webkit-search-cancel-button {
   body {
     background: #fff;
   }
+
+  #barra-lateral {
+    display: none !important;
+  }
+
+  .certificado-pagina {
+    margin: 0 !important;
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
   .certificado {
     break-after: page;
     -webkit-print-color-adjust: exact;
