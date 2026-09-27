@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "6mb",
+    },
+  },
   /*
    * Las rutas quedaron todas en español. `/courses` fue la única en inglés y
    * llegó a compartirse en público, así que se redirige de forma permanente
