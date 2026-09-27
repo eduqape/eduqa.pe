@@ -15,7 +15,7 @@ const NIVELES = ["INTRODUCCIÓN", "INTERMEDIO", "AVANZADO"] as const;
 
 async function contextoInterno() {
   const usuario = await usuarioActual();
-  if (!usuario) redirect("/acceder?volverA=/panel/proximos-cursos");
+  if (!usuario) redirect("/acceder?volverA=/proximos-cursos?gestion=1");
 
   const perfil = await perfilActual();
   if (!esInterno(perfil)) redirect("/proximos-cursos");
@@ -99,8 +99,7 @@ export async function crearPropuesta(formData: FormData) {
   if (error) throw new Error("No se pudo crear la propuesta.");
 
   revalidatePath("/proximos-cursos");
-  revalidatePath("/panel/proximos-cursos");
-  redirect("/panel/proximos-cursos?estado=creada");
+  redirect("/proximos-cursos?gestion=1&estado=creada#gestion-propuestas");
 }
 
 export async function actualizarPropuesta(formData: FormData) {
@@ -128,6 +127,5 @@ export async function actualizarPropuesta(formData: FormData) {
   if (error) throw new Error("No se pudo actualizar la propuesta.");
 
   revalidatePath("/proximos-cursos");
-  revalidatePath("/panel/proximos-cursos");
-  redirect("/panel/proximos-cursos?estado=actualizada");
+  redirect("/proximos-cursos?gestion=1&estado=actualizada#gestion-propuestas");
 }
