@@ -3,12 +3,7 @@ import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import {
   BookOpen,
-  Bug,
-  Megaphone,
-  Newspaper,
-  Stamp,
   ArrowUpRight,
-  Sparkles,
 } from "lucide-react";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import { Migas } from "@/components/Migas";
@@ -176,117 +171,6 @@ export default async function Page() {
         </article>
       </section>
 
-      {/* Panel de administración modular */}
-      {perfil?.es_admin && (
-        <section className="mt-12 border-t border-borde pt-10" aria-label="Administración">
-          <div className="flex items-center gap-2">
-            <Sparkles size={16} className="text-rojo-acento" />
-            <h2 className="text-sm font-bold uppercase tracking-wider text-texto">
-              Panel de Administración y Gestión
-            </h2>
-          </div>
-          <p className="mt-1 text-xs text-texto-suave">
-            Herramientas exclusivas para administradores de EDUQA.PE.
-          </p>
-
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {/* Gestión académica: cursos, microcursos y rutas */}
-            <Link
-              href="/panel/cursos"
-              className="group flex flex-col justify-between rounded-2xl border border-borde bg-superficie p-5 transition-all hover:border-rojo-acento hover:shadow-sm"
-            >
-              <div>
-                <div className="flex size-9 items-center justify-center rounded-lg bg-rojo-tenue text-rojo-acento">
-                  <BookOpen size={18} />
-                </div>
-                <h3 className="mt-3 text-sm font-semibold text-texto group-hover:text-rojo-acento">
-                  Gestión académica
-                </h3>
-                <p className="mt-1 text-xs leading-relaxed text-texto-suave">
-                  Cursos, microcursos y rutas de aprendizaje.
-                </p>
-              </div>
-              <span className="mt-4 text-[11px] font-semibold text-rojo-acento">Entrar →</span>
-            </Link>
-
-            {/* El mismo blog muestra la publicación y su gestión. */}
-            <Link
-              href="/blog#gestion-medium"
-              className="group flex flex-col justify-between rounded-2xl border border-borde bg-superficie p-5 transition-all hover:border-rojo-acento hover:shadow-sm"
-            >
-              <div>
-                <div className="flex size-9 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
-                  <Newspaper size={18} />
-                </div>
-                <h3 className="mt-3 text-sm font-semibold text-texto group-hover:text-rojo-acento">
-                  Blog
-                </h3>
-                <p className="mt-1 text-xs leading-relaxed text-texto-suave">
-                  Artículos y publicación desde Medium.
-                </p>
-              </div>
-              <span className="mt-4 text-[11px] font-semibold text-rojo-acento">Entrar →</span>
-            </Link>
-
-            {/* 4. Avisos */}
-            <Link
-              href="/panel/avisos"
-              className="group flex flex-col justify-between rounded-2xl border border-borde bg-superficie p-5 transition-all hover:border-rojo-acento hover:shadow-sm"
-            >
-              <div>
-                <div className="flex size-9 items-center justify-center rounded-lg bg-purple-500/10 text-purple-500">
-                  <Megaphone size={18} />
-                </div>
-                <h3 className="mt-3 text-sm font-semibold text-texto group-hover:text-rojo-acento">
-                  Avisos Globales
-                </h3>
-                <p className="mt-1 text-xs leading-relaxed text-texto-suave">
-                  Banners y comunicados en catálogo.
-                </p>
-              </div>
-              <span className="mt-4 text-[11px] font-semibold text-rojo-acento">Entrar →</span>
-            </Link>
-
-            {/* 5. Reportes */}
-            <Link
-              href="/panel/reportes"
-              className="group flex flex-col justify-between rounded-2xl border border-borde bg-superficie p-5 transition-all hover:border-rojo-acento hover:shadow-sm"
-            >
-              <div>
-                <div className="flex size-9 items-center justify-center rounded-lg bg-rose-500/10 text-rose-500">
-                  <Bug size={18} />
-                </div>
-                <h3 className="mt-3 text-sm font-semibold text-texto group-hover:text-rojo-acento">
-                  Reportes & Errores
-                </h3>
-                <p className="mt-1 text-xs leading-relaxed text-texto-suave">
-                  Incidencias reportadas por alumnos.
-                </p>
-              </div>
-              <span className="mt-4 text-[11px] font-semibold text-rojo-acento">Entrar →</span>
-            </Link>
-
-            {/* 6. Marca */}
-            <Link
-              href="/panel/marca"
-              className="group flex flex-col justify-between rounded-2xl border border-borde bg-superficie p-5 transition-all hover:border-rojo-acento hover:shadow-sm"
-            >
-              <div>
-                <div className="flex size-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
-                  <Stamp size={18} />
-                </div>
-                <h3 className="mt-3 text-sm font-semibold text-texto group-hover:text-rojo-acento">
-                  Identidad Visual
-                </h3>
-                <p className="mt-1 text-xs leading-relaxed text-texto-suave">
-                  Logotipo SVG y personalización.
-                </p>
-              </div>
-              <span className="mt-4 text-[11px] font-semibold text-rojo-acento">Entrar →</span>
-            </Link>
-          </div>
-        </section>
-      )}
     </main>
   );
 }
