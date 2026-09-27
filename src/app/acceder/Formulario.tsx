@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { AlertCircle, CheckCircle2, KeyRound, Loader2, MailKey } from "lucide-react";
+import { AlertCircle, CheckCircle2, Eye, EyeOff, KeyRound, Loader2, MailKey } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import {
   accederConContrasena,
@@ -24,6 +24,7 @@ export function Formulario({
   const [metodo, setMetodo] = useState<Metodo>("contrasena");
   const [emailCodigo, setEmailCodigo] = useState("");
   const [enviandoGoogle, setEnviandoGoogle] = useState(false);
+  const [mostrarContrasena, setMostrarContrasena] = useState(false);
   const [errorGoogle, setErrorGoogle] = useState<string | null>(errorInicial ?? null);
 
   const [estadoPass, accionPass, enviandoPass] = useActionState<
@@ -141,14 +142,40 @@ export function Formulario({
           </Campo>
 
           <Campo etiqueta="Contraseña">
-            <input
-              name="password"
-              type="password"
-              required
-              autoComplete="current-password"
-              className={claseInput}
-            />
+            <div className="relative">
+              <input
+                name="password"
+                type={mostrarContrasena ? "text" : "password"}
+                required
+                autoComplete="current-password"
+                className={`${claseInput} pr-11`}
+              />
+              <button
+                type="button"
+                onClick={() => setMostrarContrasena((actual) => !actual)}
+                aria-label={mostrarContrasena ? "Ocultar contraseña" : "Mostrar contraseña"}
+                aria-pressed={mostrarContrasena}
+                title={mostrarContrasena ? "Ocultar contraseña" : "Mostrar contraseña"}
+                className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-texto-tenue transition-colors hover:text-texto focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-rojo-acento"
+              >
+                {mostrarContrasena ? (
+                  <EyeOff size={18} aria-hidden="true" />
+                ) : (
+                  <Eye size={18} aria-hidden="true" />
+                )}
+              </button>
+            </div>
           </Campo>
+
+          <button
+            type="button"
+            disabled
+            aria-disabled="true"
+            title="Recuperación de contraseña próximamente"
+            className="w-full cursor-not-allowed text-right text-xs text-texto-tenue opacity-60"
+          >
+            Olvidé mi contraseña
+          </button>
 
           {estadoPass && !estadoPass.ok && (
             <p
