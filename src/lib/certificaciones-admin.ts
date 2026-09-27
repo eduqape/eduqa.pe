@@ -8,6 +8,9 @@ export type CohorteCertificacion = {
   horas: number;
   dictada_en: string;
   docente: string;
+  docente_firma_url: string | null;
+  director_academico: string | null;
+  director_firma_url: string | null;
   cerrada_en: string | null;
 };
 
@@ -71,7 +74,7 @@ export async function resumenCertificacionesAdmin() {
   const [cohortesR, certificadosR, reglasR, enviosR] = await Promise.all([
     supabase
       .from("cohortes")
-      .select("id, curso_id, curso_slug, curso_nombre, horas, dictada_en, docente, cerrada_en")
+      .select("id, curso_id, curso_slug, curso_nombre, horas, dictada_en, docente, docente_firma_url, director_academico, director_firma_url, cerrada_en")
       .order("dictada_en", { ascending: false }),
     supabase
       .from("certificados")
