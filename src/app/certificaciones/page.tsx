@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { ArrowUpRight, BadgeCheck, Clock } from "lucide-react";
+import { ArrowUpRight, BadgeCheck, Bolt, Clock, Eye, Mail, Users } from "lucide-react";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import { perfilActual } from "@/lib/matriculas";
 import { fechaEmision, misCertificaciones } from "@/lib/certificados";
@@ -45,6 +45,50 @@ export default async function Page() {
         Constancias de participación de los dictados en vivo a los que asististe.
         Cada una lleva un código con el que se puede comprobar que es real.
       </p>
+
+      {perfil?.es_admin && (
+        <section className="mt-8 rounded-2xl border border-rojo-acento/30 bg-rojo-tenue/40 p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-rojo-acento">
+                Administración
+              </p>
+              <h2 className="mt-1 text-lg font-semibold text-texto">
+                Gestión de certificaciones
+              </h2>
+              <p className="mt-1 text-sm text-texto-suave">
+                Emite certificados, procesa lotes, previsualiza plantillas, configura activadores y gestiona envíos.
+              </p>
+            </div>
+            <Link
+              href="/panel/certificaciones"
+              className="inline-flex items-center gap-2 rounded-lg bg-rojo px-4 py-2.5 text-sm font-semibold text-white hover:bg-rojo-hover"
+            >
+              Abrir gestión
+              <ArrowUpRight size={15} aria-hidden="true" />
+            </Link>
+          </div>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {[
+              { href: "/panel/certificaciones#manual", texto: "Manual", Icono: BadgeCheck },
+              { href: "/panel/certificaciones#lotes", texto: "Lotes", Icono: Users },
+              { href: "/panel/certificaciones/preview", texto: "Preview", Icono: Eye },
+              { href: "/panel/certificaciones#activadores", texto: "Activadores", Icono: Bolt },
+              { href: "/panel/certificaciones#correos", texto: "Correos", Icono: Mail },
+            ].map(({ href, texto, Icono }) => (
+              <Link
+                key={texto}
+                href={href}
+                className="flex items-center gap-2 rounded-xl border border-borde bg-superficie px-3 py-3 text-sm font-semibold text-texto transition-colors hover:border-rojo-acento hover:text-rojo-acento"
+              >
+                <Icono size={16} aria-hidden="true" />
+                {texto}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {certificaciones.length === 0 ? (
         <div className="mt-8 rounded-xl border border-borde bg-superficie px-5 py-10 text-center">
