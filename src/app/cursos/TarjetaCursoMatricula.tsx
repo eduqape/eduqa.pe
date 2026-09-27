@@ -64,9 +64,19 @@ export function TarjetaCursoMatricula({
   const bloqueado = !comoAdmin && !curso.matriculado && alTope;
   const esMicro = curso.formato === "microcurso" || curso.formato === "pildora";
 
+  const nivelNormalizado = curso.nivel.trim().toUpperCase();
+  const claseNivel =
+    nivelNormalizado === "INTRODUCCIÓN" || nivelNormalizado === "INTRODUCCION"
+      ? "bg-exito text-white"
+      : nivelNormalizado === "INTERMEDIO"
+        ? "bg-amber-500 text-zinc-950"
+        : nivelNormalizado === "AVANZADO"
+          ? "bg-violet-600 text-white"
+          : "bg-superficie text-texto";
+
   const cabecera = (
     <>
-      <span className="absolute right-0 top-0 flex h-9 min-w-[44%] items-center justify-center rounded-bl-xl border-b border-l border-borde bg-rojo px-3 text-[11px] font-semibold text-white">
+      <span className={`absolute right-0 top-0 flex h-9 w-[44%] items-center justify-center rounded-bl-xl border-b border-l border-borde px-3 text-[11px] font-semibold ${claseNivel}`}>
         {curso.nivel}
       </span>
 
@@ -229,7 +239,7 @@ export function TarjetaCursoMatricula({
 
       {bloqueado && (
         <>
-          <div className="absolute bottom-0 left-0 flex h-9 w-1/2 flex-nowrap items-center justify-start gap-3 overflow-hidden whitespace-nowrap border-t border-borde px-5 text-[11px] leading-none text-texto-tenue">
+          <div className="absolute bottom-0 left-0 flex h-9 w-[56%] flex-nowrap items-center justify-start gap-3 overflow-hidden whitespace-nowrap border-t border-borde px-5 text-[11px] leading-none text-texto-tenue">
             <span className="flex shrink-0 items-center gap-1 whitespace-nowrap">
               <BookOpen size={13} className="shrink-0" aria-hidden="true" />
               <span className="whitespace-nowrap">{curso.sesiones}</span>
@@ -242,7 +252,7 @@ export function TarjetaCursoMatricula({
 
           <Link
             href={`/pagar/${curso.slug}`}
-            className="absolute bottom-0 right-0 flex h-9 w-1/2 flex-nowrap items-center justify-center gap-1.5 overflow-hidden whitespace-nowrap rounded-tl-xl border-l border-t border-borde bg-rojo px-3 text-[11px] font-semibold leading-none text-white transition-colors hover:bg-rojo-hover focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white"
+            className="absolute bottom-0 right-0 flex h-9 w-[44%] flex-nowrap items-center justify-center gap-1.5 overflow-hidden whitespace-nowrap rounded-tl-xl border-l border-t border-borde bg-rojo px-3 text-[11px] font-semibold leading-none text-white transition-colors hover:bg-rojo-hover focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white"
           >
             <Lock size={13} className="shrink-0" aria-hidden="true" />
             <span className="whitespace-nowrap">S/{curso.precio.toFixed(2)}</span>
