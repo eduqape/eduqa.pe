@@ -80,7 +80,7 @@ const barraGeneral = leer("src/components/Isla.tsx");
 assert.doesNotMatch(barraGeneral, /Cerrar sesión|LogOut|onSalir/);
 assert.match(
   barraGeneral,
-  /bg-rojo-tenue font-medium text-rojo-acento/,
+  /bg-superficie font-medium text-rojo-acento/,
   "La barra general debe conservar el mismo estado activo que el índice del curso",
 );
 assert.match(barraGeneral, /hover:bg-superficie/);
