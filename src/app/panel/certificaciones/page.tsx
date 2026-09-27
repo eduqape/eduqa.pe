@@ -48,6 +48,7 @@ export default async function Page({
         reglas={resumen.reglas}
         envios={resumen.envios}
         certificados={resumen.certificados}
+        configs={resumen.configs}
         modoInicial={params.modo}
         cursoInicial={params.curso}
         estado={params.estado}
