@@ -12,6 +12,9 @@ export type Certificacion = {
     horas: number | null;
     dictada_en: string | null;
     docente: string | null;
+    docente_firma_url: string | null;
+    director_academico: string | null;
+    director_firma_url: string | null;
   } | null;
 };
 
@@ -27,7 +30,7 @@ export type VerificacionCertificado = {
 };
 
 const CAMPOS =
-  "id, codigo, alumno, emitido_en, anulado_en, motivo_anulado, cohorte:cohortes(curso_nombre, horas, dictada_en, docente)";
+  "id, codigo, alumno, emitido_en, anulado_en, motivo_anulado, cohorte:cohortes(curso_nombre, horas, dictada_en, docente, docente_firma_url, director_academico, director_firma_url)";
 
 export async function misCertificaciones(): Promise<Certificacion[]> {
   const usuario = await usuarioActual();
