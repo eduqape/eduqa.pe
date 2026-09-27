@@ -277,10 +277,6 @@ export function Formulario({
           </Boton>
         </form>
       )}
-
-      <p className="mt-6 text-center text-xs leading-relaxed text-texto-tenue">
-        Con Google puedes entrar o crear tu cuenta en el mismo flujo.
-      </p>
     </div>
   );
 }
