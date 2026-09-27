@@ -202,12 +202,6 @@ html[data-sidebar="collapsed"] .sidebar-pie form button {
   padding-inline: 0;
 }
 
-@media (min-width: 1024px) {
-  html[data-sidebar="collapsed"] .lg\:pl-64 {
-    padding-left: 5.5rem;
-  }
-}
-
 /* Chrome y Safari añaden una segunda X a los campos search. La aplicación
    conserva su único botón de limpieza, con nombre accesible y área estable. */
 input.buscador-cursos[type="search"]::-webkit-search-cancel-button {
@@ -215,9 +209,33 @@ input.buscador-cursos[type="search"]::-webkit-search-cancel-button {
   -webkit-appearance: none;
 }
 
+@media (min-width: 1024px) {
+  html:not([data-sidebar="collapsed"]) .lg\:pl-64 {
+    padding-left: 16rem;
+  }
+
+  html[data-sidebar="collapsed"] .lg\:pl-64 {
+    padding-left: 5.5rem;
+  }
+}
+
 @media (min-width: 1280px) {
+  html:not([data-sidebar="collapsed"]) .xl\:pl-32 {
+    padding-left: 16rem;
+  }
+
   html[data-sidebar="collapsed"] .xl\:pl-32 {
-    padding-left: 1.5rem;
+    padding-left: 5.5rem;
+  }
+}
+
+@media (min-width: 1536px) {
+  html:not([data-sidebar="collapsed"]) .\32xl\:pl-6 {
+    padding-left: 16rem;
+  }
+
+  html[data-sidebar="collapsed"] .\32xl\:pl-6 {
+    padding-left: 5.5rem;
   }
 }
 
