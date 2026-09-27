@@ -8,6 +8,9 @@ export type DatosCertificado = {
   horas: number;
   fecha: string; // ya formateada, ej. "23 de agosto de 2026"
   docente: string;
+  docenteFirmaUrl?: string | null;
+  directorAcademico: string;
+  directorFirmaUrl?: string | null;
   codigo: string;
 };
 
@@ -25,7 +28,17 @@ export function Certificado({
   datos: DatosCertificado;
   variante?: Variante;
 }) {
-  const { alumno, curso, horas, fecha, docente, codigo } = datos;
+  const {
+    alumno,
+    curso,
+    horas,
+    fecha,
+    docente,
+    docenteFirmaUrl,
+    directorAcademico,
+    directorFirmaUrl,
+    codigo,
+  } = datos;
 
   const esSolido = variante === "solido";
   const tinta = esSolido ? "text-white" : "text-texto";
@@ -99,13 +112,41 @@ export function Certificado({
         </div>
 
         {/* Pie */}
-        <footer className="flex items-end justify-between gap-[12mm]">
-          <div className="min-w-[70mm]">
+        <footer className="grid grid-cols-[1fr_1fr_auto] items-end gap-[10mm]">
+          <div className="min-w-[58mm]">
+            {docenteFirmaUrl && (
+              <div className="mb-[2mm] flex h-[16mm] items-end">
+                <img
+                  src={docenteFirmaUrl}
+                  alt=""
+                  className="max-h-[16mm] max-w-[55mm] object-contain object-left-bottom"
+                />
+              </div>
+            )}
             <div
-              className={`h-[0.4mm] w-[62mm] ${esSolido ? "bg-white/50" : "bg-borde-fuerte"}`}
+              className={`h-[0.4mm] w-[55mm] ${esSolido ? "bg-white/50" : "bg-borde-fuerte"}`}
             />
-            <p className={`mt-[2mm] text-[4mm] font-semibold ${tinta}`}>{docente}</p>
-            <p className={`text-[3.4mm] ${suave}`}>Director Académico</p>
+            <p className={`mt-[2mm] text-[3.7mm] font-semibold ${tinta}`}>{docente}</p>
+            <p className={`text-[3.2mm] ${suave}`}>Docente</p>
+          </div>
+
+          <div className="min-w-[58mm]">
+            {directorFirmaUrl && (
+              <div className="mb-[2mm] flex h-[16mm] items-end">
+                <img
+                  src={directorFirmaUrl}
+                  alt=""
+                  className="max-h-[16mm] max-w-[55mm] object-contain object-left-bottom"
+                />
+              </div>
+            )}
+            <div
+              className={`h-[0.4mm] w-[55mm] ${esSolido ? "bg-white/50" : "bg-borde-fuerte"}`}
+            />
+            <p className={`mt-[2mm] text-[3.7mm] font-semibold ${tinta}`}>
+              {directorAcademico}
+            </p>
+            <p className={`text-[3.2mm] ${suave}`}>Director Académico</p>
           </div>
 
           <div className="text-right">
