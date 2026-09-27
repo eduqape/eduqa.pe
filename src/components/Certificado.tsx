@@ -115,11 +115,11 @@ export function Certificado({
         <footer className="grid grid-cols-[1fr_1fr_auto] items-end gap-[10mm]">
           <div className="min-w-[58mm]">
             {docenteFirmaUrl && (
-              <div className="mb-[2mm] flex h-[16mm] items-end">
+              <div className="mb-[2mm] flex h-[18mm] w-[55mm] items-center justify-center">
                 <img
                   src={docenteFirmaUrl}
                   alt=""
-                  className="max-h-[16mm] max-w-[55mm] object-contain object-left-bottom"
+                  className="h-[18mm] w-[55mm] object-contain object-center"
                 />
               </div>
             )}
