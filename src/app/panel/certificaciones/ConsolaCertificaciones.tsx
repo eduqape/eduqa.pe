@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useFormStatus } from "react-dom";
+import { VistaPrevia, type Variante } from "@/components/Certificado";
 import Link from "next/link";
 import {
   BadgeCheck,
@@ -12,6 +14,7 @@ import {
 } from "lucide-react";
 import type {
   CertificadoAdmin,
+  ConfigCertificacionCurso,
   CursoCertificacion,
   EnvioCertificado,
   MatriculadoCertificacion,
@@ -34,12 +37,31 @@ const MODOS: { id: Modo; texto: string; Icono: typeof BadgeCheck }[] = [
   { id: "correos", texto: "Correos", Icono: Mail },
 ];
 
+function BotonEmitirManual({
+  habilitado,
+}: {
+  habilitado: boolean;
+}) {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      disabled={!habilitado || pending}
+      className="inline-flex items-center justify-center gap-2 rounded-lg bg-rojo px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      <BadgeCheck size={16} aria-hidden="true" />
+      {pending ? "Emitiendo certificación…" : "Emitir certificación"}
+    </button>
+  );
+}
+
 export function ConsolaCertificaciones({
   cursos,
   matriculados,
   reglas,
   envios,
   certificados,
+  configs,
   modoInicial = "manual",
   cursoInicial = "",
   estado,
@@ -50,6 +72,7 @@ export function ConsolaCertificaciones({
   reglas: ReglaCertificacion[];
   envios: EnvioCertificado[];
   certificados: CertificadoAdmin[];
+  configs: ConfigCertificacionCurso[];
   modoInicial?: string;
   cursoInicial?: string;
   estado?: string;
@@ -64,6 +87,10 @@ export function ConsolaCertificaciones({
     cursoInicial || cursos[0]?.id || "",
   );
   const [usuarioId, setUsuarioId] = useState("");
+  const configInicial = configs.find((item) => item.curso_id === (cursoInicial || cursos[0]?.id));
+  const [varianteManual, setVarianteManual] = useState<Variante>(
+    configInicial?.variante ?? "banda",
+  );
 
   const alumnos = useMemo(
     () => matriculados.filter((item) => item.curso_id === cursoId),
@@ -73,10 +100,36 @@ export function ConsolaCertificaciones({
   const alumnoSeleccionado = alumnos.find(
     (item) => item.usuario_id === usuarioId,
   );
+  const cursoSeleccionado = cursos.find((item) => item.id === cursoId) ?? null;
+  const configSeleccionada =
+    configs.find((item) => item.curso_id === cursoId) ?? null;
+
+  const fechaPreview = new Intl.DateTimeFormat("es-PE", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "America/Lima",
+  }).format(new Date());
+
+  const datosPreviewManual = {
+    alumno: alumnoSeleccionado?.nombre ?? "Nombre del alumno",
+    curso: cursoSeleccionado?.titulo ?? "Curso EDUQA.PE",
+    horas: Number(cursoSeleccionado?.horas ?? configSeleccionada?.horas ?? 0),
+    fecha: fechaPreview,
+    docente: configSeleccionada?.docente ?? "Docente EDUQA.PE",
+    docenteFirmaUrl: configSeleccionada?.docente_firma_url ?? null,
+    directorAcademico:
+      configSeleccionada?.director_academico ?? "Director Académico EDUQA.PE",
+    directorFirmaUrl: configSeleccionada?.director_firma_url ?? null,
+    codigo: "EDUQA-PREVIEW-NO-VALIDO",
+  };
 
   function cambiarCurso(id: string) {
     setCursoId(id);
     setUsuarioId("");
+    setVarianteManual(
+      configs.find((item) => item.curso_id === id)?.variante ?? "banda",
+    );
   }
 
   return (
@@ -126,89 +179,137 @@ export function ConsolaCertificaciones({
 
       <section className="mt-6 rounded-2xl border border-borde bg-superficie p-5 sm:p-6">
         {modo === "manual" && (
-          <form action={emitirCertificadoManual} className="grid gap-5">
-            <div>
-              <h2 className="text-lg font-semibold text-texto">Emisión manual</h2>
-              <p className="mt-1 text-sm text-texto-suave">
-                Selecciona un curso y luego uno de sus matriculados.
-              </p>
-            </div>
-
-            <label>
-              <span className="mb-1.5 block text-sm font-medium text-texto">
-                Curso
-              </span>
-              <select
-                name="cursoId"
-                value={cursoId}
-                onChange={(e) => cambiarCurso(e.target.value)}
-                required
-                className="w-full rounded-lg border border-borde bg-fondo px-3 py-2.5 text-sm text-texto"
-              >
-                {cursos.length === 0 && <option value="">No hay cursos</option>}
-                {cursos.map((curso) => (
-                  <option key={curso.id} value={curso.id}>
-                    {curso.titulo}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label>
-              <span className="mb-1.5 block text-sm font-medium text-texto">
-                Alumno matriculado
-              </span>
-              <select
-                name="usuarioId"
-                value={usuarioId}
-                onChange={(e) => setUsuarioId(e.target.value)}
-                required
-                disabled={!cursoId || alumnos.length === 0}
-                className="w-full rounded-lg border border-borde bg-fondo px-3 py-2.5 text-sm text-texto disabled:opacity-50"
-              >
-                <option value="">
-                  {alumnos.length
-                    ? "Seleccionar alumno…"
-                    : "Este curso no tiene matriculados"}
-                </option>
-                {alumnos.map((alumno) => (
-                  <option key={alumno.usuario_id} value={alumno.usuario_id}>
-                    {alumno.nombre} · {alumno.email} · {alumno.estado}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            {alumnoSeleccionado && (
-              <div className="rounded-xl border border-borde bg-fondo p-4 text-sm">
-                <p className="font-semibold text-texto">
-                  {alumnoSeleccionado.nombre}
-                </p>
-                <p className="mt-1 text-texto-suave">
-                  {alumnoSeleccionado.email}
-                </p>
-                <p className="mt-1 text-xs text-texto-tenue">
-                  Matrícula: {alumnoSeleccionado.estado}
-                  {alumnoSeleccionado.certificado_id
-                    ? ` · certificado ${alumnoSeleccionado.codigo ?? ""}`
-                    : ""}
+          <div className="grid gap-6 2xl:grid-cols-[minmax(340px,430px)_minmax(0,1fr)] 2xl:items-start">
+            <form action={emitirCertificadoManual} className="grid gap-5">
+              <div>
+                <h2 className="text-lg font-semibold text-texto">Emisión manual</h2>
+                <p className="mt-1 text-sm text-texto-suave">
+                  Elige curso, alumno y estilo. El certificado se previsualiza antes de emitir.
                 </p>
               </div>
-            )}
 
-            <label className="flex items-center gap-2 text-sm text-texto-suave">
-              <input type="checkbox" name="enviar" />
-              Encolar correo después de emitir
-            </label>
+              <label>
+                <span className="mb-1.5 block text-sm font-medium text-texto">
+                  Curso
+                </span>
+                <select
+                  name="cursoId"
+                  value={cursoId}
+                  onChange={(e) => cambiarCurso(e.target.value)}
+                  required
+                  className="w-full rounded-lg border border-borde bg-fondo px-3 py-2.5 text-sm text-texto"
+                >
+                  {cursos.length === 0 && <option value="">No hay cursos</option>}
+                  {cursos.map((curso) => (
+                    <option key={curso.id} value={curso.id}>
+                      {curso.titulo}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-            <button
-              disabled={!cursoId || !usuarioId}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-rojo px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <BadgeCheck size={16} aria-hidden="true" />
-              Emitir certificación
-            </button>
-          </form>
+              <label>
+                <span className="mb-1.5 block text-sm font-medium text-texto">
+                  Alumno matriculado
+                </span>
+                <select
+                  name="usuarioId"
+                  value={usuarioId}
+                  onChange={(e) => setUsuarioId(e.target.value)}
+                  required
+                  disabled={!cursoId || alumnos.length === 0}
+                  className="w-full rounded-lg border border-borde bg-fondo px-3 py-2.5 text-sm text-texto disabled:opacity-50"
+                >
+                  <option value="">
+                    {alumnos.length
+                      ? "Seleccionar alumno…"
+                      : "Este curso no tiene matriculados"}
+                  </option>
+                  {alumnos.map((alumno) => (
+                    <option key={alumno.usuario_id} value={alumno.usuario_id}>
+                      {alumno.nombre} · {alumno.email} · {alumno.estado}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                <span className="mb-1.5 block text-sm font-medium text-texto">
+                  Estilo de certificación
+                </span>
+                <select
+                  name="variante"
+                  value={varianteManual}
+                  onChange={(e) => setVarianteManual(e.target.value as Variante)}
+                  className="w-full rounded-lg border border-borde bg-fondo px-3 py-2.5 text-sm text-texto"
+                >
+                  <option value="banda">Banda</option>
+                  <option value="marco">Marco</option>
+                  <option value="solido">Sólido</option>
+                </select>
+              </label>
+
+              {alumnoSeleccionado && (
+                <div className="rounded-xl border border-borde bg-fondo p-4 text-sm">
+                  <p className="font-semibold text-texto">
+                    {alumnoSeleccionado.nombre}
+                  </p>
+                  <p className="mt-1 text-texto-suave">
+                    {alumnoSeleccionado.email}
+                  </p>
+                  <p className="mt-1 text-xs text-texto-tenue">
+                    Matrícula: {alumnoSeleccionado.estado}
+                    {alumnoSeleccionado.certificado_id
+                      ? ` · certificado ${alumnoSeleccionado.codigo ?? ""}`
+                      : ""}
+                  </p>
+                </div>
+              )}
+
+              {!configSeleccionada && cursoId && (
+                <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-sm text-amber-500">
+                  Configura docente, director y firmas en Preview antes de emitir este curso.
+                </p>
+              )}
+
+              <label className="flex items-center gap-2 text-sm text-texto-suave">
+                <input type="checkbox" name="enviar" />
+                Encolar correo después de emitir
+              </label>
+
+              <BotonEmitirManual
+                habilitado={Boolean(
+                  cursoId && usuarioId && configSeleccionada,
+                )}
+              />
+            </form>
+
+            <section className="min-w-0 rounded-xl border border-borde bg-fondo p-4 2xl:sticky 2xl:top-6">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-texto">Preview en vivo</p>
+                  <p className="mt-0.5 text-xs text-texto-tenue">
+                    Alumno y estilo se actualizan antes de emitir.
+                  </p>
+                </div>
+                <Link
+                  href={`/panel/certificaciones/preview${cursoId ? `?curso=${cursoId}` : ""}`}
+                  className="text-xs font-semibold text-rojo-acento hover:underline"
+                >
+                  Configurar firmas
+                </Link>
+              </div>
+              <div className="overflow-x-auto">
+                <div className="min-w-[560px]">
+                  <VistaPrevia
+                    datos={datosPreviewManual}
+                    variante={varianteManual}
+                    escala={0.47}
+                  />
+                </div>
+              </div>
+            </section>
+          </div>
         )}
 
         {modo === "lote" && (
