@@ -55,7 +55,7 @@ export default async function Page({
       <header className="mt-4 flex flex-wrap items-end justify-between gap-4 border-b border-borde pb-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-texto">
-            Certificaciones
+            Gestión de certificaciones
           </h1>
           <p className="mt-1 max-w-2xl text-sm text-texto-suave">
             Emisión manual, por lotes, automática mediante activadores y envío por correo.
@@ -71,6 +71,25 @@ export default async function Page({
         </Link>
       </header>
 
+      <nav className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5" aria-label="Gestión de certificaciones">
+        {[
+          { href: "#manual", texto: "Manual", Icono: BadgeCheck },
+          { href: "#lotes", texto: "Lotes", Icono: Users },
+          { href: "/panel/certificaciones/preview", texto: "Preview", Icono: Eye },
+          { href: "#activadores", texto: "Activadores", Icono: Bolt },
+          { href: "#correos", texto: "Correos", Icono: Mail },
+        ].map(({ href, texto, Icono }) => (
+          <Link
+            key={texto}
+            href={href}
+            className="flex items-center gap-2 rounded-xl border border-borde bg-superficie px-3 py-3 text-sm font-semibold text-texto transition-colors hover:border-rojo-acento hover:text-rojo-acento"
+          >
+            <Icono size={16} aria-hidden="true" />
+            {texto}
+          </Link>
+        ))}
+      </nav>
+
       {params.estado === "emitido" && (
         <p className="mt-5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-500">
           Certificación emitida.
@@ -82,7 +101,7 @@ export default async function Page({
         </p>
       )}
 
-      <section className="mt-8 grid gap-6 lg:grid-cols-2">
+      <section id="lotes" className="mt-8 grid scroll-mt-6 gap-6 lg:grid-cols-2">
         <article className="rounded-2xl border border-borde bg-superficie p-5">
           <div className="flex items-center gap-2">
             <Users size={18} className="text-rojo-acento" aria-hidden="true" />
@@ -136,7 +155,7 @@ export default async function Page({
           </form>
         </article>
 
-        <article className="rounded-2xl border border-borde bg-superficie p-5">
+        <article id="activadores" className="scroll-mt-6 rounded-2xl border border-borde bg-superficie p-5">
           <div className="flex items-center gap-2">
             <Bolt size={18} className="text-rojo-acento" aria-hidden="true" />
             <h2 className="font-semibold text-texto">Activadores automáticos</h2>
@@ -215,8 +234,8 @@ export default async function Page({
         </article>
       </section>
 
-      <section className="mt-8 rounded-2xl border border-borde bg-superficie p-5">
-        <h2 className="font-semibold text-texto">Alumnos de la cohorte</h2>
+      <section id="manual" className="mt-8 scroll-mt-6 rounded-2xl border border-borde bg-superficie p-5">
+        <h2 className="font-semibold text-texto">Emisión manual por alumno</h2>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[760px] text-left text-sm">
             <thead className="text-xs uppercase tracking-wide text-texto-tenue">
@@ -314,7 +333,7 @@ export default async function Page({
       </section>
 
       <section className="mt-8 grid gap-6 lg:grid-cols-2">
-        <article className="rounded-2xl border border-borde bg-superficie p-5">
+        <article id="correos" className="scroll-mt-6 rounded-2xl border border-borde bg-superficie p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="font-semibold text-texto">Cola de correos</h2>
