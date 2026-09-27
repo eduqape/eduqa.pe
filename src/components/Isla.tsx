@@ -103,8 +103,9 @@ export function Isla({
    */
   const inicio = autenticado ? "/cursos" : "/";
 
-  // La portada tiene su propia cabecera y no necesita esta barra.
-  if (ruta === "/") return null;
+  // La portada y las pantallas de autenticación tienen un layout propio y no
+  // necesitan navegación lateral: mostrarla ahí añade ruido antes de entrar.
+  if (ruta === "/" || ruta === "/acceder" || ruta === "/registro") return null;
 
   // Dentro de una lección manda el índice del curso.
   if (/^\/cursos\/[^/]+\/[^/]+/.test(ruta)) return null;
