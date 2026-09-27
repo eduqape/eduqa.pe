@@ -29,6 +29,7 @@ export type ConfigCertificacionCurso = {
   docente_firma_url: string | null;
   director_academico: string;
   director_firma_url: string | null;
+  variante: "banda" | "marco" | "solido";
 };
 
 export type CertificadoAdmin = {
@@ -77,7 +78,7 @@ export async function resumenCertificacionesAdmin() {
       supabase
         .from("certificacion_config_curso")
         .select(
-          "curso_id, horas, docente, docente_firma_url, director_academico, director_firma_url",
+          "curso_id, horas, docente, docente_firma_url, director_academico, director_firma_url, variante",
         ),
       supabase
         .from("certificados")
