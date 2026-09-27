@@ -132,11 +132,11 @@ export function Certificado({
 
           <div className="min-w-[58mm]">
             {directorFirmaUrl && (
-              <div className="mb-[2mm] flex h-[16mm] items-end">
+              <div className="mb-[2mm] flex h-[18mm] w-[55mm] items-center justify-center">
                 <img
                   src={directorFirmaUrl}
                   alt=""
-                  className="max-h-[16mm] max-w-[55mm] object-contain object-left-bottom"
+                  className="h-[18mm] w-[55mm] object-contain object-center"
                 />
               </div>
             )}
