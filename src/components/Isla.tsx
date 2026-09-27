@@ -31,6 +31,7 @@ type Enlace = {
   href: string;
   etiqueta: string;
   Icono: ComponentType<{ size?: number; className?: string }>;
+  roles: string;
 };
 
 const EVENTO_BARRA = "eduqa:barra-lateral";
@@ -115,32 +116,33 @@ export function Isla({
    */
   const enlaces: Enlace[] = autenticado
     ? [
-        { href: "/cursos", etiqueta: "Cursos", Icono: GraduationCap },
-        { href: "/proximos-cursos", etiqueta: "Próximos cursos", Icono: ListChecks },
-        { href: "/blog", etiqueta: "Blog", Icono: Newspaper },
-        { href: "/calendario", etiqueta: "Calendario", Icono: CalendarDays },
-        { href: "/compras", etiqueta: "Mis compras", Icono: Receipt },
+        { href: "/cursos", etiqueta: "Cursos", Icono: GraduationCap, roles: "Alumno, Profesor, Gestor, Desarrollador, Agente de IA y Administrador" },
+        { href: "/proximos-cursos", etiqueta: "Próximos cursos", Icono: ListChecks, roles: "Alumno, Profesor, Gestor, Desarrollador, Agente de IA y Administrador" },
+        { href: "/blog", etiqueta: "Blog", Icono: Newspaper, roles: "Alumno, Profesor, Gestor, Desarrollador, Agente de IA y Administrador" },
+        { href: "/calendario", etiqueta: "Calendario", Icono: CalendarDays, roles: "Alumno, Profesor, Gestor, Desarrollador, Agente de IA y Administrador" },
+        { href: "/compras", etiqueta: "Mis compras", Icono: Receipt, roles: "Alumno, Profesor, Gestor, Desarrollador, Agente de IA y Administrador" },
         {
           href: "/certificaciones",
           etiqueta: "Certificaciones",
           Icono: BadgeCheck,
+          roles: "Alumno, Profesor, Gestor, Desarrollador, Agente de IA y Administrador",
         },
         ...(esInterno
-          ? [{ href: "/recursos", etiqueta: "Recursos", Icono: Library }]
+          ? [{ href: "/recursos", etiqueta: "Recursos", Icono: Library, roles: "Profesor, Gestor, Desarrollador, Agente de IA y Administrador" }]
           : []),
         ...(esAdmin
           ? [
-              { href: "/panel/cursos", etiqueta: "Gestión académica", Icono: GraduationCap },
-              { href: "/panel/avisos", etiqueta: "Avisos", Icono: Megaphone },
-              { href: "/panel/reportes", etiqueta: "Reportes", Icono: Bug },
-              { href: "/panel/marca", etiqueta: "Marca", Icono: Stamp },
+              { href: "/panel/cursos", etiqueta: "Gestión académica", Icono: GraduationCap, roles: "Administrador" },
+              { href: "/panel/avisos", etiqueta: "Avisos", Icono: Megaphone, roles: "Administrador" },
+              { href: "/panel/reportes", etiqueta: "Reportes", Icono: Bug, roles: "Administrador" },
+              { href: "/panel/marca", etiqueta: "Marca", Icono: Stamp, roles: "Administrador" },
             ]
           : []),
       ]
     : [
-        { href: "/acceder", etiqueta: "Entrar", Icono: LogIn },
-        { href: "/registro", etiqueta: "Crear cuenta", Icono: UserRoundPlus },
-        { href: "/blog", etiqueta: "Blog", Icono: Newspaper },
+        { href: "/acceder", etiqueta: "Entrar", Icono: LogIn, roles: "Visitante" },
+        { href: "/registro", etiqueta: "Crear cuenta", Icono: UserRoundPlus, roles: "Visitante" },
+        { href: "/blog", etiqueta: "Blog", Icono: Newspaper, roles: "Visitante" },
       ];
 
   return (
@@ -160,13 +162,13 @@ export function Isla({
       </Link>
 
       <div className="sidebar-scroll mx-3 mt-3 flex flex-1 flex-col gap-1 overflow-y-auto">
-        {enlaces.map(({ href, etiqueta, Icono }) => {
+        {enlaces.map(({ href, etiqueta, Icono, roles }) => {
           const activo = ruta === href || (href !== "/cursos" && href !== "/" && ruta.startsWith(href)) || (href === "/panel/cursos" && ruta.startsWith("/panel/rutas"));
           return (
             <Link
               key={href}
               href={href}
-              title={etiqueta}
+              title={esAdmin ? `${etiqueta} — Visible para: ${roles}` : etiqueta}
               aria-label={etiqueta}
               className={`sidebar-enlace flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rojo-acento ${
                 activo
@@ -185,7 +187,7 @@ export function Isla({
         <div className="mx-3 border-t border-borde pt-2">
           <Link
             href="/panel"
-            title="Mi cuenta"
+            title={esAdmin ? "Mi cuenta — Visible para: Alumno, Profesor, Gestor, Desarrollador, Agente de IA y Administrador" : "Mi cuenta"}
             aria-label="Mi cuenta"
             aria-current={ruta === "/panel" ? "page" : undefined}
             className={`sidebar-enlace mb-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rojo-acento ${
@@ -210,7 +212,7 @@ export function Isla({
 
           <Link
             href="/ajustes"
-            title="Ajustes"
+            title={esAdmin ? "Ajustes — Visible para: Alumno, Profesor, Gestor, Desarrollador, Agente de IA y Administrador" : "Ajustes"}
             aria-label="Ajustes"
             aria-current={ruta.startsWith("/ajustes") ? "page" : undefined}
             className={`sidebar-enlace flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rojo-acento ${ruta.startsWith("/ajustes") ? "bg-superficie font-medium text-rojo-acento" : "text-texto-suave hover:bg-superficie"}`}
