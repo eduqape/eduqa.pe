@@ -28,7 +28,10 @@ export default async function Page({
     curso: cohorte?.curso_nombre ?? "Curso EDUQA.PE",
     horas: Number(cohorte?.horas ?? 0),
     fecha: fechaCertificado(cohorte?.dictada_en),
-    docente: cohorte?.docente ?? "EDUQA.PE",
+    docente: cohorte?.docente ?? "Docente EDUQA.PE",
+    docenteFirmaUrl: cohorte?.docente_firma_url ?? null,
+    directorAcademico: cohorte?.director_academico ?? "Director Académico EDUQA.PE",
+    directorFirmaUrl: cohorte?.director_firma_url ?? null,
     codigo: certificacion.codigo,
   };
 
