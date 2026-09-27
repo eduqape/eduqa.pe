@@ -90,6 +90,16 @@ export function TarjetaCursoMatricula({
         {curso.resumen}
       </p>
 
+      {!curso.matriculado && !comoAdmin && (
+        <Link
+          href={`/cursos/${curso.slug}/preview`}
+          className="mt-2 inline-flex w-fit items-center gap-1 text-xs font-semibold text-rojo-acento hover:underline"
+        >
+          Ver preview
+          <ArrowRight size={12} aria-hidden="true" />
+        </Link>
+      )}
+
       {/* La barra solo tiene sentido cuando hay algo que medir: si no estás
           matriculado, no hay progreso del que hablar. */}
       {curso.matriculado && (
