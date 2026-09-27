@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Library,
   CalendarDays,
+  Award,
   BadgeCheck,
   Bug,
   GraduationCap,
@@ -136,6 +137,7 @@ export function Isla({
         ...(esAdmin
           ? [
               { href: "/panel/cursos", etiqueta: "Gestión académica", Icono: GraduationCap },
+              { href: "/panel/certificaciones", etiqueta: "Certificaciones", Icono: Award },
               { href: "/panel/avisos", etiqueta: "Avisos", Icono: Megaphone },
               { href: "/panel/reportes", etiqueta: "Reportes", Icono: Bug },
               { href: "/panel/marca", etiqueta: "Marca", Icono: Stamp },
