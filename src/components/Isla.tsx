@@ -164,7 +164,7 @@ export function Isla({
         <MarcaTextoLateral ocultarAlColapsar />
       </Link>
 
-      <div className="mx-3 mt-3 flex flex-1 flex-col gap-1 overflow-y-auto">
+      <div className="sidebar-scroll mx-3 mt-3 flex flex-1 flex-col gap-1 overflow-y-auto">
         {enlaces.map(({ href, etiqueta, Icono }) => {
           const activo = ruta === href || (href !== "/cursos" && href !== "/" && ruta.startsWith(href)) || (href === "/panel/cursos" && ruta.startsWith("/panel/rutas"));
           return (
