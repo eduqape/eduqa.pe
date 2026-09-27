@@ -9,11 +9,13 @@ import {
   ETIQUETA_ESTADO,
   miEstadoDeVoto,
   proximosCursos,
+  propuestasInternas,
   type EstadoPropuesta,
 } from "@/lib/proximos-cursos";
 import { esInterno } from "@/lib/roles";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import { votarPropuesta } from "./acciones";
+import { GestionPropuestas } from "./GestionPropuestas";
 
 export const metadata: Metadata = {
   title: "Próximos cursos — EDUQA.PE",
@@ -56,19 +58,28 @@ const MENSAJES: Record<string, { texto: string; exito?: boolean }> = {
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ estado?: string }>;
+  searchParams: Promise<{ estado?: string; gestion?: string }>;
 }) {
   const usuario = await usuarioActual();
   if (!usuario) redirect("/acceder?volverA=/proximos-cursos");
 
-  const [perfil, propuestas, voto] = await Promise.all([
+  const [perfil, propuestas, voto, parametros] = await Promise.all([
     perfilActual(),
     proximosCursos(),
     miEstadoDeVoto(),
+    searchParams,
   ]);
 
-  const parametros = await searchParams;
+  const puedeGestionar = esInterno(perfil);
+  const gestionAbierta = puedeGestionar && parametros.gestion === "1";
+  const propuestasGestion = gestionAbierta ? await propuestasInternas() : [];
   const mensaje = parametros.estado ? MENSAJES[parametros.estado] : undefined;
+  const mensajeGestion =
+    parametros.estado === "creada"
+      ? "Propuesta creada."
+      : parametros.estado === "actualizada"
+        ? "Propuesta actualizada."
+        : null;
 
   const ranking = propuestas.map((propuesta) => ({
     ...propuesta,
@@ -96,13 +107,17 @@ export default async function Page({
             </p>
           </div>
 
-          {esInterno(perfil) && (
+          {puedeGestionar && (
             <Link
-              href="/panel/proximos-cursos"
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-borde-fuerte bg-fondo px-4 py-2.5 text-sm font-semibold text-texto transition-colors hover:border-rojo-acento hover:text-rojo-acento"
+              href={
+                gestionAbierta
+                  ? "/proximos-cursos"
+                  : "/proximos-cursos?gestion=1#gestion-propuestas"
+              }
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-borde-fuerte bg-fondo px-4 py-2.5 text-sm font-semibold text-texto transition-colors hover:border-rojo-acento hover:text-rojo-acento"
             >
               <Settings2 size={16} aria-hidden="true" />
-              Gestionar propuestas
+              {gestionAbierta ? "Cerrar gestión" : "Gestionar propuestas"}
             </Link>
           )}
         </div>
@@ -128,6 +143,17 @@ export default async function Page({
           </p>
         )}
       </header>
+
+      {gestionAbierta && (
+        <>
+          {mensajeGestion && (
+            <p className="mt-6 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-500">
+              {mensajeGestion}
+            </p>
+          )}
+          <GestionPropuestas propuestas={propuestasGestion} />
+        </>
+      )}
 
       {ranking.length === 0 ? (
         <section className="mt-8 rounded-2xl border border-dashed border-borde p-10 text-center">
