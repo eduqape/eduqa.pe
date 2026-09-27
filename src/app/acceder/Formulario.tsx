@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { AlertCircle, CheckCircle2, Eye, EyeOff, KeyRound, Loader2, MailKey } from "lucide-react";
+import { AlertCircle, CheckCircle2, Eye, EyeOff, KeyRound, Loader2, Mail } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import {
   accederConContrasena,
@@ -105,7 +105,7 @@ export function Formulario({
         {(
           [
             { id: "contrasena", etiqueta: "Contraseña", Icono: KeyRound },
-            { id: "codigo", etiqueta: "Código OTP", Icono: MailKey },
+            { id: "codigo", etiqueta: "Código OTP", Icono: Mail },
           ] as const
         ).map(({ id, etiqueta, Icono }) => (
           <button
