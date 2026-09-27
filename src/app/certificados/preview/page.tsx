@@ -9,6 +9,9 @@ const MUESTRA = {
   horas: 4,
   fecha: "23 de agosto de 2026",
   docente: "Alejandro Seminario",
+  docenteFirmaUrl: null,
+  directorAcademico: "Director Académico EDUQA.PE",
+  directorFirmaUrl: null,
   codigo: "EDUQA-DK03-2026-XGPGBC",
 };
 
