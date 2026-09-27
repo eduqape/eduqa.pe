@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useTransition, type FormEvent } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -8,11 +8,17 @@ import {
   ChevronDown,
   Plus,
   Save,
+  Upload,
   X,
 } from "lucide-react";
-import { Icono } from "@/components/Iconos";
+import { IconoPropuesta } from "@/components/IconoPropuesta";
 import { claseInput, claseInputBase } from "@/components/ui";
-import { ICONOS_CURSO, type IconoNombre } from "@/lib/iconos-curso";
+import {
+  agregarOpcionCatalogo,
+  actualizarPropuesta,
+  cargarIconoCatalogo,
+  crearPropuesta,
+} from "./gestion-acciones";
 
 const ESTADOS_PROPUESTA = [
   "borrador",
@@ -34,12 +40,23 @@ const ETIQUETA_ESTADO: Record<EstadoPropuesta, string> = {
   descartado: "Descartado",
 };
 
+type OpcionCatalogo = {
+  valor: string;
+  svg: string | null;
+};
+
+type Catalogos = {
+  niveles: OpcionCatalogo[];
+  areas: OpcionCatalogo[];
+  iconos: OpcionCatalogo[];
+};
+
 type PropuestaInterna = {
   id: string;
   titulo: string;
   subtitulo: string;
   precio: number;
-  icono: IconoNombre;
+  icono: string;
   nivel: string;
   area: string;
   estado: EstadoPropuesta;
@@ -50,12 +67,13 @@ type PropuestaInterna = {
   creadoPor: string;
   actualizadaEn: string;
 };
-import { actualizarPropuesta, crearPropuesta } from "./gestion-acciones";
 
-const NIVELES = ["INTRODUCCIÓN", "INTERMEDIO", "AVANZADO"] as const;
 const PASOS = ["Información", "Clasificación", "Publicación"] as const;
-
 type CampoValidable = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+
+function capitalizar(valor: string) {
+  return valor ? valor.charAt(0).toLocaleUpperCase("es-PE") + valor.slice(1) : valor;
+}
 
 function esCampoValidable(elemento: Element): elemento is CampoValidable {
   return (
@@ -70,25 +88,12 @@ function animarCampo(campo: CampoValidable) {
   campo.classList.remove("animar-campo-bounce", "animar-campo-buzz");
   void campo.offsetWidth;
   campo.classList.add(clase);
-  campo.addEventListener(
-    "animationend",
-    () => campo.classList.remove(clase),
-    { once: true },
-  );
+  campo.addEventListener("animationend", () => campo.classList.remove(clase), { once: true });
 }
 
 function pasoDe(campo: CampoValidable) {
   const contenedor = campo.closest<HTMLElement>("[data-paso]");
   return Number(contenedor?.dataset.paso ?? 0);
-}
-
-function validarCampos(campos: CampoValidable[]) {
-  const invalido = campos.find((campo) => !campo.validity.valid);
-  if (!invalido) return null;
-
-  animarCampo(invalido);
-  invalido.focus({ preventScroll: false });
-  return invalido;
 }
 
 function Progreso({ paso }: { paso: number }) {
@@ -116,38 +121,98 @@ function Progreso({ paso }: { paso: number }) {
 
 function FormularioPropuesta({
   propuesta,
+  catalogos,
+  onCatalogos,
   onCancelar,
 }: {
   propuesta?: PropuestaInterna;
+  catalogos: Catalogos;
+  onCatalogos: (catalogos: Catalogos) => void;
   onCancelar?: () => void;
 }) {
   const [paso, setPaso] = useState(0);
+  const [iconoSeleccionado, setIconoSeleccionado] = useState(
+    propuesta?.icono ?? catalogos.iconos[0]?.valor ?? "libro",
+  );
+  const [nuevoNivel, setNuevoNivel] = useState("");
+  const [nuevaArea, setNuevaArea] = useState("");
+  const [nombreIcono, setNombreIcono] = useState("");
+  const [archivoIcono, setArchivoIcono] = useState<File | null>(null);
+  const [mensajeCatalogo, setMensajeCatalogo] = useState<string | null>(null);
+  const [guardandoCatalogo, iniciarCatalogo] = useTransition();
   const esEdicion = Boolean(propuesta);
 
   function camposDelPaso(form: HTMLFormElement, indice: number) {
     return Array.from(
-      form.querySelectorAll(`[data-paso="${indice}"] input, [data-paso="${indice}"] textarea, [data-paso="${indice}"] select`),
+      form.querySelectorAll(
+        `[data-paso="${indice}"] input, [data-paso="${indice}"] textarea, [data-paso="${indice}"] select`,
+      ),
     ).filter(esCampoValidable);
   }
 
   function avanzar(form: HTMLFormElement) {
-    const invalido = validarCampos(camposDelPaso(form, paso));
-    if (!invalido) setPaso((actual) => Math.min(actual + 1, PASOS.length - 1));
+    const invalido = camposDelPaso(form, paso).find((campo) => !campo.validity.valid);
+    if (!invalido) {
+      setPaso((actual) => Math.min(actual + 1, PASOS.length - 1));
+      return;
+    }
+    animarCampo(invalido);
+    invalido.focus({ preventScroll: false });
   }
 
   function enviar(evento: FormEvent<HTMLFormElement>) {
     const form = evento.currentTarget;
     const campos = Array.from(form.elements).filter(esCampoValidable);
     const invalido = campos.find((campo) => !campo.validity.valid);
-
     if (!invalido) return;
 
     evento.preventDefault();
-    const destino = pasoDe(invalido);
-    setPaso(destino);
+    setPaso(pasoDe(invalido));
     requestAnimationFrame(() => {
       animarCampo(invalido);
       invalido.focus({ preventScroll: false });
+    });
+  }
+
+  function agregarTexto(tipo: "nivel" | "area", valor: string) {
+    iniciarCatalogo(async () => {
+      try {
+        const item = await agregarOpcionCatalogo(tipo, valor);
+        onCatalogos({
+          ...catalogos,
+          niveles:
+            tipo === "nivel" ? [...catalogos.niveles, item] : catalogos.niveles,
+          areas: tipo === "area" ? [...catalogos.areas, item] : catalogos.areas,
+        });
+        if (tipo === "nivel") setNuevoNivel("");
+        else setNuevaArea("");
+        setMensajeCatalogo(`${tipo === "nivel" ? "Nivel" : "Área"} agregado.`);
+      } catch (error) {
+        setMensajeCatalogo(error instanceof Error ? error.message : "No se pudo agregar.");
+      }
+    });
+  }
+
+  function cargarIcono() {
+    if (!archivoIcono) {
+      setMensajeCatalogo("Selecciona un archivo SVG.");
+      return;
+    }
+
+    iniciarCatalogo(async () => {
+      try {
+        const data = new FormData();
+        data.set("archivo", archivoIcono);
+        data.set("nombre", nombreIcono);
+        const item = await cargarIconoCatalogo(data);
+        onCatalogos({ ...catalogos, iconos: [...catalogos.iconos, item] });
+        setIconoSeleccionado(item.valor);
+        setArchivoIcono(null);
+        setNombreIcono("");
+        setMensajeCatalogo("Icono cargado.");
+      } catch (error) {
+        setMensajeCatalogo(error instanceof Error ? error.message : "No se pudo cargar el icono.");
+      }
     });
   }
 
@@ -159,6 +224,7 @@ function FormularioPropuesta({
       className="mt-5"
     >
       {propuesta && <input type="hidden" name="id" value={propuesta.id} />}
+      <input type="hidden" name="icono" value={iconoSeleccionado} />
 
       <Progreso paso={paso} />
 
@@ -189,56 +255,146 @@ function FormularioPropuesta({
         </label>
       </div>
 
-      <div data-paso="1" className={paso === 1 ? "grid gap-4 sm:grid-cols-2" : "hidden"}>
-        <label>
-          <span className="mb-1.5 block text-sm font-medium text-texto">Área</span>
-          <input
-            name="area"
-            required
-            minLength={2}
-            maxLength={80}
-            defaultValue={propuesta?.area ?? ""}
-            className={claseInput}
-            placeholder="Ej. Lenguajes"
-          />
-        </label>
+      <div data-paso="1" className={paso === 1 ? "grid gap-5" : "hidden"}>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label>
+            <span className="mb-1.5 block text-sm font-medium text-texto">Área</span>
+            <select
+              name="area"
+              required
+              defaultValue={propuesta?.area ?? catalogos.areas[0]?.valor ?? ""}
+              className={claseInput}
+            >
+              {catalogos.areas.map((area) => (
+                <option key={area.valor} value={area.valor}>
+                  {area.valor}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        <label>
-          <span className="mb-1.5 block text-sm font-medium text-texto">Nivel</span>
-          <select
-            name="nivel"
-            defaultValue={propuesta?.nivel ?? "INTRODUCCIÓN"}
-            className={claseInput}
-          >
-            {NIVELES.map((nivel) => (
-              <option key={nivel} value={nivel}>
-                {nivel}
-              </option>
-            ))}
-          </select>
-        </label>
+          <label>
+            <span className="mb-1.5 block text-sm font-medium text-texto">Nivel</span>
+            <select
+              name="nivel"
+              required
+              defaultValue={propuesta?.nivel ?? catalogos.niveles[0]?.valor ?? "INTRODUCCIÓN"}
+              className={claseInput}
+            >
+              {catalogos.niveles.map((nivel) => (
+                <option key={nivel.valor} value={nivel.valor}>
+                  {nivel.valor}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
 
-        <label className="sm:col-span-2">
-          <span className="mb-1.5 block text-sm font-medium text-texto">Icono</span>
-          <select
-            name="icono"
-            defaultValue={propuesta?.icono ?? "libro"}
-            className={claseInput}
-          >
-            {ICONOS_CURSO.map((icono) => (
-              <option key={icono} value={icono}>
-                {icono}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={nuevaArea}
+              onChange={(evento) => setNuevaArea(evento.target.value)}
+              placeholder="Nueva área"
+              className={claseInput}
+            />
+            <button
+              type="button"
+              disabled={guardandoCatalogo || !nuevaArea.trim()}
+              onClick={() => agregarTexto("area", nuevaArea)}
+              className="shrink-0 rounded-lg border border-borde px-3 text-sm font-semibold text-texto disabled:opacity-50"
+            >
+              + Área
+            </button>
+          </div>
+
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={nuevoNivel}
+              onChange={(evento) => setNuevoNivel(evento.target.value)}
+              placeholder="Nuevo nivel"
+              className={claseInput}
+            />
+            <button
+              type="button"
+              disabled={guardandoCatalogo || !nuevoNivel.trim()}
+              onClick={() => agregarTexto("nivel", nuevoNivel)}
+              className="shrink-0 rounded-lg border border-borde px-3 text-sm font-semibold text-texto disabled:opacity-50"
+            >
+              + Nivel
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <span className="mb-2 block text-sm font-medium text-texto">Icono</span>
+          <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8">
+            {catalogos.iconos.map((icono) => {
+              const activo = iconoSeleccionado === icono.valor;
+              return (
+                <button
+                  key={icono.valor}
+                  type="button"
+                  onClick={() => setIconoSeleccionado(icono.valor)}
+                  title={capitalizar(icono.valor)}
+                  aria-pressed={activo}
+                  className={`flex min-h-20 flex-col items-center justify-center gap-2 rounded-xl border p-2 text-center transition-colors ${
+                    activo
+                      ? "border-rojo-acento bg-rojo-tenue text-rojo-acento"
+                      : "border-borde bg-fondo text-texto-suave hover:border-borde-fuerte"
+                  }`}
+                >
+                  <IconoPropuesta
+                    nombre={icono.valor}
+                    svg={icono.svg}
+                    className="size-6 [&>svg]:size-full"
+                  />
+                  <span className="max-w-full truncate text-[10px]">
+                    {capitalizar(icono.valor)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-3 grid gap-2 rounded-xl border border-dashed border-borde p-3 sm:grid-cols-[1fr_1fr_auto]">
+            <input
+              type="text"
+              value={nombreIcono}
+              onChange={(evento) => setNombreIcono(evento.target.value)}
+              placeholder="Nombre del icono"
+              className={claseInput}
+            />
+            <input
+              type="file"
+              accept=".svg,image/svg+xml"
+              onChange={(evento) => setArchivoIcono(evento.target.files?.[0] ?? null)}
+              className="block w-full text-xs text-texto-suave file:mr-3 file:rounded-md file:border-0 file:bg-superficie file:px-3 file:py-2 file:text-xs file:font-semibold file:text-texto"
+            />
+            <button
+              type="button"
+              disabled={guardandoCatalogo || !archivoIcono}
+              onClick={cargarIcono}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-borde px-3 text-sm font-semibold text-texto disabled:opacity-50"
+            >
+              <Upload size={14} aria-hidden="true" />
+              Cargar SVG
+            </button>
+          </div>
+
+          {mensajeCatalogo && (
+            <p className="mt-2 text-xs text-texto-tenue" role="status">
+              {mensajeCatalogo}
+            </p>
+          )}
+        </div>
       </div>
 
       <div data-paso="2" className={paso === 2 ? "grid gap-4 sm:grid-cols-2" : "hidden"}>
         <label>
-          <span className="mb-1.5 block text-sm font-medium text-texto">
-            Precio estimado
-          </span>
+          <span className="mb-1.5 block text-sm font-medium text-texto">Precio estimado</span>
           <input
             name="precio"
             type="number"
@@ -265,9 +421,7 @@ function FormularioPropuesta({
         </label>
 
         <label>
-          <span className="mb-1.5 block text-sm font-medium text-texto">
-            Prioridad interna
-          </span>
+          <span className="mb-1.5 block text-sm font-medium text-texto">Prioridad interna</span>
           <input
             name="prioridadInterna"
             type="number"
@@ -280,9 +434,7 @@ function FormularioPropuesta({
         </label>
 
         <label>
-          <span className="mb-1.5 block text-sm font-medium text-texto">
-            Slug publicado
-          </span>
+          <span className="mb-1.5 block text-sm font-medium text-texto">Slug publicado</span>
           <input
             name="cursoSlug"
             defaultValue={propuesta?.cursoSlug ?? ""}
@@ -344,13 +496,19 @@ function FormularioPropuesta({
 
 export function GestionPropuestas({
   propuestas,
+  catalogosIniciales,
 }: {
   propuestas: PropuestaInterna[];
+  catalogosIniciales: Catalogos;
 }) {
-  const [creando, setCreando] = useState(false);
+  const [creando, setCreando] = useState(propuestas.length === 0);
+  const [catalogos, setCatalogos] = useState(catalogosIniciales);
 
   return (
-    <section id="gestion-propuestas" className="mt-8 scroll-mt-6 rounded-2xl border border-borde bg-superficie p-5 sm:p-6">
+    <section
+      id="gestion-propuestas"
+      className="mt-8 scroll-mt-6 rounded-2xl border border-borde bg-superficie p-5 sm:p-6"
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <BarChart3 size={17} className="text-rojo-acento" aria-hidden="true" />
@@ -379,46 +537,55 @@ export function GestionPropuestas({
       {creando && (
         <div className="mt-5 rounded-xl border border-borde bg-fondo p-4 sm:p-5">
           <h3 className="text-base font-semibold text-texto">Nueva propuesta</h3>
-          <FormularioPropuesta onCancelar={() => setCreando(false)} />
+          <FormularioPropuesta
+            catalogos={catalogos}
+            onCatalogos={setCatalogos}
+            onCancelar={propuestas.length > 0 ? () => setCreando(false) : undefined}
+          />
         </div>
       )}
 
       {propuestas.length === 0 ? (
-        <div className="mt-5 rounded-xl border border-dashed border-borde p-7 text-center text-sm text-texto-suave">
-          Todavía no hay propuestas.
-        </div>
+        <p className="mt-5 text-center text-sm text-texto-tenue">
+          La primera propuesta se crea directamente desde el formulario superior.
+        </p>
       ) : (
         <div className="mt-5 space-y-3">
-          {propuestas.map((propuesta) => (
-            <details
-              key={propuesta.id}
-              className="group rounded-xl border border-borde bg-fondo"
-            >
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-4 [&::-webkit-details-marker]:hidden">
-                <div className="flex min-w-0 items-center gap-3">
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-borde bg-superficie">
-                    <Icono nombre={propuesta.icono} className="size-6 text-texto-suave" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-texto">
-                      {propuesta.titulo}
-                    </p>
-                    <p className="mt-0.5 text-xs text-texto-tenue">
-                      {propuesta.votos} {propuesta.votos === 1 ? "voto" : "votos"} · prioridad {propuesta.prioridadInterna}/100 · {ETIQUETA_ESTADO[propuesta.estado]}
-                    </p>
+          {propuestas.map((propuesta) => {
+            const svg = catalogos.iconos.find((item) => item.valor === propuesta.icono)?.svg ?? null;
+            return (
+              <details
+                key={propuesta.id}
+                className="group rounded-xl border border-borde bg-fondo"
+              >
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-4 [&::-webkit-details-marker]:hidden">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-borde bg-superficie">
+                      <IconoPropuesta nombre={propuesta.icono} svg={svg} className="size-6 [&>svg]:size-full" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-texto">{propuesta.titulo}</p>
+                      <p className="mt-0.5 text-xs text-texto-tenue">
+                        {propuesta.votos} {propuesta.votos === 1 ? "voto" : "votos"} · prioridad {propuesta.prioridadInterna}/100 · {ETIQUETA_ESTADO[propuesta.estado]}
+                      </p>
+                    </div>
                   </div>
+                  <ChevronDown
+                    size={17}
+                    className="shrink-0 text-texto-tenue transition-transform group-open:rotate-180"
+                    aria-hidden="true"
+                  />
+                </summary>
+                <div className="border-t border-borde px-4 pb-5">
+                  <FormularioPropuesta
+                    propuesta={propuesta}
+                    catalogos={catalogos}
+                    onCatalogos={setCatalogos}
+                  />
                 </div>
-                <ChevronDown
-                  size={17}
-                  className="shrink-0 text-texto-tenue transition-transform group-open:rotate-180"
-                  aria-hidden="true"
-                />
-              </summary>
-              <div className="border-t border-borde px-4 pb-5">
-                <FormularioPropuesta propuesta={propuesta} />
-              </div>
-            </details>
-          ))}
+              </details>
+            );
+          })}
         </div>
       )}
     </section>
