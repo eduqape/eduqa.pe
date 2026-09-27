@@ -7,6 +7,7 @@ import { clienteServidor } from "@/lib/supabase/servidor";
 export type EstadoAcceso = { ok: false; error: string } | { ok: true; aviso: string };
 
 const RE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const RE_CODIGO = /^\d{6}$/;
 
 function limpiar(v: FormDataEntryValue | null) {
   return typeof v === "string" ? v.trim() : "";
@@ -41,32 +42,60 @@ export async function accederConContrasena(
   redirect(volverA);
 }
 
-export async function enviarEnlaceMagico(
+export async function enviarCodigoAcceso(
   _prev: EstadoAcceso | null,
   formData: FormData,
 ): Promise<EstadoAcceso> {
   const email = limpiar(formData.get("email")).toLowerCase();
+
   if (!RE_EMAIL.test(email)) return { ok: false, error: "Ese correo no parece válido." };
 
   const supabase = await clienteServidor();
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITIO_URL ?? "http://localhost:3011"}/auth/confirmar`,
-      // No crear cuentas desde el formulario: las altas se hacen a mano.
+      // Las altas se hacen desde el flujo de registro; iniciar sesión no crea cuentas.
       shouldCreateUser: false,
     },
   });
 
   if (error) {
-    console.error("[enviarEnlaceMagico]", error);
-    return { ok: false, error: "No pudimos enviar el enlace. Intenta de nuevo." };
+    console.error("[enviarCodigoAcceso]", error);
+    return { ok: false, error: "No pudimos enviar el código. Intenta de nuevo." };
   }
 
   return {
     ok: true,
-    aviso: "Si ese correo está registrado, recibirás un enlace para entrar.",
+    aviso: "Si ese correo está registrado, recibirás un código de 6 dígitos.",
   };
+}
+
+export async function verificarCodigoAcceso(
+  _prev: EstadoAcceso | null,
+  formData: FormData,
+): Promise<EstadoAcceso> {
+  const email = limpiar(formData.get("email")).toLowerCase();
+  const codigo = limpiar(formData.get("codigo"));
+  const volverA = destinoSeguro(limpiar(formData.get("volverA")));
+
+  if (!RE_EMAIL.test(email)) return { ok: false, error: "Ese correo no parece válido." };
+  if (!RE_CODIGO.test(codigo)) {
+    return { ok: false, error: "Escribe el código de 6 dígitos." };
+  }
+
+  const supabase = await clienteServidor();
+  const { error } = await supabase.auth.verifyOtp({
+    email,
+    token: codigo,
+    type: "email",
+  });
+
+  if (error) {
+    return { ok: false, error: "El código es incorrecto o ya caducó." };
+  }
+
+  revalidatePath("/", "layout");
+  redirect(volverA);
 }
 
 export async function cerrarSesion() {
