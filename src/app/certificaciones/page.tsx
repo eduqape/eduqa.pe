@@ -66,7 +66,7 @@ export default async function Page() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="font-medium">
-                    {c.cohorte?.curso_nombre ?? "Curso"}
+                    {c.curso_nombre ?? c.cohorte?.curso_nombre ?? "Curso"}
                   </p>
                   <p className="mt-0.5 text-sm text-texto-suave">{c.alumno}</p>
                 </div>
@@ -78,23 +78,27 @@ export default async function Page() {
               </div>
 
               <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs text-texto-tenue">
-                {c.cohorte?.horas && (
+                {(c.horas ?? c.cohorte?.horas) && (
                   <div className="flex items-center gap-1.5">
                     <Clock size={12} aria-hidden="true" />
-                    {c.cohorte.horas} horas
+                    {c.horas ?? c.cohorte?.horas} horas
                   </div>
                 )}
-                {c.cohorte?.dictada_en && (
+                {(c.dictada_en ?? c.cohorte?.dictada_en) && (
                   <div>
                     Dictado el{" "}
-                    {new Date(c.cohorte.dictada_en).toLocaleDateString("es-PE", {
+                    {new Date(
+                      c.dictada_en ?? c.cohorte?.dictada_en ?? "",
+                    ).toLocaleDateString("es-PE", {
                       day: "numeric",
                       month: "long",
                       year: "numeric",
                     })}
                   </div>
                 )}
-                {c.cohorte?.docente && <div>{c.cohorte.docente}</div>}
+                {(c.docente ?? c.cohorte?.docente) && (
+                  <div>{c.docente ?? c.cohorte?.docente}</div>
+                )}
               </dl>
 
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-borde pt-3">
