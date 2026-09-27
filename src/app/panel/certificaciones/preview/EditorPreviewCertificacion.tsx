@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import type { Variante } from "@/components/Certificado";
 import { VistaPrevia } from "@/components/Certificado";
 import type {
@@ -14,30 +14,27 @@ import {
 
 const ESTADO_INICIAL: EstadoGuardadoCertificacion = { ok: false };
 
-function crearPreviewArchivo(file: File | null) {
-  return file ? URL.createObjectURL(file) : null;
-}
-
-export function EditorPreviewCertificacion({
-  cursos,
-  configs,
-  cursoInicial,
+function EditorCurso({
+  curso,
+  config,
   alumnoInicial,
   varianteInicial,
   fecha,
+  onCambiarCurso,
+  cursos,
 }: {
-  cursos: CursoCertificacion[];
-  configs: ConfigCertificacionCurso[];
-  cursoInicial: string;
+  curso: CursoCertificacion | null;
+  config: ConfigCertificacionCurso | null;
   alumnoInicial: string;
   varianteInicial: Variante;
   fecha: string;
+  onCambiarCurso: (id: string) => void;
+  cursos: CursoCertificacion[];
 }) {
-  const [cursoId, setCursoId] = useState(cursoInicial || cursos[0]?.id || "");
   const [alumno, setAlumno] = useState(alumnoInicial || "Nombre del alumno");
   const [variante, setVariante] = useState<Variante>(varianteInicial);
-  const [docente, setDocente] = useState("");
-  const [director, setDirector] = useState("");
+  const [docente, setDocente] = useState(config?.docente ?? "");
+  const [director, setDirector] = useState(config?.director_academico ?? "");
   const [firmaDocente, setFirmaDocente] = useState<File | null>(null);
   const [firmaDirector, setFirmaDirector] = useState<File | null>(null);
   const [previewFirmaDocente, setPreviewFirmaDocente] = useState<string | null>(null);
@@ -47,48 +44,17 @@ export function EditorPreviewCertificacion({
     ESTADO_INICIAL,
   );
 
-  const curso = useMemo(
-    () => cursos.find((item) => item.id === cursoId) ?? null,
-    [cursos, cursoId],
-  );
+  function cambiarFirmaDocente(file: File | null) {
+    if (previewFirmaDocente?.startsWith("blob:")) URL.revokeObjectURL(previewFirmaDocente);
+    setFirmaDocente(file);
+    setPreviewFirmaDocente(file ? URL.createObjectURL(file) : null);
+  }
 
-  const config = useMemo(
-    () => configs.find((item) => item.curso_id === cursoId) ?? null,
-    [configs, cursoId],
-  );
-
-  useEffect(() => {
-    setDocente(config?.docente ?? "");
-    setDirector(config?.director_academico ?? "");
-    setFirmaDocente(null);
-    setFirmaDirector(null);
-    setPreviewFirmaDocente(null);
-    setPreviewFirmaDirector(null);
-  }, [cursoId, config]);
-
-  useEffect(() => {
-    if (!firmaDocente) {
-      setPreviewFirmaDocente(null);
-      return;
-    }
-    const url = crearPreviewArchivo(firmaDocente);
-    setPreviewFirmaDocente(url);
-    return () => {
-      if (url) URL.revokeObjectURL(url);
-    };
-  }, [firmaDocente]);
-
-  useEffect(() => {
-    if (!firmaDirector) {
-      setPreviewFirmaDirector(null);
-      return;
-    }
-    const url = crearPreviewArchivo(firmaDirector);
-    setPreviewFirmaDirector(url);
-    return () => {
-      if (url) URL.revokeObjectURL(url);
-    };
-  }, [firmaDirector]);
+  function cambiarFirmaDirector(file: File | null) {
+    if (previewFirmaDirector?.startsWith("blob:")) URL.revokeObjectURL(previewFirmaDirector);
+    setFirmaDirector(file);
+    setPreviewFirmaDirector(file ? URL.createObjectURL(file) : null);
+  }
 
   const datos = {
     alumno: alumno.trim() || "Nombre del alumno",
@@ -105,19 +71,19 @@ export function EditorPreviewCertificacion({
   const subiendo = Boolean(firmaDocente || firmaDirector);
 
   return (
-    <div className="mt-6 grid gap-6 2xl:grid-cols-[minmax(380px,480px)_minmax(0,1fr)] 2xl:items-start">
+    <div className="grid gap-6 2xl:grid-cols-[minmax(380px,480px)_minmax(0,1fr)] 2xl:items-start">
       <form
         action={formAction}
         className="rounded-2xl border border-borde bg-superficie p-5"
       >
-        <input type="hidden" name="cursoId" value={cursoId} />
+        <input type="hidden" name="cursoId" value={curso?.id ?? ""} />
 
         <div className="grid gap-4">
           <label className="text-sm font-medium text-texto">
             Curso
             <select
-              value={cursoId}
-              onChange={(event) => setCursoId(event.target.value)}
+              value={curso?.id ?? ""}
+              onChange={(event) => onCambiarCurso(event.target.value)}
               className="mt-1.5 w-full rounded-lg border border-borde bg-fondo px-3 py-2.5 text-sm text-texto"
             >
               {cursos.length === 0 && (
@@ -185,7 +151,7 @@ export function EditorPreviewCertificacion({
               type="file"
               accept="image/png,image/jpeg,image/webp"
               onChange={(event) =>
-                setFirmaDocente(event.target.files?.[0] ?? null)
+                cambiarFirmaDocente(event.target.files?.[0] ?? null)
               }
               className="mt-1.5 block w-full text-xs text-texto-suave file:mr-3 file:rounded-md file:border-0 file:bg-fondo file:px-3 file:py-2 file:text-xs file:font-semibold file:text-texto"
             />
@@ -213,7 +179,7 @@ export function EditorPreviewCertificacion({
               type="file"
               accept="image/png,image/jpeg,image/webp"
               onChange={(event) =>
-                setFirmaDirector(event.target.files?.[0] ?? null)
+                cambiarFirmaDirector(event.target.files?.[0] ?? null)
               }
               className="mt-1.5 block w-full text-xs text-texto-suave file:mr-3 file:rounded-md file:border-0 file:bg-fondo file:px-3 file:py-2 file:text-xs file:font-semibold file:text-texto"
             />
@@ -239,7 +205,7 @@ export function EditorPreviewCertificacion({
         )}
 
         <button
-          disabled={!cursoId || pendiente}
+          disabled={!curso || pendiente}
           className="mt-5 w-full rounded-lg bg-rojo px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
         >
           {pendiente
@@ -264,6 +230,49 @@ export function EditorPreviewCertificacion({
           </div>
         </div>
       </section>
+    </div>
+  );
+}
+
+export function EditorPreviewCertificacion({
+  cursos,
+  configs,
+  cursoInicial,
+  alumnoInicial,
+  varianteInicial,
+  fecha,
+}: {
+  cursos: CursoCertificacion[];
+  configs: ConfigCertificacionCurso[];
+  cursoInicial: string;
+  alumnoInicial: string;
+  varianteInicial: Variante;
+  fecha: string;
+}) {
+  const [cursoId, setCursoId] = useState(cursoInicial || cursos[0]?.id || "");
+
+  const curso = useMemo(
+    () => cursos.find((item) => item.id === cursoId) ?? null,
+    [cursos, cursoId],
+  );
+
+  const config = useMemo(
+    () => configs.find((item) => item.curso_id === cursoId) ?? null,
+    [configs, cursoId],
+  );
+
+  return (
+    <div className="mt-6">
+      <EditorCurso
+        key={cursoId || "sin-curso"}
+        curso={curso}
+        config={config}
+        alumnoInicial={alumnoInicial}
+        varianteInicial={varianteInicial}
+        fecha={fecha}
+        onCambiarCurso={setCursoId}
+        cursos={cursos}
+      />
     </div>
   );
 }
