@@ -1,9 +1,11 @@
 import { clienteServidor } from "@/lib/supabase/servidor";
+import { obtenerCursos } from "@/lib/catalogo-cursos";
 
 export type CursoCertificacion = {
   id: string;
   slug: string;
   titulo: string;
+  horas: number;
 };
 
 export type MatriculadoCertificacion = {
@@ -67,9 +69,10 @@ export type EnvioCertificado = {
 export async function resumenCertificacionesAdmin() {
   const supabase = await clienteServidor();
 
-  const [cursosR, matriculadosR, configR, certificadosR, reglasR, enviosR] =
+  const [cursosR, cursosRuntime, matriculadosR, configR, certificadosR, reglasR, enviosR] =
     await Promise.all([
       supabase.from("cursos").select("id, slug, titulo").order("titulo"),
+      obtenerCursos(),
       supabase.rpc("admin_matriculados_certificacion"),
       supabase
         .from("certificacion_config_curso")
@@ -98,8 +101,13 @@ export async function resumenCertificacionesAdmin() {
         .limit(100),
     ]);
 
+  const horasPorSlug = new Map(cursosRuntime.map((curso) => [curso.slug, curso.horas]));
+
   return {
-    cursos: (cursosR.data ?? []) as CursoCertificacion[],
+    cursos: (cursosR.data ?? []).map((curso) => ({
+      ...curso,
+      horas: Number(horasPorSlug.get(curso.slug) ?? 0),
+    })) as CursoCertificacion[],
     matriculados: (matriculadosR.data ?? []) as MatriculadoCertificacion[],
     configs: (configR.data ?? []) as unknown as ConfigCertificacionCurso[],
     certificados: (certificadosR.data ?? []) as unknown as CertificadoAdmin[],
