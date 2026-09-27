@@ -1,4 +1,3 @@
-import { esIconoCurso, type IconoNombre } from "@/lib/iconos-curso";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 
 export const ESTADOS_PROPUESTA = [
@@ -26,7 +25,7 @@ export type PropuestaPublica = {
   titulo: string;
   subtitulo: string;
   precio: number;
-  icono: IconoNombre;
+  icono: string;
   nivel: string;
   area: string;
   estado: EstadoPropuesta;
@@ -39,6 +38,17 @@ export type PropuestaInterna = PropuestaPublica & {
   prioridadInterna: number;
   creadoPor: string;
   actualizadaEn: string;
+};
+
+export type OpcionCatalogo = {
+  valor: string;
+  svg: string | null;
+};
+
+export type CatalogosPropuestas = {
+  niveles: OpcionCatalogo[];
+  areas: OpcionCatalogo[];
+  iconos: OpcionCatalogo[];
 };
 
 type FilaPublica = {
@@ -55,23 +65,45 @@ type FilaPublica = {
   votos: number;
 };
 
-function iconoSeguro(icono: string): IconoNombre {
-  return esIconoCurso(icono) ? icono : "libro";
-}
-
 function normalizarPublica(fila: FilaPublica): PropuestaPublica {
   return {
     id: fila.id,
     titulo: fila.titulo,
     subtitulo: fila.subtitulo,
     precio: Number(fila.precio),
-    icono: iconoSeguro(fila.icono),
+    icono: fila.icono || "libro",
     nivel: fila.nivel,
     area: fila.area,
     estado: fila.estado,
     cursoSlug: fila.curso_slug,
     creadaEn: fila.creada_en,
     votos: Number(fila.votos ?? 0),
+  };
+}
+
+export async function catalogosPropuestas(): Promise<CatalogosPropuestas> {
+  const supabase = await clienteServidor();
+  const { data, error } = await supabase
+    .from("catalogo_propuestas")
+    .select("tipo, valor, svg, orden")
+    .eq("activo", true)
+    .order("orden", { ascending: true })
+    .order("valor", { ascending: true });
+
+  if (error) {
+    return { niveles: [], areas: [], iconos: [] };
+  }
+
+  const filas = data ?? [];
+  const tomar = (tipo: "nivel" | "area" | "icono") =>
+    filas
+      .filter((fila) => fila.tipo === tipo)
+      .map((fila) => ({ valor: fila.valor, svg: fila.svg ?? null }));
+
+  return {
+    niveles: tomar("nivel"),
+    areas: tomar("area"),
+    iconos: tomar("icono"),
   };
 }
 
@@ -108,9 +140,7 @@ export async function miEstadoDeVoto(): Promise<{
   votoDeHoyUsado: boolean;
 }> {
   const usuario = await usuarioActual();
-  if (!usuario) {
-    return { propuestasVotadas: new Set(), votoDeHoyUsado: false };
-  }
+  if (!usuario) return { propuestasVotadas: new Set(), votoDeHoyUsado: false };
 
   const supabase = await clienteServidor();
   const { data, error } = await supabase
@@ -118,9 +148,7 @@ export async function miEstadoDeVoto(): Promise<{
     .select("propuesta_id, dia_lima")
     .eq("usuario_id", usuario.id);
 
-  if (error) {
-    return { propuestasVotadas: new Set(), votoDeHoyUsado: false };
-  }
+  if (error) return { propuestasVotadas: new Set(), votoDeHoyUsado: false };
 
   const filas = data ?? [];
   return {
@@ -145,7 +173,7 @@ export async function propuestasInternas(): Promise<PropuestaInterna[]> {
     titulo: fila.titulo,
     subtitulo: fila.subtitulo,
     precio: Number(fila.precio),
-    icono: iconoSeguro(fila.icono),
+    icono: fila.icono || "libro",
     nivel: fila.nivel,
     area: fila.area,
     estado: fila.estado as EstadoPropuesta,
