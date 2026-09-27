@@ -131,7 +131,7 @@ export function Isla({
           : []),
         {
           href: "/panel",
-          etiqueta: esInterno ? "Panel" : "Mi cuenta",
+          etiqueta: "Mi cuenta",
           Icono: esInterno ? LayoutDashboard : UserRound,
         },
         ...(esAdmin
