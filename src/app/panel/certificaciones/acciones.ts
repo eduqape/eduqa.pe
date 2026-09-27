@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { perfilActual } from "@/lib/matriculas";
+import { buscarCurso } from "@/lib/catalogo-cursos";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 
 async function admin() {
@@ -53,68 +54,98 @@ async function subirFirma(
   return supabase.storage.from("firmas-certificados").getPublicUrl(ruta).data.publicUrl;
 }
 
-export async function actualizarResponsablesCertificacion(formData: FormData) {
-  const { usuario, supabase } = await admin();
-  const cursoId = String(formData.get("cursoId") ?? "").trim();
-  const horas = Number(formData.get("horas") ?? 0);
-  const docente = String(formData.get("docente") ?? "").trim();
-  const directorAcademico = String(formData.get("directorAcademico") ?? "").trim();
-  const firmaDocente = formData.get("firmaDocente");
-  const firmaDirector = formData.get("firmaDirector");
+export type EstadoGuardadoCertificacion = {
+  ok: boolean;
+  error?: string;
+};
 
-  if (!cursoId) throw new Error("Selecciona un curso.");
-  if (!Number.isFinite(horas) || horas <= 0) throw new Error("Las horas deben ser mayores a 0.");
-  if (!docente) throw new Error("Escribe el nombre del docente.");
-  if (!directorAcademico) throw new Error("Escribe el nombre del director académico.");
+export async function actualizarResponsablesCertificacion(
+  _estado: EstadoGuardadoCertificacion,
+  formData: FormData,
+): Promise<EstadoGuardadoCertificacion> {
+  try {
+    const { usuario, supabase } = await admin();
+    const cursoId = String(formData.get("cursoId") ?? "").trim();
+    const docente = String(formData.get("docente") ?? "").trim();
+    const directorAcademico = String(formData.get("directorAcademico") ?? "").trim();
+    const firmaDocente = formData.get("firmaDocente");
+    const firmaDirector = formData.get("firmaDirector");
 
-  const { data: actual } = await supabase
-    .from("certificacion_config_curso")
-    .select("docente_firma_url, director_firma_url")
-    .eq("curso_id", cursoId)
-    .maybeSingle();
+    if (!cursoId) return { ok: false, error: "Selecciona un curso." };
+    if (!docente) return { ok: false, error: "Escribe el nombre del docente." };
+    if (!directorAcademico) {
+      return { ok: false, error: "Escribe el nombre del director académico." };
+    }
 
-  const cambios: {
-    curso_id: string;
-    horas: number;
-    docente: string;
-    director_academico: string;
-    actualizado_por: string;
-    actualizado_en: string;
-    docente_firma_url?: string | null;
-    director_firma_url?: string | null;
-  } = {
-    curso_id: cursoId,
-    horas,
-    docente,
-    director_academico: directorAcademico,
-    actualizado_por: usuario.id,
-    actualizado_en: new Date().toISOString(),
-    docente_firma_url: actual?.docente_firma_url ?? null,
-    director_firma_url: actual?.director_firma_url ?? null,
-  };
+    const { data: cursoDb, error: errorCursoDb } = await supabase
+      .from("cursos")
+      .select("slug")
+      .eq("id", cursoId)
+      .maybeSingle();
 
-  if (firmaDocente instanceof File && firmaDocente.size > 0) {
-    const url = await subirFirma(supabase, cursoId, "docente", firmaDocente);
-    if (url) cambios.docente_firma_url = url;
+    if (errorCursoDb || !cursoDb?.slug) {
+      return { ok: false, error: "No se pudo leer el curso seleccionado." };
+    }
+
+    const curso = await buscarCurso(cursoDb.slug);
+    if (!curso || !Number.isFinite(curso.horas) || curso.horas <= 0) {
+      return { ok: false, error: "El curso no tiene horas válidas configuradas." };
+    }
+
+    const { data: actual } = await supabase
+      .from("certificacion_config_curso")
+      .select("docente_firma_url, director_firma_url")
+      .eq("curso_id", cursoId)
+      .maybeSingle();
+
+    const cambios: {
+      curso_id: string;
+      horas: number;
+      docente: string;
+      director_academico: string;
+      actualizado_por: string;
+      actualizado_en: string;
+      docente_firma_url?: string | null;
+      director_firma_url?: string | null;
+    } = {
+      curso_id: cursoId,
+      horas: curso.horas,
+      docente,
+      director_academico: directorAcademico,
+      actualizado_por: usuario.id,
+      actualizado_en: new Date().toISOString(),
+      docente_firma_url: actual?.docente_firma_url ?? null,
+      director_firma_url: actual?.director_firma_url ?? null,
+    };
+
+    if (firmaDocente instanceof File && firmaDocente.size > 0) {
+      const url = await subirFirma(supabase, cursoId, "docente", firmaDocente);
+      if (url) cambios.docente_firma_url = url;
+    }
+
+    if (firmaDirector instanceof File && firmaDirector.size > 0) {
+      const url = await subirFirma(supabase, cursoId, "director", firmaDirector);
+      if (url) cambios.director_firma_url = url;
+    }
+
+    const { error } = await supabase
+      .from("certificacion_config_curso")
+      .upsert(cambios, { onConflict: "curso_id" });
+
+    if (error) return { ok: false, error: error.message };
+
+    revalidatePath("/panel/certificaciones");
+    revalidatePath("/panel/certificaciones/preview");
+    revalidatePath("/certificaciones");
+
+    return { ok: true };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "No se pudo guardar la configuración.",
+    };
   }
-
-  if (firmaDirector instanceof File && firmaDirector.size > 0) {
-    const url = await subirFirma(supabase, cursoId, "director", firmaDirector);
-    if (url) cambios.director_firma_url = url;
-  }
-
-  const { error } = await supabase
-    .from("certificacion_config_curso")
-    .upsert(cambios, { onConflict: "curso_id" });
-
-  if (error) throw new Error(error.message);
-
-  revalidatePath("/panel/certificaciones");
-  revalidatePath("/panel/certificaciones/preview");
-  revalidatePath("/certificaciones");
-  redirect(`/panel/certificaciones/preview?curso=${encodeURIComponent(cursoId)}&estado=responsables-actualizados`);
 }
-
 export async function emitirCertificadoManual(formData: FormData) {
   const { supabase } = await admin();
   const cursoId = String(formData.get("cursoId") ?? "");
