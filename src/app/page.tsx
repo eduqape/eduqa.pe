@@ -115,7 +115,7 @@ export default async function Page() {
         </header>
 
         {/* Pilares fundamentales */}
-        <Seccion titulo="Nuestros 4 pilares fundamentales" ancho="amplio">
+        <Seccion titulo="¿Qué nos hace diferentes?" ancho="amplio">
           <p className="-mt-4 mb-8 max-w-2xl leading-relaxed text-texto-suave">
             La propuesta educativa de EDUQA.PE se sostiene en cuatro principios claros.
           </p>
@@ -168,10 +168,10 @@ export default async function Page() {
                     )}
                   </div>
 
-                  <h3 className="mt-5 whitespace-nowrap text-center text-[13px] font-semibold leading-none tracking-tight text-texto">
+                  <h3 className="mt-5 flex min-h-[2.5rem] items-center justify-center text-center text-[13px] font-semibold leading-snug tracking-tight text-texto">
                     {pilar.titulo}
                   </h3>
-                  <p className="mt-3 text-sm leading-relaxed text-texto-suave">
+                  <p className="mt-3 text-center text-sm leading-relaxed text-texto-suave">
                     {pilar.texto}
                   </p>
                 </div>
