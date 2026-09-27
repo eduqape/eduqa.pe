@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { ArrowUp, Check, Clock3, ListChecks, Settings2 } from "lucide-react";
-import { Icono } from "@/components/Iconos";
+import { ArrowUp, Check, Clock3, ListChecks } from "lucide-react";
+import { IconoPropuesta } from "@/components/IconoPropuesta";
 import { Migas } from "@/components/Migas";
 import { perfilActual } from "@/lib/matriculas";
 import {
+  catalogosPropuestas,
   ETIQUETA_ESTADO,
   miEstadoDeVoto,
   proximosCursos,
@@ -38,41 +39,33 @@ const MENSAJES: Record<string, { texto: string; exito?: boolean }> = {
     texto: "Tu voto quedó registrado. Mañana tendrás un nuevo voto para otra propuesta.",
     exito: true,
   },
-  "ya-votaste": {
-    texto: "Ya votaste por esa propuesta anteriormente.",
-  },
+  "ya-votaste": { texto: "Ya votaste por esa propuesta anteriormente." },
   "voto-diario-usado": {
     texto: "Ya usaste tu voto de hoy. El siguiente se habilita a las 00:00, hora de Perú.",
   },
-  "votacion-cerrada": {
-    texto: "Esa propuesta ya no está recibiendo votos.",
-  },
-  "propuesta-invalida": {
-    texto: "No se pudo identificar la propuesta.",
-  },
-  error: {
-    texto: "No se pudo registrar el voto. Intenta nuevamente.",
-  },
+  "votacion-cerrada": { texto: "Esa propuesta ya no está recibiendo votos." },
+  "propuesta-invalida": { texto: "No se pudo identificar la propuesta." },
+  error: { texto: "No se pudo registrar el voto. Intenta nuevamente." },
 };
 
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ estado?: string; gestion?: string }>;
+  searchParams: Promise<{ estado?: string }>;
 }) {
   const usuario = await usuarioActual();
   if (!usuario) redirect("/acceder?volverA=/proximos-cursos");
 
-  const [perfil, propuestas, voto, parametros] = await Promise.all([
+  const [perfil, propuestas, voto, parametros, catalogos] = await Promise.all([
     perfilActual(),
     proximosCursos(),
     miEstadoDeVoto(),
     searchParams,
+    catalogosPropuestas(),
   ]);
 
   const puedeGestionar = esInterno(perfil);
-  const gestionAbierta = puedeGestionar && parametros.gestion === "1";
-  const propuestasGestion = gestionAbierta ? await propuestasInternas() : [];
+  const propuestasGestion = puedeGestionar ? await propuestasInternas() : [];
   const mensaje = parametros.estado ? MENSAJES[parametros.estado] : undefined;
   const mensajeGestion =
     parametros.estado === "creada"
@@ -81,6 +74,7 @@ export default async function Page({
         ? "Propuesta actualizada."
         : null;
 
+  const iconosPorNombre = new Map(catalogos.iconos.map((icono) => [icono.valor, icono.svg]));
   const ranking = propuestas.map((propuesta) => ({
     ...propuesta,
     puesto:
@@ -92,34 +86,18 @@ export default async function Page({
       <Migas items={[{ texto: "Próximos cursos" }]} />
 
       <header className="mt-4 border-b border-borde pb-7">
-        <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-rojo-tenue px-3 py-1 text-xs font-semibold uppercase tracking-wider text-rojo-acento">
-              <ListChecks size={14} aria-hidden="true" />
-              Prioridad de la comunidad
-            </div>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-texto sm:text-4xl">
-              Próximos cursos
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-texto-suave">
-              El ranking se ordena únicamente por votos. Tienes un voto por día
-              y cada propuesta puede recibir como máximo un voto tuyo.
-            </p>
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full bg-rojo-tenue px-3 py-1 text-xs font-semibold uppercase tracking-wider text-rojo-acento">
+            <ListChecks size={14} aria-hidden="true" />
+            Prioridad de la comunidad
           </div>
-
-          {puedeGestionar && (
-            <Link
-              href={
-                gestionAbierta
-                  ? "/proximos-cursos"
-                  : "/proximos-cursos?gestion=1#gestion-propuestas"
-              }
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-borde-fuerte bg-fondo px-4 py-2.5 text-sm font-semibold text-texto transition-colors hover:border-rojo-acento hover:text-rojo-acento"
-            >
-              <Settings2 size={16} aria-hidden="true" />
-              {gestionAbierta ? "Cerrar gestión" : "Gestionar propuestas"}
-            </Link>
-          )}
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-texto sm:text-4xl">
+            Próximos cursos
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-texto-suave">
+            El ranking se ordena únicamente por votos. Tienes un voto por día y
+            cada propuesta puede recibir como máximo un voto tuyo.
+          </p>
         </div>
 
         <div className="mt-5 flex items-start gap-2 rounded-xl border border-borde bg-superficie px-4 py-3 text-sm text-texto-suave">
@@ -144,14 +122,17 @@ export default async function Page({
         )}
       </header>
 
-      {gestionAbierta && (
+      {puedeGestionar && (
         <>
           {mensajeGestion && (
             <p className="mt-6 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-500">
               {mensajeGestion}
             </p>
           )}
-          <GestionPropuestas propuestas={propuestasGestion} />
+          <GestionPropuestas
+            propuestas={propuestasGestion}
+            catalogosIniciales={catalogos}
+          />
         </>
       )}
 
@@ -169,8 +150,7 @@ export default async function Page({
           {ranking.map((propuesta) => {
             const yaVoto = voto.propuestasVotadas.has(propuesta.id);
             const recibeVotos = propuesta.estado === "en_votacion";
-            const puedeVotar =
-              recibeVotos && !yaVoto && !voto.votoDeHoyUsado;
+            const puedeVotar = recibeVotos && !yaVoto && !voto.votoDeHoyUsado;
 
             return (
               <article
@@ -180,9 +160,10 @@ export default async function Page({
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <span className="flex size-10 items-center justify-center rounded-xl border border-borde bg-fondo">
-                      <Icono
+                      <IconoPropuesta
                         nombre={propuesta.icono}
-                        className="size-6 text-texto-suave"
+                        svg={iconosPorNombre.get(propuesta.icono) ?? null}
+                        className="size-6 text-texto-suave [&>svg]:size-full"
                       />
                     </span>
                     <div>
