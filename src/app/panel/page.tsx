@@ -96,11 +96,7 @@ export default async function Page() {
         {/* Cursos activos */}
         <article className="rounded-2xl border border-zinc-200 bg-white p-6 text-zinc-950 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex size-9 items-center justify-center rounded-lg bg-rojo-tenue text-rojo-acento">
-                <BookOpen size={18} />
-              </div>
-              <div>
+            <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-sm font-semibold text-zinc-950">Cursos activos</h2>
                   <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-rojo-tenue px-1.5 py-0.5 text-[10px] font-semibold text-rojo-acento">
@@ -110,7 +106,6 @@ export default async function Page() {
                 <p className="mt-0.5 text-xs text-zinc-500">
                   Continúa donde lo dejaste.
                 </p>
-              </div>
             </div>
 
             <Link
