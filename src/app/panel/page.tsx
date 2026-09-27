@@ -94,7 +94,7 @@ export default async function Page() {
         />
 
         {/* Cursos activos */}
-        <article className="rounded-2xl border border-borde bg-superficie p-6">
+        <article className="rounded-2xl border border-zinc-200 bg-white p-6 text-zinc-950 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="flex size-9 items-center justify-center rounded-lg bg-rojo-tenue text-rojo-acento">
@@ -102,12 +102,12 @@ export default async function Page() {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-semibold text-texto">Cursos activos</h2>
-                  <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-fondo px-1.5 py-0.5 text-[10px] font-semibold text-texto-suave">
+                  <h2 className="text-sm font-semibold text-zinc-950">Cursos activos</h2>
+                  <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-rojo-tenue px-1.5 py-0.5 text-[10px] font-semibold text-rojo-acento">
                     {matriculas.length}
                   </span>
                 </div>
-                <p className="mt-0.5 text-xs text-texto-tenue">
+                <p className="mt-0.5 text-xs text-zinc-500">
                   Continúa donde lo dejaste.
                 </p>
               </div>
@@ -122,11 +122,11 @@ export default async function Page() {
           </div>
 
           {matriculas.length === 0 ? (
-            <div className="mt-6 rounded-xl border border-dashed border-borde p-8 text-center">
-              <div className="mx-auto flex size-10 items-center justify-center rounded-xl bg-fondo text-texto-tenue">
+            <div className="mt-6 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center">
+              <div className="mx-auto flex size-10 items-center justify-center rounded-xl bg-white text-zinc-400">
                 <BookOpen size={18} />
               </div>
-              <p className="mt-3 text-sm text-texto-suave">
+              <p className="mt-3 text-sm text-zinc-600">
                 Aún no te has matriculado en ningún curso.
               </p>
               <Link
@@ -143,15 +143,15 @@ export default async function Page() {
                 return (
                   <div
                     key={m.curso_slug}
-                    className="group flex items-center gap-3 rounded-xl border border-borde bg-fondo p-3 transition-colors hover:border-rojo-acento/60"
+                    className="group flex items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3 transition-colors hover:border-rojo-acento/60 hover:bg-white"
                   >
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-borde bg-superficie text-rojo-acento transition-colors group-hover:border-rojo-acento/40">
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-white text-rojo-acento transition-colors group-hover:border-rojo-acento/40">
                       <Icono nombre={info?.icono} className="size-5" />
                     </div>
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="truncate text-[10px] uppercase tracking-wide text-texto-tenue">
+                        <span className="truncate text-[10px] uppercase tracking-wide text-zinc-500">
                           {info?.area ?? "Curso"}
                         </span>
                         {info?.formato === "microcurso" && (
@@ -160,7 +160,7 @@ export default async function Page() {
                           </span>
                         )}
                       </div>
-                      <h3 className="mt-0.5 truncate text-sm font-semibold text-texto">
+                      <h3 className="mt-0.5 truncate text-sm font-semibold text-zinc-950">
                         {info?.titulo ?? m.curso_slug}
                       </h3>
                     </div>
@@ -168,7 +168,7 @@ export default async function Page() {
                     <Link
                       href={`/cursos/${m.curso_slug}`}
                       aria-label={`Continuar ${info?.titulo ?? m.curso_slug}`}
-                      className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-borde bg-superficie px-3 py-1.5 text-xs font-medium text-texto transition-colors hover:border-rojo-acento hover:text-rojo-acento"
+                      className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 transition-colors hover:border-rojo-acento hover:text-rojo-acento"
                     >
                       <span className="hidden sm:inline">Continuar</span>
                       <ArrowUpRight size={13} />
