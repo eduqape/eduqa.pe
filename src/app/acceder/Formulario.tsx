@@ -1,17 +1,18 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { AlertCircle, CheckCircle2, KeyRound, Loader2, Mail } from "lucide-react";
+import { AlertCircle, CheckCircle2, KeyRound, Loader2, MailKey } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import {
   accederConContrasena,
-  enviarEnlaceMagico,
+  enviarCodigoAcceso,
+  verificarCodigoAcceso,
   type EstadoAcceso,
 } from "./acciones";
 import { Boton, Campo, claseInput } from "@/components/ui";
 import { clienteNavegador } from "@/lib/supabase/navegador";
 
-type Metodo = "contrasena" | "enlace";
+type Metodo = "contrasena" | "codigo";
 
 export function Formulario({
   volverA,
@@ -21,19 +22,24 @@ export function Formulario({
   errorInicial?: string;
 }) {
   const [metodo, setMetodo] = useState<Metodo>("contrasena");
+  const [emailCodigo, setEmailCodigo] = useState("");
   const [enviandoGoogle, setEnviandoGoogle] = useState(false);
   const [errorGoogle, setErrorGoogle] = useState<string | null>(errorInicial ?? null);
+
   const [estadoPass, accionPass, enviandoPass] = useActionState<
     EstadoAcceso | null,
     FormData
   >(accederConContrasena, null);
-  const [estadoLink, accionLink, enviandoLink] = useActionState<
+
+  const [estadoEnvioCodigo, accionEnvioCodigo, enviandoCodigo] = useActionState<
     EstadoAcceso | null,
     FormData
-  >(enviarEnlaceMagico, null);
+  >(enviarCodigoAcceso, null);
 
-  const estado = metodo === "contrasena" ? estadoPass : estadoLink;
-  const enviando = metodo === "contrasena" ? enviandoPass : enviandoLink;
+  const [estadoVerificacion, accionVerificacion, verificandoCodigo] = useActionState<
+    EstadoAcceso | null,
+    FormData
+  >(verificarCodigoAcceso, null);
 
   async function accederConGoogle() {
     setEnviandoGoogle(true);
@@ -98,7 +104,7 @@ export function Formulario({
         {(
           [
             { id: "contrasena", etiqueta: "Contraseña", Icono: KeyRound },
-            { id: "enlace", etiqueta: "Por correo", Icono: Mail },
+            { id: "codigo", etiqueta: "Código", Icono: MailKey },
           ] as const
         ).map(({ id, etiqueta, Icono }) => (
           <button
@@ -119,25 +125,21 @@ export function Formulario({
         ))}
       </div>
 
-      <form
-        key={metodo}
-        action={metodo === "contrasena" ? accionPass : accionLink}
-        className="space-y-4"
-      >
-        <input type="hidden" name="volverA" value={volverA} />
+      {metodo === "contrasena" ? (
+        <form action={accionPass} className="space-y-4">
+          <input type="hidden" name="volverA" value={volverA} />
 
-        <Campo etiqueta="Correo">
-          <input
-            name="email"
-            type="email"
-            required
-            autoComplete="email"
-            placeholder="tu@correo.com"
-            className={claseInput}
-          />
-        </Campo>
+          <Campo etiqueta="Correo">
+            <input
+              name="email"
+              type="email"
+              required
+              autoComplete="email"
+              placeholder="tu@correo.com"
+              className={claseInput}
+            />
+          </Campo>
 
-        {metodo === "contrasena" && (
           <Campo etiqueta="Contraseña">
             <input
               name="password"
@@ -147,38 +149,107 @@ export function Formulario({
               className={claseInput}
             />
           </Campo>
-        )}
 
-        {estado && !estado.ok && (
-          <p
-            role="alert"
-            className="flex items-start gap-2 rounded-lg border border-rojo-acento/30 bg-rojo-tenue px-3 py-2.5 text-sm text-rojo-acento"
-          >
-            <AlertCircle size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
-            {estado.error}
-          </p>
-        )}
+          {estadoPass && !estadoPass.ok && (
+            <p
+              role="alert"
+              className="flex items-start gap-2 rounded-lg border border-rojo-acento/30 bg-rojo-tenue px-3 py-2.5 text-sm text-rojo-acento"
+            >
+              <AlertCircle size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+              {estadoPass.error}
+            </p>
+          )}
 
-        {estado?.ok && (
+          <Boton type="submit" disabled={enviandoPass} className="w-full">
+            {enviandoPass && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
+            {enviandoPass ? "Comprobando…" : "Entrar"}
+          </Boton>
+        </form>
+      ) : estadoEnvioCodigo?.ok ? (
+        <form action={accionVerificacion} className="space-y-4">
+          <input type="hidden" name="volverA" value={volverA} />
+          <input type="hidden" name="email" value={emailCodigo} />
+
           <p className="flex items-start gap-2 rounded-lg border border-borde bg-superficie px-3 py-2.5 text-sm text-texto-suave">
             <CheckCircle2
               size={16}
               className="mt-0.5 shrink-0 text-exito"
               aria-hidden="true"
             />
-            {estado.aviso}
+            {estadoEnvioCodigo.aviso}
           </p>
-        )}
 
-        <Boton type="submit" disabled={enviando} className="w-full">
-          {enviando && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
-          {enviando
-            ? "Comprobando…"
-            : metodo === "contrasena"
-              ? "Entrar"
-              : "Enviarme el enlace"}
-        </Boton>
-      </form>
+          <Campo etiqueta="Código">
+            <input
+              name="codigo"
+              type="text"
+              required
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]{6}"
+              maxLength={6}
+              placeholder="123456"
+              className={claseInput}
+              autoFocus
+            />
+          </Campo>
+
+          {estadoVerificacion && !estadoVerificacion.ok && (
+            <p
+              role="alert"
+              className="flex items-start gap-2 rounded-lg border border-rojo-acento/30 bg-rojo-tenue px-3 py-2.5 text-sm text-rojo-acento"
+            >
+              <AlertCircle size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+              {estadoVerificacion.error}
+            </p>
+          )}
+
+          <Boton type="submit" disabled={verificandoCodigo} className="w-full">
+            {verificandoCodigo && (
+              <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+            )}
+            {verificandoCodigo ? "Verificando…" : "Entrar con código"}
+          </Boton>
+
+          <button
+            type="button"
+            onClick={() => setMetodo("codigo")}
+            className="w-full text-center text-xs text-texto-tenue hover:text-texto"
+          >
+            Usar otro correo
+          </button>
+        </form>
+      ) : (
+        <form action={accionEnvioCodigo} className="space-y-4">
+          <Campo etiqueta="Correo">
+            <input
+              name="email"
+              type="email"
+              required
+              autoComplete="email"
+              placeholder="tu@correo.com"
+              className={claseInput}
+              value={emailCodigo}
+              onChange={(event) => setEmailCodigo(event.target.value)}
+            />
+          </Campo>
+
+          {estadoEnvioCodigo && !estadoEnvioCodigo.ok && (
+            <p
+              role="alert"
+              className="flex items-start gap-2 rounded-lg border border-rojo-acento/30 bg-rojo-tenue px-3 py-2.5 text-sm text-rojo-acento"
+            >
+              <AlertCircle size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+              {estadoEnvioCodigo.error}
+            </p>
+          )}
+
+          <Boton type="submit" disabled={enviandoCodigo} className="w-full">
+            {enviandoCodigo && <Loader2 size={16} className="animate-spin" aria-hidden="true" />}
+            {enviandoCodigo ? "Enviando…" : "Enviar código"}
+          </Boton>
+        </form>
+      )}
 
       <p className="mt-6 text-center text-xs leading-relaxed text-texto-tenue">
         Con Google puedes entrar o crear tu cuenta en el mismo flujo.
