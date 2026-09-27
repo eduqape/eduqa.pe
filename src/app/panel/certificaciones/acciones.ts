@@ -68,6 +68,7 @@ export async function actualizarResponsablesCertificacion(
     const cursoId = String(formData.get("cursoId") ?? "").trim();
     const docente = String(formData.get("docente") ?? "").trim();
     const directorAcademico = String(formData.get("directorAcademico") ?? "").trim();
+    const variante = String(formData.get("variante") ?? "banda").trim();
     const firmaDocente = formData.get("firmaDocente");
     const firmaDirector = formData.get("firmaDirector");
 
@@ -75,6 +76,9 @@ export async function actualizarResponsablesCertificacion(
     if (!docente) return { ok: false, error: "Escribe el nombre del docente." };
     if (!directorAcademico) {
       return { ok: false, error: "Escribe el nombre del director académico." };
+    }
+    if (!["banda", "marco", "solido"].includes(variante)) {
+      return { ok: false, error: "Selecciona un estilo de certificación válido." };
     }
 
     const { data: cursoDb, error: errorCursoDb } = await supabase
@@ -103,6 +107,7 @@ export async function actualizarResponsablesCertificacion(
       horas: number;
       docente: string;
       director_academico: string;
+      variante: "banda" | "marco" | "solido";
       actualizado_por: string;
       actualizado_en: string;
       docente_firma_url?: string | null;
@@ -112,6 +117,7 @@ export async function actualizarResponsablesCertificacion(
       horas: curso.horas,
       docente,
       director_academico: directorAcademico,
+      variante: variante as "banda" | "marco" | "solido",
       actualizado_por: usuario.id,
       actualizado_en: new Date().toISOString(),
       docente_firma_url: actual?.docente_firma_url ?? null,
@@ -151,13 +157,18 @@ export async function emitirCertificadoManual(formData: FormData) {
   const cursoId = String(formData.get("cursoId") ?? "");
   const usuarioId = String(formData.get("usuarioId") ?? "");
   const enviar = formData.get("enviar") === "on";
+  const variante = String(formData.get("variante") ?? "banda");
 
   if (!cursoId || !usuarioId) throw new Error("Selecciona curso y alumno.");
+  if (!["banda", "marco", "solido"].includes(variante)) {
+    throw new Error("Selecciona un estilo de certificación válido.");
+  }
 
   const { error } = await supabase.rpc("emitir_certificado_curso_usuario", {
     p_curso_id: cursoId,
     p_usuario_id: usuarioId,
     p_solicitar_correo: enviar,
+    p_variante: variante,
   });
   if (error) throw new Error(error.message);
 
@@ -333,7 +344,7 @@ export async function procesarEnviosPendientes() {
   const { data: envios, error } = await supabase
     .from("certificado_envios")
     .select(
-      "id, certificado_id, destinatario, intentos, certificado:certificados(codigo, alumno, anulado_en, cohorte:cohortes(curso_nombre))",
+      "id, certificado_id, destinatario, intentos, certificado:certificados(codigo, alumno, anulado_en, curso_nombre, cohorte:cohortes(curso_nombre))",
     )
     .in("estado", ["pendiente", "error"])
     .order("solicitado_en", { ascending: true })
@@ -346,6 +357,7 @@ export async function procesarEnviosPendientes() {
       codigo: string;
       alumno: string;
       anulado_en: string | null;
+      curso_nombre: string | null;
       cohorte: { curso_nombre: string } | null;
     } | null;
 
@@ -365,7 +377,7 @@ export async function procesarEnviosPendientes() {
       await enviarConResend({
         destinatario: envio.destinatario,
         alumno: certificado.alumno,
-        curso: certificado.cohorte?.curso_nombre ?? "Curso EDUQA.PE",
+        curso: certificado.curso_nombre ?? certificado.cohorte?.curso_nombre ?? "Curso EDUQA.PE",
         codigo: certificado.codigo,
         certificadoId: envio.certificado_id,
       });
