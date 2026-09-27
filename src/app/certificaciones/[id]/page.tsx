@@ -25,15 +25,21 @@ export default async function Page({
   const cohorte = certificacion.cohorte;
   const datos = {
     alumno: certificacion.alumno,
-    curso: cohorte?.curso_nombre ?? "Curso EDUQA.PE",
-    horas: Number(cohorte?.horas ?? 0),
-    fecha: fechaCertificado(cohorte?.dictada_en),
-    docente: cohorte?.docente ?? "Docente EDUQA.PE",
-    docenteFirmaUrl: cohorte?.docente_firma_url ?? null,
-    directorAcademico: cohorte?.director_academico ?? "Director Académico EDUQA.PE",
-    directorFirmaUrl: cohorte?.director_firma_url ?? null,
+    curso: certificacion.curso_nombre ?? cohorte?.curso_nombre ?? "Curso EDUQA.PE",
+    horas: Number(certificacion.horas ?? cohorte?.horas ?? 0),
+    fecha: fechaCertificado(certificacion.dictada_en ?? cohorte?.dictada_en),
+    docente: certificacion.docente ?? cohorte?.docente ?? "Docente EDUQA.PE",
+    docenteFirmaUrl:
+      certificacion.docente_firma_url ?? cohorte?.docente_firma_url ?? null,
+    directorAcademico:
+      certificacion.director_academico ??
+      cohorte?.director_academico ??
+      "Director Académico EDUQA.PE",
+    directorFirmaUrl:
+      certificacion.director_firma_url ?? cohorte?.director_firma_url ?? null,
     codigo: certificacion.codigo,
   };
+  const variante = certificacion.variante ?? "banda";
 
   return (
     <main className="certificado-pagina mx-auto w-full max-w-5xl px-6 py-10 lg:pl-64 xl:pl-32 2xl:pl-6">
@@ -80,14 +86,14 @@ export default async function Page({
 
         <div className="mt-8 overflow-x-auto rounded-2xl border border-borde bg-superficie p-4 sm:p-6">
           <div className="min-w-[580px]">
-            <VistaPrevia datos={datos} variante="banda" escala={0.52} />
+            <VistaPrevia datos={datos} variante={variante} escala={0.52} />
           </div>
         </div>
       </div>
 
       {!certificacion.anulado_en && (
         <div className="hidden print:block">
-          <Certificado datos={datos} variante="banda" />
+          <Certificado datos={datos} variante={variante} />
         </div>
       )}
     </main>
