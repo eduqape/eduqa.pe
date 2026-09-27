@@ -66,23 +66,22 @@ export function TarjetaCursoMatricula({
 
   const cabecera = (
     <>
-      <div className="flex items-start justify-between gap-3">
+      <span className="absolute right-0 top-0 flex h-9 min-w-[44%] items-center justify-center rounded-bl-xl border-b border-l border-borde bg-rojo px-3 text-[11px] font-semibold text-white">
+        {curso.nivel}
+      </span>
+
+      <div className="flex items-start justify-between gap-3 pr-[44%]">
         <Icono
           nombre={curso.icono}
           className="size-14 shrink-0 text-texto-tenue transition-colors group-hover:text-rojo-acento"
         />
         <div className="flex shrink-0 flex-col items-end gap-1.5">
-          <div className="flex items-center gap-1.5">
-            {esMicro && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-rojo-tenue px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-rojo-acento ring-1 ring-inset ring-rojo-acento/30">
-                <Sparkles size={10} />
-                Microcurso
-              </span>
-            )}
-            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-emerald-700 ring-1 ring-inset ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-900">
-              {curso.nivel}
+          {esMicro && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-rojo-tenue px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-rojo-acento ring-1 ring-inset ring-rojo-acento/30">
+              <Sparkles size={10} />
+              Microcurso
             </span>
-          </div>
+          )}
           {curso.completado && (
             <span className="flex items-center gap-1 rounded-full bg-superficie px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-texto-tenue ring-1 ring-inset ring-borde">
               <Check size={9} aria-hidden="true" />
