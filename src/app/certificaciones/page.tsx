@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { BadgeCheck, Clock } from "lucide-react";
+import { ArrowUpRight, BadgeCheck, Clock } from "lucide-react";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import { perfilActual } from "@/lib/matriculas";
-import { misCertificaciones } from "@/lib/compras";
+import { fechaEmision, misCertificaciones } from "@/lib/certificados";
 import { cerrarSesion } from "@/app/acceder/acciones";
 import { CabeceraApp } from "@/components/CabeceraApp";
 import { Migas } from "@/components/Migas";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Mis certificaciones — EDUQA.PE",
@@ -96,9 +97,21 @@ export default async function Page() {
                 {c.cohorte?.docente && <div>{c.cohorte.docente}</div>}
               </dl>
 
-              <p className="mt-3 border-t border-borde pt-3 font-mono text-xs text-texto-suave">
-                {c.codigo}
-              </p>
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-borde pt-3">
+                <div>
+                  <p className="font-mono text-xs text-texto-suave">{c.codigo}</p>
+                  <p className="mt-1 text-[11px] text-texto-tenue">
+                    Emitida el {fechaEmision(c.emitido_en)}
+                  </p>
+                </div>
+                <Link
+                  href={`/certificaciones/${c.id}`}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-borde px-3 py-2 text-xs font-semibold text-texto transition-colors hover:border-rojo-acento hover:text-rojo-acento"
+                >
+                  Ver certificado
+                  <ArrowUpRight size={13} aria-hidden="true" />
+                </Link>
+              </div>
             </li>
           ))}
         </ul>
