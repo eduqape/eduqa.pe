@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { esIconoCurso } from "@/lib/iconos-curso";
 import { perfilActual } from "@/lib/matriculas";
 import {
   ESTADOS_PROPUESTA,
@@ -11,11 +10,9 @@ import {
 import { esInterno } from "@/lib/roles";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 
-const NIVELES = ["INTRODUCCIÓN", "INTERMEDIO", "AVANZADO"] as const;
-
 async function contextoInterno() {
   const usuario = await usuarioActual();
-  if (!usuario) redirect("/acceder?volverA=/proximos-cursos?gestion=1");
+  if (!usuario) redirect("/acceder?volverA=/proximos-cursos");
 
   const perfil = await perfilActual();
   if (!esInterno(perfil)) redirect("/proximos-cursos");
@@ -26,7 +23,34 @@ async function contextoInterno() {
   };
 }
 
-function leer(formData: FormData) {
+function slugIcono(valor: string) {
+  return valor
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+}
+
+function sanitizarSvg(svg: string) {
+  const limpio = svg.trim();
+  if (!/^<svg\b/i.test(limpio) || !/<\/svg>$/i.test(limpio)) {
+    throw new Error("El archivo debe contener un SVG completo.");
+  }
+  if (limpio.length > 65536) {
+    throw new Error("El SVG no puede superar 64 KB.");
+  }
+  if (/<\s*(script|foreignObject|iframe|object|embed|style)\b/i.test(limpio)) {
+    throw new Error("El SVG contiene elementos no permitidos.");
+  }
+  if (/\son[a-z]+\s*=/i.test(limpio) || /\s(?:xlink:)?href\s*=/i.test(limpio)) {
+    throw new Error("El SVG contiene atributos no permitidos.");
+  }
+  return limpio;
+}
+
+async function leer(formData: FormData, supabase: Awaited<ReturnType<typeof clienteServidor>>) {
   const titulo = String(formData.get("titulo") ?? "").trim();
   const subtitulo = String(formData.get("subtitulo") ?? "").trim();
   const area = String(formData.get("area") ?? "").trim();
@@ -43,15 +67,6 @@ function leer(formData: FormData) {
   if (subtitulo.length > 240) {
     throw new Error("El subtítulo no puede superar 240 caracteres.");
   }
-  if (area.length < 2 || area.length > 80) {
-    throw new Error("El área debe tener entre 2 y 80 caracteres.");
-  }
-  if (!(NIVELES as readonly string[]).includes(nivel)) {
-    throw new Error("Nivel inválido.");
-  }
-  if (!esIconoCurso(icono)) {
-    throw new Error("Icono de curso inválido.");
-  }
   if (!(ESTADOS_PROPUESTA as readonly string[]).includes(estado)) {
     throw new Error("Estado inválido.");
   }
@@ -66,6 +81,21 @@ function leer(formData: FormData) {
     throw new Error("La prioridad interna debe estar entre 0 y 100.");
   }
 
+  const { data: opciones, error } = await supabase
+    .from("catalogo_propuestas")
+    .select("tipo, valor")
+    .eq("activo", true)
+    .in("tipo", ["nivel", "area", "icono"]);
+
+  if (error) throw new Error("No se pudieron validar los catálogos.");
+
+  const existe = (tipo: string, valor: string) =>
+    (opciones ?? []).some((opcion) => opcion.tipo === tipo && opcion.valor === valor);
+
+  if (!existe("nivel", nivel)) throw new Error("Nivel inválido.");
+  if (!existe("area", area)) throw new Error("Área inválida.");
+  if (!existe("icono", icono)) throw new Error("Icono inválido.");
+
   return {
     titulo,
     subtitulo,
@@ -79,9 +109,78 @@ function leer(formData: FormData) {
   };
 }
 
+export async function agregarOpcionCatalogo(
+  tipo: "nivel" | "area",
+  valorOriginal: string,
+) {
+  const { usuario, supabase } = await contextoInterno();
+  const valorBase = valorOriginal.trim();
+  if (!valorBase) throw new Error("Escribe un valor.");
+
+  const valor = tipo === "nivel" ? valorBase.toLocaleUpperCase("es-PE") : valorBase;
+  if (valor.length > 80) throw new Error("El valor es demasiado largo.");
+
+  const { data, error } = await supabase
+    .from("catalogo_propuestas")
+    .insert({
+      tipo,
+      valor,
+      creado_por: usuario.id,
+    })
+    .select("valor, svg")
+    .single();
+
+  if (error) {
+    if (error.code === "23505") throw new Error("Ese valor ya existe.");
+    throw new Error("No se pudo agregar la opción.");
+  }
+
+  revalidatePath("/proximos-cursos");
+  return { valor: data.valor, svg: data.svg ?? null };
+}
+
+export async function cargarIconoCatalogo(formData: FormData) {
+  const { usuario, supabase } = await contextoInterno();
+  const archivo = formData.get("archivo");
+
+  if (!(archivo instanceof File) || archivo.size === 0) {
+    throw new Error("Selecciona un archivo SVG.");
+  }
+  if (archivo.size > 65536) {
+    throw new Error("El SVG no puede superar 64 KB.");
+  }
+
+  const nombreBase =
+    String(formData.get("nombre") ?? "").trim() ||
+    archivo.name.replace(/\.svg$/i, "");
+  const valor = slugIcono(nombreBase);
+  if (!valor) throw new Error("No se pudo generar un nombre válido para el icono.");
+
+  const svg = sanitizarSvg(await archivo.text());
+
+  const { data, error } = await supabase
+    .from("catalogo_propuestas")
+    .insert({
+      tipo: "icono",
+      valor,
+      svg,
+      creado_por: usuario.id,
+    })
+    .select("valor, svg")
+    .single();
+
+  if (error) {
+    if (error.code === "23505") throw new Error("Ya existe un icono con ese nombre.");
+    throw new Error("No se pudo cargar el icono.");
+  }
+
+  revalidatePath("/proximos-cursos");
+  return { valor: data.valor, svg: data.svg ?? null };
+}
+
 export async function crearPropuesta(formData: FormData) {
   const { usuario, supabase } = await contextoInterno();
-  const datos = leer(formData);
+  const datos = await leer(formData, supabase);
 
   const { error } = await supabase.from("propuestas_curso").insert({
     titulo: datos.titulo,
@@ -99,7 +198,7 @@ export async function crearPropuesta(formData: FormData) {
   if (error) throw new Error("No se pudo crear la propuesta.");
 
   revalidatePath("/proximos-cursos");
-  redirect("/proximos-cursos?gestion=1&estado=creada#gestion-propuestas");
+  redirect("/proximos-cursos?estado=creada#gestion-propuestas");
 }
 
 export async function actualizarPropuesta(formData: FormData) {
@@ -107,7 +206,7 @@ export async function actualizarPropuesta(formData: FormData) {
   const id = String(formData.get("id") ?? "").trim();
   if (!id) throw new Error("Propuesta inválida.");
 
-  const datos = leer(formData);
+  const datos = await leer(formData, supabase);
 
   const { error } = await supabase
     .from("propuestas_curso")
@@ -127,5 +226,5 @@ export async function actualizarPropuesta(formData: FormData) {
   if (error) throw new Error("No se pudo actualizar la propuesta.");
 
   revalidatePath("/proximos-cursos");
-  redirect("/proximos-cursos?gestion=1&estado=actualizada#gestion-propuestas");
+  redirect("/proximos-cursos?estado=actualizada#gestion-propuestas");
 }
