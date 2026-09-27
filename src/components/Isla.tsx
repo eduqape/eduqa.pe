@@ -128,11 +128,6 @@ export function Isla({
         ...(esInterno
           ? [{ href: "/recursos", etiqueta: "Recursos", Icono: Library }]
           : []),
-        {
-          href: "/panel",
-          etiqueta: "Mi cuenta",
-          Icono: esInterno ? LayoutDashboard : UserRound,
-        },
         ...(esAdmin
           ? [
               { href: "/panel/cursos", etiqueta: "Gestión académica", Icono: GraduationCap },
@@ -188,6 +183,31 @@ export function Isla({
 
       {autenticado && (
         <div className="mx-3 border-t border-borde pt-2">
+          <Link
+            href="/panel"
+            title="Mi cuenta"
+            aria-label="Mi cuenta"
+            aria-current={ruta === "/panel" ? "page" : undefined}
+            className={`sidebar-enlace mb-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rojo-acento ${
+              ruta === "/panel"
+                ? "bg-rojo-tenue font-medium text-rojo-acento"
+                : "text-texto-suave hover:bg-superficie"
+            }`}
+          >
+            {esInterno ? (
+              <LayoutDashboard
+                size={18}
+                className={`shrink-0 ${ruta === "/panel" ? "text-rojo-acento" : ""}`}
+              />
+            ) : (
+              <UserRound
+                size={18}
+                className={`shrink-0 ${ruta === "/panel" ? "text-rojo-acento" : ""}`}
+              />
+            )}
+            <span className="sidebar-etiqueta truncate">Mi cuenta</span>
+          </Link>
+
           <Link
             href="/ajustes"
             title="Ajustes"
