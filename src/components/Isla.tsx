@@ -155,7 +155,7 @@ export function Isla({
         href={inicio}
         aria-label={autenticado ? "Ir a cursos" : "Ir al inicio"}
         title={autenticado ? "Cursos" : "Inicio"}
-        className="sidebar-marca flex items-center gap-2 border-b border-borde px-4 py-4 transition-colors hover:bg-superficie"
+        className="sidebar-marca flex items-center gap-2 border-b border-borde px-6 py-4 transition-colors hover:bg-superficie"
       >
         <MarcaInline svg={marcaSidebar} className="h-9 w-auto text-rojo-acento" />
         <MarcaTextoLateral ocultarAlColapsar />
