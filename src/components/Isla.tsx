@@ -170,7 +170,7 @@ export function Isla({
               aria-label={etiqueta}
               className={`sidebar-enlace flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rojo-acento ${
                 activo
-                  ? "bg-rojo-tenue font-medium text-rojo-acento"
+                  ? "bg-superficie font-medium text-rojo-acento"
                   : "text-texto-suave hover:bg-superficie"
               }`}
             >
@@ -190,7 +190,7 @@ export function Isla({
             aria-current={ruta === "/panel" ? "page" : undefined}
             className={`sidebar-enlace mb-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rojo-acento ${
               ruta === "/panel"
-                ? "bg-rojo-tenue font-medium text-rojo-acento"
+                ? "bg-superficie font-medium text-rojo-acento"
                 : "text-texto-suave hover:bg-superficie"
             }`}
           >
@@ -213,7 +213,7 @@ export function Isla({
             title="Ajustes"
             aria-label="Ajustes"
             aria-current={ruta.startsWith("/ajustes") ? "page" : undefined}
-            className={`sidebar-enlace flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rojo-acento ${ruta.startsWith("/ajustes") ? "bg-rojo-tenue font-medium text-rojo-acento" : "text-texto-suave hover:bg-superficie"}`}
+            className={`sidebar-enlace flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rojo-acento ${ruta.startsWith("/ajustes") ? "bg-superficie font-medium text-rojo-acento" : "text-texto-suave hover:bg-superficie"}`}
           >
             <Settings size={18} className={`shrink-0 ${ruta.startsWith("/ajustes") ? "text-rojo-acento" : ""}`} />
             <span className="sidebar-etiqueta truncate">Ajustes</span>
