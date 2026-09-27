@@ -233,7 +233,7 @@ export function Listado({
                 id="catalogo-populares"
                 className="mb-4 flex items-center gap-2 pl-5 text-xl font-semibold tracking-tight"
               >
-                <Flame size={20} strokeWidth={1.5} className="shrink-0" aria-hidden="true" />
+                <Flame size={20} strokeWidth={1.5} className="shrink-0 translate-x-px" aria-hidden="true" />
                 <TituloEditable
                   clave="catalogo-populares"
                   valorInicial={tPopulares}
