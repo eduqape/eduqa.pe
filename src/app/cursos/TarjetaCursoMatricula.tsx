@@ -2,7 +2,7 @@
 
 import { useActionState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { ArrowRight, BookOpen, Check, Clock, Loader2, Lock, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpen, Check, Clock, Loader2, Lock } from "lucide-react";
 import { matricularse, type EstadoMatricula } from "./acciones";
 import { Icono, type IconoNombre } from "@/components/Iconos";
 import { Boton } from "@/components/ui";
@@ -62,21 +62,9 @@ export function TarjetaCursoMatricula({
   // ofrecer una compra que para esta cuenta no tiene sentido.
   const comoAdmin = esAdmin && revisando;
   const bloqueado = !comoAdmin && !curso.matriculado && alTope;
-  const esMicro = curso.formato === "microcurso" || curso.formato === "pildora";
-
-  const nivelNormalizado = curso.nivel.trim().toUpperCase();
-  const claseNivel =
-    nivelNormalizado === "INTRODUCCIÓN" || nivelNormalizado === "INTRODUCCION"
-      ? "bg-exito text-white"
-      : nivelNormalizado === "INTERMEDIO"
-        ? "bg-amber-500 text-zinc-950"
-        : nivelNormalizado === "AVANZADO"
-          ? "bg-violet-600 text-white"
-          : "bg-superficie text-texto";
-
   const cabecera = (
     <>
-      <span className={`absolute right-0 top-0 flex h-9 w-[44%] items-center justify-center rounded-bl-xl border-b border-l border-borde px-3 text-[11px] font-semibold ${claseNivel}`}>
+      <span className="absolute right-0 top-0 flex h-9 w-[44%] items-center justify-center rounded-bl-xl border-b border-l border-borde bg-rojo px-3 text-[11px] font-semibold text-white">
         {curso.nivel}
       </span>
 
@@ -86,12 +74,6 @@ export function TarjetaCursoMatricula({
           className="size-14 shrink-0 text-texto-tenue transition-colors group-hover:text-rojo-acento"
         />
         <div className="flex shrink-0 flex-col items-end gap-1.5">
-          {esMicro && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-rojo-tenue px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-rojo-acento ring-1 ring-inset ring-rojo-acento/30">
-              <Sparkles size={10} />
-              Microcurso
-            </span>
-          )}
           {curso.completado && (
             <span className="flex items-center gap-1 rounded-full bg-superficie px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-texto-tenue ring-1 ring-inset ring-borde">
               <Check size={9} aria-hidden="true" />
