@@ -33,7 +33,7 @@ export default async function Page({
   };
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-6 py-10 lg:pl-64 xl:pl-32 2xl:pl-6">
+    <main className="certificado-pagina mx-auto w-full max-w-5xl px-6 py-10 lg:pl-64 xl:pl-32 2xl:pl-6">
       <div className="print:hidden">
         <Link
           href="/certificaciones"
