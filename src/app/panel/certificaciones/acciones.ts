@@ -54,79 +54,96 @@ async function subirFirma(
 }
 
 export async function actualizarResponsablesCertificacion(formData: FormData) {
-  const { supabase } = await admin();
-  const cohorteId = String(formData.get("cohorteId") ?? "").trim();
+  const { usuario, supabase } = await admin();
+  const cursoId = String(formData.get("cursoId") ?? "").trim();
+  const horas = Number(formData.get("horas") ?? 0);
   const docente = String(formData.get("docente") ?? "").trim();
   const directorAcademico = String(formData.get("directorAcademico") ?? "").trim();
   const firmaDocente = formData.get("firmaDocente");
   const firmaDirector = formData.get("firmaDirector");
 
-  if (!cohorteId) throw new Error("Selecciona una cohorte.");
+  if (!cursoId) throw new Error("Selecciona un curso.");
+  if (!Number.isFinite(horas) || horas <= 0) throw new Error("Las horas deben ser mayores a 0.");
   if (!docente) throw new Error("Escribe el nombre del docente.");
   if (!directorAcademico) throw new Error("Escribe el nombre del director académico.");
 
+  const { data: actual } = await supabase
+    .from("certificacion_config_curso")
+    .select("docente_firma_url, director_firma_url")
+    .eq("curso_id", cursoId)
+    .maybeSingle();
+
   const cambios: {
+    curso_id: string;
+    horas: number;
     docente: string;
     director_academico: string;
-    docente_firma_url?: string;
-    director_firma_url?: string;
+    actualizado_por: string;
+    actualizado_en: string;
+    docente_firma_url?: string | null;
+    director_firma_url?: string | null;
   } = {
+    curso_id: cursoId,
+    horas,
     docente,
     director_academico: directorAcademico,
+    actualizado_por: usuario.id,
+    actualizado_en: new Date().toISOString(),
+    docente_firma_url: actual?.docente_firma_url ?? null,
+    director_firma_url: actual?.director_firma_url ?? null,
   };
 
   if (firmaDocente instanceof File && firmaDocente.size > 0) {
-    const url = await subirFirma(supabase, cohorteId, "docente", firmaDocente);
+    const url = await subirFirma(supabase, cursoId, "docente", firmaDocente);
     if (url) cambios.docente_firma_url = url;
   }
 
   if (firmaDirector instanceof File && firmaDirector.size > 0) {
-    const url = await subirFirma(supabase, cohorteId, "director", firmaDirector);
+    const url = await subirFirma(supabase, cursoId, "director", firmaDirector);
     if (url) cambios.director_firma_url = url;
   }
 
   const { error } = await supabase
-    .from("cohortes")
-    .update(cambios)
-    .eq("id", cohorteId);
+    .from("certificacion_config_curso")
+    .upsert(cambios, { onConflict: "curso_id" });
 
   if (error) throw new Error(error.message);
 
   revalidatePath("/panel/certificaciones");
   revalidatePath("/panel/certificaciones/preview");
   revalidatePath("/certificaciones");
-  redirect(`/panel/certificaciones/preview?cohorte=${encodeURIComponent(cohorteId)}&estado=responsables-actualizados`);
+  redirect(`/panel/certificaciones/preview?curso=${encodeURIComponent(cursoId)}&estado=responsables-actualizados`);
 }
 
 export async function emitirCertificadoManual(formData: FormData) {
   const { supabase } = await admin();
-  const cohorteId = String(formData.get("cohorteId") ?? "");
+  const cursoId = String(formData.get("cursoId") ?? "");
   const usuarioId = String(formData.get("usuarioId") ?? "");
   const enviar = formData.get("enviar") === "on";
 
-  if (!cohorteId || !usuarioId) throw new Error("Selecciona cohorte y alumno.");
+  if (!cursoId || !usuarioId) throw new Error("Selecciona curso y alumno.");
 
-  const { error } = await supabase.rpc("admin_emitir_certificado", {
-    p_cohorte_id: cohorteId,
+  const { error } = await supabase.rpc("emitir_certificado_curso_usuario", {
+    p_curso_id: cursoId,
     p_usuario_id: usuarioId,
     p_solicitar_correo: enviar,
   });
   if (error) throw new Error(error.message);
 
   revalidatePath("/panel/certificaciones");
-  redirect(`/panel/certificaciones?estado=emitido&cohorte=${cohorteId}`);
+  redirect(`/panel/certificaciones?modo=manual&estado=emitido&curso=${cursoId}`);
 }
 
 export async function emitirCertificadosLote(formData: FormData) {
   const { supabase } = await admin();
-  const cohorteId = String(formData.get("cohorteId") ?? "");
+  const cursoId = String(formData.get("cursoId") ?? "");
   const soloCompletadas = formData.get("soloCompletadas") === "on";
   const enviar = formData.get("enviar") === "on";
 
-  if (!cohorteId) throw new Error("Selecciona una cohorte.");
+  if (!cursoId) throw new Error("Selecciona un curso.");
 
-  const { data, error } = await supabase.rpc("admin_emitir_lote", {
-    p_cohorte_id: cohorteId,
+  const { data, error } = await supabase.rpc("emitir_certificados_curso_lote", {
+    p_curso_id: cursoId,
     p_solo_completadas: soloCompletadas,
     p_solicitar_correo: enviar,
   });
@@ -134,7 +151,7 @@ export async function emitirCertificadosLote(formData: FormData) {
 
   revalidatePath("/panel/certificaciones");
   redirect(
-    `/panel/certificaciones?estado=lote&cantidad=${Number(data ?? 0)}&cohorte=${cohorteId}`,
+    `/panel/certificaciones?modo=lote&estado=lote&cantidad=${Number(data ?? 0)}&curso=${cursoId}`,
   );
 }
 
@@ -150,8 +167,8 @@ export async function crearReglaCertificacion(formData: FormData) {
   if (!["matricula_completada", "cohorte_cerrada"].includes(activador)) {
     throw new Error("Activador inválido.");
   }
-  if (!cohorteId && !cursoId) {
-    throw new Error("La regla debe apuntar a una cohorte o curso.");
+  if (!cursoId && !cohorteId) {
+    throw new Error("La regla debe apuntar a un curso.");
   }
 
   const { error } = await supabase.from("certificacion_reglas").insert({
