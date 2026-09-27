@@ -105,7 +105,7 @@ export function Formulario({
         {(
           [
             { id: "contrasena", etiqueta: "Contraseña", Icono: KeyRound },
-            { id: "codigo", etiqueta: "Código", Icono: MailKey },
+            { id: "codigo", etiqueta: "Código OTP", Icono: MailKey },
           ] as const
         ).map(({ id, etiqueta, Icono }) => (
           <button
