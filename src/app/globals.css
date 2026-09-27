@@ -210,11 +210,11 @@ input.buscador-cursos[type="search"]::-webkit-search-cancel-button {
 }
 
 @media (min-width: 1024px) {
-  html:not([data-sidebar="collapsed"]) body {
+  html:not([data-sidebar="collapsed"]) body:has(#barra-lateral) {
     padding-left: 15rem;
   }
 
-  html[data-sidebar="collapsed"] body {
+  html[data-sidebar="collapsed"] body:has(#barra-lateral) {
     padding-left: 4.5rem;
   }
 
