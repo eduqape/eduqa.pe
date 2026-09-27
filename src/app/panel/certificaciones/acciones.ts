@@ -15,6 +15,89 @@ async function admin() {
   return { usuario, supabase: await clienteServidor() };
 }
 
+
+async function subirFirma(
+  supabase: Awaited<ReturnType<typeof clienteServidor>>,
+  cohorteId: string,
+  tipo: "docente" | "director",
+  archivo: File,
+) {
+  if (archivo.size === 0) return null;
+  if (archivo.size > 2 * 1024 * 1024) {
+    throw new Error("Cada firma debe pesar como máximo 2 MB.");
+  }
+
+  const permitidos = new Set(["image/png", "image/jpeg", "image/webp"]);
+  if (!permitidos.has(archivo.type)) {
+    throw new Error("La firma debe ser PNG, JPG o WebP.");
+  }
+
+  const extension =
+    archivo.type === "image/png"
+      ? "png"
+      : archivo.type === "image/webp"
+        ? "webp"
+        : "jpg";
+
+  const ruta = `${cohorteId}/${tipo}.${extension}`;
+  const { error } = await supabase.storage
+    .from("firmas-certificados")
+    .upload(ruta, archivo, {
+      upsert: true,
+      contentType: archivo.type,
+      cacheControl: "3600",
+    });
+
+  if (error) throw new Error(`No se pudo subir la firma de ${tipo}.`);
+
+  return supabase.storage.from("firmas-certificados").getPublicUrl(ruta).data.publicUrl;
+}
+
+export async function actualizarResponsablesCertificacion(formData: FormData) {
+  const { supabase } = await admin();
+  const cohorteId = String(formData.get("cohorteId") ?? "").trim();
+  const docente = String(formData.get("docente") ?? "").trim();
+  const directorAcademico = String(formData.get("directorAcademico") ?? "").trim();
+  const firmaDocente = formData.get("firmaDocente");
+  const firmaDirector = formData.get("firmaDirector");
+
+  if (!cohorteId) throw new Error("Selecciona una cohorte.");
+  if (!docente) throw new Error("Escribe el nombre del docente.");
+  if (!directorAcademico) throw new Error("Escribe el nombre del director académico.");
+
+  const cambios: {
+    docente: string;
+    director_academico: string;
+    docente_firma_url?: string;
+    director_firma_url?: string;
+  } = {
+    docente,
+    director_academico: directorAcademico,
+  };
+
+  if (firmaDocente instanceof File && firmaDocente.size > 0) {
+    const url = await subirFirma(supabase, cohorteId, "docente", firmaDocente);
+    if (url) cambios.docente_firma_url = url;
+  }
+
+  if (firmaDirector instanceof File && firmaDirector.size > 0) {
+    const url = await subirFirma(supabase, cohorteId, "director", firmaDirector);
+    if (url) cambios.director_firma_url = url;
+  }
+
+  const { error } = await supabase
+    .from("cohortes")
+    .update(cambios)
+    .eq("id", cohorteId);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/panel/certificaciones");
+  revalidatePath("/panel/certificaciones/preview");
+  revalidatePath("/certificaciones");
+  redirect(`/panel/certificaciones/preview?cohorte=${encodeURIComponent(cohorteId)}&estado=responsables-actualizados`);
+}
+
 export async function emitirCertificadoManual(formData: FormData) {
   const { supabase } = await admin();
   const cohorteId = String(formData.get("cohorteId") ?? "");
