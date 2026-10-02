@@ -154,33 +154,19 @@ export const comoFunciona = [
   },
 ];
 
-export const instructor = {
-  nombre: "Alejandro Seminario",
-  titulo: "Ingeniero de Inteligencia Artificial",
-  bio: [
-    "AI Engineer con experiencia en Computer Vision, sistemas de IA en producción y entornos edge-first.",
-    "Desarrollo modelos de visión por computadora, pipelines de datos y APIs de inferencia, integrando prácticas de MLOps, despliegue en cloud y arquitecturas limpias.",
-    "Experiencia en investigación aplicada, docencia técnica y proyectos orientados a impacto industrial y académico.",
-  ],
-  // Para sumar una red: añade la entrada. El icono sale de RedNombre en Iconos.tsx.
-  // Disponibles: linkedin, github, instagram, x, youtube, tiktok, substack,
-  // medium, researchgate, orcid.
-  redes: [
-    {
-      red: "linkedin" as const,
-      etiqueta: "LinkedIn",
-      url: "https://www.linkedin.com/in/alejandroseminariomedina/",
-    },
-    {
-      red: "github" as const,
-      etiqueta: "GitHub",
-      url: "https://github.com/seminarioA",
-    },
-  ],
-};
+/*
+ * Quien integra el equipo ya no vive aquí.
+ *
+ * Antes esta constante era `instructor`, con nombre, título, biografía y redes
+ * escritas a mano, y la portada las pintaba directamente. Ahora todo eso está
+ * en la tabla `personas`, que se gestiona en /panel/personas, así que añadir o
+ * retirar a alguien del equipo no obliga a tocar TypeScript ni redesplegar.
+ *
+ * Lo que queda en este archivo es copy de marca: textos que no son el registro
+ * de nadie. La llamada a dictar es una de ellos y por eso sigue aquí, y no como
+ * una fila más de `personas`: no es una persona, es un hueco por llenar.
+ */
 
-// Hueco vacío del equipo docente. Se lee como un espacio por llenar,
-// no como una oferta de trabajo. Cambia el correo por uno real.
 export const plazaLibre = {
   titulo: "Estamos buscando más docentes",
   texto: "Este espacio es para el siguiente. Si crees que es el tuyo, escríbenos.",

@@ -144,6 +144,29 @@ const REDES: Record<RedNombre, ComponentType<{ className?: string }>> = {
   orcid: SiOrcid,
 };
 
+/**
+ * Los mismos nombres, en el orden del registro. Se exportan para poder armar
+ * los selectores de redes sin tener que duplicar la lista en otro sitio.
+ */
+export const REDES_NOMBRE = Object.keys(REDES) as RedNombre[];
+
+/**
+ * Cómo se escribe cada red. Va aparte porque capitalizar el nombre sale mal en
+ * media decena de ellas: "Linkedin" y "Github" no son nombres.
+ */
+export const ETIQUETA_RED: Record<RedNombre, string> = {
+  linkedin: "LinkedIn",
+  github: "GitHub",
+  instagram: "Instagram",
+  x: "X",
+  youtube: "YouTube",
+  tiktok: "TikTok",
+  substack: "Substack",
+  medium: "Medium",
+  researchgate: "ResearchGate",
+  orcid: "ORCID",
+};
+
 export function IconoRed({
   nombre,
   className,

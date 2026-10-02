@@ -35,6 +35,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "daily",
       priority: 0.7,
     },
+    {
+      url: urlAbsoluta("/equipo"),
+      lastModified: ahora,
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
   ];
 
   const cursos: MetadataRoute.Sitemap =

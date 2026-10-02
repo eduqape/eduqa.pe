@@ -12,13 +12,14 @@ import {
 import {
   comoFunciona,
   faq,
-  instructor,
   marca,
   promesas,
   plazaLibre,
 } from "@/lib/catalogo";
+import { personasQueEnsenan } from "@/lib/personas";
 import { LIMITE_PLAN_GRATIS } from "@/lib/matriculas";
 import { usuarioActual } from "@/lib/supabase/servidor";
+import { FichaPersona } from "@/components/FichaPersona";
 import { IconoRed, Stack } from "@/components/Iconos";
 import { Llama } from "@/components/Llama";
 import { SelectorTema } from "@/components/Tema";
@@ -47,6 +48,11 @@ export default async function Page() {
   // La portada cambia según haya sesión: a quien ya entró no se le ofrece
   // crear cuenta como llamada principal.
   const usuario = await usuarioActual();
+
+  // Solo quienes tienen un rol docente. Un practicante o un invitado pueden
+  // estar publicados en /equipo sin aparecer aquí, que es la respuesta a
+  // "¿quién me enseña?" y no el censo completo.
+  const docentes = await personasQueEnsenan();
 
   return (
     <>
@@ -304,34 +310,28 @@ export default async function Page() {
           </dl>
         </Seccion>
 
-        {/* Instructor */}
+        {/* Quién enseña. Sale de `personas`, la misma tabla que gestiona el
+            panel: no hay una lista aparte en el código. Cuando el equipo se
+            amplía, esta sección cambia sin desplegar nada. */}
         <Seccion titulo="Quién enseña" ancho="amplio">
           <div className="grid items-stretch gap-5 sm:grid-cols-2">
-            <article className="flex flex-col rounded-xl border border-borde bg-superficie p-6">
-              <h3 className="text-lg font-medium">{instructor.nombre}</h3>
-              <p className="mt-0.5 text-sm font-medium text-rojo-acento">{instructor.titulo}</p>
-              <div className="mt-4 flex-1 space-y-3">
-                {instructor.bio.map((p) => (
-                  <p key={p} className="text-sm leading-relaxed text-texto-suave">
-                    {p}
-                  </p>
-                ))}
-              </div>
-              <div className="mt-6 flex flex-wrap gap-2">
-                {instructor.redes.map((r) => (
-                  <a
-                    key={r.red}
-                    href={r.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-lg border border-borde-fuerte bg-fondo px-3 py-1.5 text-sm font-medium text-texto-suave transition-colors hover:border-rojo-acento hover:text-rojo-acento"
+            {docentes.length > 0 ? (
+              docentes.map((persona) => <FichaPersona key={persona.id} persona={persona} />)
+            ) : (
+              <article className="flex flex-col justify-center rounded-xl bg-superficie p-6 shadow-sm">
+                <p className="text-sm leading-relaxed text-texto-suave">
+                  Estamos cerrando las fechas de los próximos cursos. Mientras
+                  tanto,{" "}
+                  <Link
+                    href="/equipo"
+                    className="font-medium text-rojo-acento underline-offset-4 hover:underline"
                   >
-                    <IconoRed nombre={r.red} className="size-4" />
-                    {r.etiqueta}
-                  </a>
-                ))}
-              </div>
-            </article>
+                    mira quién forma el equipo
+                  </Link>
+                  .
+                </p>
+              </article>
+            )}
 
             {/* Plaza libre: se lee como un hueco por llenar, no como un aviso de empleo. */}
             <article className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-borde-fuerte bg-superficie p-6 text-center">

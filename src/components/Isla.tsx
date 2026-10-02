@@ -20,6 +20,7 @@ import {
   Stamp,
   UserRound,
   UserRoundPlus,
+  Users,
 } from "lucide-react";
 import { useSyncExternalStore, type ComponentType } from "react";
 import { MarcaInline } from "@/components/LlamaMarca";
@@ -118,6 +119,7 @@ export function Isla({
     ? [
         { href: "/cursos", etiqueta: "Cursos", Icono: GraduationCap, roles: "Alumno, Profesor, Gestor, Desarrollador, Agente de IA y Administrador" },
         { href: "/proximos-cursos", etiqueta: "Próximos cursos", Icono: ListChecks, roles: "Alumno, Profesor, Gestor, Desarrollador, Agente de IA y Administrador" },
+        { href: "/equipo", etiqueta: "Equipo", Icono: Users, roles: "Alumno, Profesor, Gestor, Desarrollador, Agente de IA y Administrador" },
         { href: "/blog", etiqueta: "Blog", Icono: Newspaper, roles: "Alumno, Profesor, Gestor, Desarrollador, Agente de IA y Administrador" },
         { href: "/calendario", etiqueta: "Calendario", Icono: CalendarDays, roles: "Alumno, Profesor, Gestor, Desarrollador, Agente de IA y Administrador" },
         { href: "/compras", etiqueta: "Mis compras", Icono: Receipt, roles: "Alumno, Profesor, Gestor, Desarrollador, Agente de IA y Administrador" },
@@ -133,6 +135,7 @@ export function Isla({
         ...(esAdmin
           ? [
               { href: "/panel/cursos", etiqueta: "Gestión académica", Icono: GraduationCap, roles: "Administrador" },
+              { href: "/panel/personas", etiqueta: "Equipo", Icono: Users, roles: "Administrador" },
               { href: "/panel/avisos", etiqueta: "Avisos", Icono: Megaphone, roles: "Administrador" },
               { href: "/panel/reportes", etiqueta: "Reportes", Icono: Bug, roles: "Administrador" },
               { href: "/panel/marca", etiqueta: "Marca", Icono: Stamp, roles: "Administrador" },
@@ -142,6 +145,7 @@ export function Isla({
     : [
         { href: "/acceder", etiqueta: "Entrar", Icono: LogIn, roles: "Visitante" },
         { href: "/registro", etiqueta: "Crear cuenta", Icono: UserRoundPlus, roles: "Visitante" },
+        { href: "/equipo", etiqueta: "Equipo", Icono: Users, roles: "Visitante" },
         { href: "/blog", etiqueta: "Blog", Icono: Newspaper, roles: "Visitante" },
       ];
 
