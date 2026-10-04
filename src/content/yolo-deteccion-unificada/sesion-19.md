@@ -84,7 +84,7 @@ Fondo es el único criterio que no depende de la clase.
 
 # Comparar los perfiles de error
 
-![Análisis de errores: Fast R-CNN frente a YOLO](/cursos/yolo-deteccion-unificada/imagenes/figura-4-analisis-errores.png)
+![Análisis de errores: Fast R-CNN frente a YOLO](imagenes/figura-4-analisis-errores.png)
 
 La figura 4 promedia los tipos de error en las 20 clases de VOC 2007. YOLO comete más errores de localización; Fast R-CNN, muchos más errores de fondo.
 

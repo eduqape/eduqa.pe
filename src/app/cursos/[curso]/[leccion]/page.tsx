@@ -11,6 +11,7 @@ import {
   type Seccion,
 } from "@/lib/cursos";
 import { estaMatriculado, perfilActual } from "@/lib/matriculas";
+import { baseImagenesCurso } from "@/lib/imagenes-curso";
 import { codigoDeCurso, esAccesoLibre } from "@/lib/precios";
 import { vistasDe } from "@/lib/progreso";
 import { AvanceLeccion } from "./AvanceLeccion";
@@ -50,6 +51,7 @@ type Opciones = {
   ejercicios?: Record<string, Ejercicio>;
   paquetes?: string[];
   preludio?: string;
+  baseImagenes?: string;
 };
 
 function renderCuerpoSeccion(sec: Seccion, op: Opciones) {
@@ -58,7 +60,7 @@ function renderCuerpoSeccion(sec: Seccion, op: Opciones) {
     <>
       {sec.bloques.map((b, i) =>
           b.tipo === "teoria" ? (
-            <Teoria key={i} contenido={b.contenido} docs={b.docs} nota={b.nota} />
+            <Teoria key={i} contenido={b.contenido} docs={b.docs} nota={b.nota} baseImagenes={op.baseImagenes} />
           ) : b.tipo === "venn" ? (
             <Venn
               key={i}
@@ -222,6 +224,7 @@ export default async function Page({
     ejercicios: leccion.ejercicios,
     paquetes: leccion.paquetes ?? curso.paquetes,
     preludio: leccion.preludio ?? curso.preludio,
+    baseImagenes: baseImagenesCurso(curso.slug),
   };
 
   return (

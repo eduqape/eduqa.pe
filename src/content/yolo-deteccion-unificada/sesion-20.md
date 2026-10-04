@@ -75,7 +75,7 @@ DPM 5.4
 
 > Nota: Los valores son la precisión promedio (AP) de la clase persona en VOC 2007 y en Picasso, tomados de la figura 5. R-CNN pierde más porque Selective Search está ajustado a imágenes naturales y su clasificador solo ve regiones pequeñas. El artículo atribuye la robustez de YOLO a que modela el tamaño y la forma de los objetos y sus relaciones, que se parecen en arte y en fotografía aunque los píxeles difieran.
 
-![Resultados cualitativos de YOLO](/cursos/yolo-deteccion-unificada/imagenes/figura-6-resultados-cualitativos.jpg)
+![Resultados cualitativos de YOLO](imagenes/figura-6-resultados-cualitativos.jpg)
 
 La figura 6 muestra YOLO sobre obras de arte e imágenes naturales de internet. El propio artículo señala que es mayormente correcto, aunque confunde a una persona con un avión.
 

@@ -264,4 +264,34 @@ for (const [i, [slug, titulo, programas]] of ruta.entries()) {
     assert.ok(sesion.bloques.some(b => b.tipo === 'teoria' && b.contenido.includes('# Cierre')) || sesion.secciones.some(s => s.titulo === 'Cierre'), slug+' sin cierre');
   }
 }
+// Imágenes de cursos: rutas relativas resueltas contra el bucket, sin /public.
+{
+  const img = cargar(path.resolve('src/lib/imagenes-curso.ts'));
+  const md = '![a](imagenes/figura-1.png) ![b](./imagenes/b.jpg "t") ![c](https://x.org/c.png) ![d](/cursos/d.png)';
+  assert.deepEqual(img.imagenesReferenciadas(md), ['imagenes/figura-1.png', 'imagenes/b.jpg']);
+  assert.equal(img.rutaEnBucket('yolo', 'imagenes/figura-1.png'), 'yolo/imagenes/figura-1.png');
+  assert.equal(img.rutaEnBucket('yolo', 'imagenes/../secreto.png'), null);
+  assert.equal(img.rutaEnBucket('yolo', 'otra/figura.png'), null);
+  assert.equal(img.rutaEnBucket('yolo', 'imagenes/figura.svg'), null);
+  const base = 'https://p.supabase.co/storage/v1/object/public/cursos-imagenes/yolo/';
+  assert.equal(img.resolverImagenCurso('imagenes/f.png', base), base + 'imagenes/f.png');
+  assert.equal(img.resolverImagenCurso('/cursos/f.png', base), '/cursos/f.png');
+  assert.equal(img.resolverImagenCurso('https://x.org/f.png', base), 'https://x.org/f.png');
+  const png = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0]);
+  assert.ok(img.firmaImagenValida(png, 'image/png'));
+  assert.ok(!img.firmaImagenValida(png, 'image/jpeg'));
+  assert.ok(!img.firmaImagenValida(new TextEncoder().encode('<svg>'), 'image/png'));
+  // Cada imagen relativa de un curso local existe en su carpeta imagenes/.
+  for (const curso of fs.readdirSync('src/content', { withFileTypes: true }).filter(d => d.isDirectory())) {
+    const dir = path.join('src/content', curso.name);
+    for (const archivo of fs.readdirSync(dir).filter(f => f.endsWith('.md'))) {
+      for (const ruta of img.imagenesReferenciadas(fs.readFileSync(path.join(dir, archivo), 'utf8'))) {
+        assert.ok(img.rutaEnBucket(curso.name, ruta), `${curso.name}/${archivo}: ruta de imagen no admitida ${ruta}`);
+        const local = path.join(dir, ruta);
+        assert.ok(fs.existsSync(local), `${curso.name}/${archivo}: falta ${ruta}`);
+        assert.ok(fs.statSync(local).size <= img.MAX_BYTES_IMAGEN, `${local} supera 2 MB`);
+      }
+    }
+  }
+}
 console.log(`Detección automática verificada con una carpeta nueva; ${cursos.length} cursos locales y 16 sesiones Fortran válidos.`);

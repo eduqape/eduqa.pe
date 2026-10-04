@@ -11,7 +11,7 @@ El artículo de YOLO (*You Only Look Once*, «solo se mira una vez») plantea la
 
 > Doc: [You Only Look Once: Unified, Real-Time Object Detection, resumen y sección 1](https://arxiv.org/abs/1506.02640)
 
-![El sistema de detección YOLO](/cursos/yolo-deteccion-unificada/imagenes/figura-1-sistema-yolo.png)
+![El sistema de detección YOLO](imagenes/figura-1-sistema-yolo.png)
 
 La figura 1 del artículo resume el sistema en tres pasos: redimensionar la imagen a 448 × 448 píxeles, evaluar una sola red convolucional y aplicar un umbral sobre la confianza de las detecciones resultantes.
 

@@ -360,6 +360,30 @@ Al cargar el curso falla, con el archivo y el motivo, si:
 
 Son errores de compilación, no páginas rotas en producción.
 
+## Imágenes
+
+Una figura se cita con una ruta relativa a la carpeta `imagenes/` del paquete:
+
+```markdown
+![Arquitectura de la red](imagenes/figura-3-arquitectura.png)
+```
+
+Al publicar desde `/panel/cursos` se arrastran las imágenes junto con
+`curso.md` y las sesiones. Se suben al bucket público `cursos-imagenes`, bajo
+`<slug>/imagenes/`, y la sesión resuelve la ruta relativa contra ese prefijo.
+No se copian a `/public` ni hace falta volver a desplegar.
+
+- Formatos: PNG, JPG, WebP o GIF, hasta 2 MB por imagen. Un envío completo
+  no puede superar 6 MB; si las figuras pesan más, se publican en dos envíos:
+  primero todo el curso con una parte de las imágenes y luego se republica
+  con el resto.
+- El nombre del archivo solo admite letras, números, punto, guion y guion
+  bajo, y es el mismo que cita el Markdown.
+- Antes de guardar, la publicación comprueba que cada imagen citada llegue en
+  el envío o ya esté en el bucket. Si falta alguna, no se escribe nada.
+- Republicar con una imagen del mismo nombre la reemplaza.
+- Las URL absolutas (`https://…`) se respetan tal cual.
+
 ## Diagramas de conjuntos
 
 Una valla ```venn dibuja un diagrama de dos conjuntos. Va declarado, no como

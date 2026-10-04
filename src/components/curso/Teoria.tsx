@@ -1,6 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Doc } from "@/lib/cursos";
+import { resolverImagenCurso } from "@/lib/imagenes-curso";
 import { Citas } from "./Citas";
 import { NotaTecnica } from "./NotaTecnica";
 
@@ -13,10 +14,13 @@ export function Teoria({
   contenido,
   docs,
   nota,
+  baseImagenes,
 }: {
   contenido: string;
   docs?: Doc[];
   nota?: string;
+  /** Prefijo público del bucket del curso; resuelve `imagenes/…`. */
+  baseImagenes?: string;
 }) {
   return (
     <div className="max-w-none">
@@ -51,6 +55,15 @@ export function Teoria({
           ),
           strong: (p) => <strong className="font-semibold text-texto" {...p} />,
           hr: () => <hr className="my-8 border-borde" />,
+          img: ({ src, alt }) => (
+            // eslint-disable-next-line @next/next/no-img-element -- la imagen vive en Supabase Storage y su tamaño no se conoce al compilar.
+            <img
+              src={typeof src === "string" ? resolverImagenCurso(src, baseImagenes) : undefined}
+              alt={alt ?? ""}
+              loading="lazy"
+              className="mt-6 h-auto max-w-full"
+            />
+          ),
           blockquote: (p) => (
             <blockquote
               className="mt-4 border-l-4 border-rojo-acento/40 bg-rojo-tenue py-2 pl-4 text-texto-suave"

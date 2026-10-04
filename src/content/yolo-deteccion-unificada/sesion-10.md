@@ -7,7 +7,7 @@ titulo: "La arquitectura: de 448 × 448 a 7 × 7"
 
 La red de detección tiene 24 capas convolucionales seguidas de 2 capas totalmente conectadas. Las capas convolucionales extraen características de la imagen y las capas conectadas predicen las probabilidades y las coordenadas. El diseño se inspira en GoogLeNet, pero en lugar de módulos *inception* usa reducciones 1 × 1 seguidas de convoluciones 3 × 3.
 
-![La arquitectura de YOLO](/cursos/yolo-deteccion-unificada/imagenes/figura-3-arquitectura.png)
+![La arquitectura de YOLO](imagenes/figura-3-arquitectura.png)
 
 > Doc: [YOLO, sección 2.1 y figura 3](https://arxiv.org/abs/1506.02640)
 

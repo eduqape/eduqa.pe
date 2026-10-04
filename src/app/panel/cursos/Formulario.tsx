@@ -3,6 +3,7 @@
 import { useActionState, useRef, useState } from "react";
 import { FileText, Upload } from "lucide-react";
 import { publicarCurso, type EstadoPublicacion } from "./acciones";
+import { tipoImagen } from "@/lib/imagenes-curso";
 
 /**
  * Publicación de un curso arrastrando sus archivos.
@@ -10,6 +11,8 @@ import { publicarCurso, type EstadoPublicacion } from "./acciones";
  * Se sube la carpeta entera del curso —la ficha y las sesiones— porque el
  * temario se deriva del propio Markdown: mandar las sesiones sueltas dejaría
  * el índice a merced de que alguien se acuerde de actualizarlo aparte.
+ * Las imágenes que citan las sesiones (`imagenes/figura.png`) viajan en el
+ * mismo envío y se suben al bucket del curso.
  */
 export function FormularioCurso() {
   const [estado, accion, pendiente] = useActionState<EstadoPublicacion | null, FormData>(
@@ -25,7 +28,7 @@ export function FormularioCurso() {
     // Se pasan al input real para que viajen con el formulario: asignar
     // `files` es la única forma de que un arrastre acabe en el envío.
     const dt = new DataTransfer();
-    for (const f of Array.from(lista)) if (f.name.endsWith(".md")) dt.items.add(f);
+    for (const f of Array.from(lista)) if (f.name.endsWith(".md") || tipoImagen(f.name)) dt.items.add(f);
     if (entrada.current) entrada.current.files = dt.files;
     setNombres(Array.from(dt.files).map((f) => f.name).sort());
   };
@@ -48,13 +51,14 @@ export function FormularioCurso() {
         <p className="mt-1 text-xs text-texto-suave">
           La ficha <code className="font-mono">curso.md</code> y una sesión por archivo.
           El icono es obligatorio. La ficha también puede publicar precio, estado y ruta.
+          Suma las imágenes que citan las sesiones (PNG, JPG, WebP o GIF, hasta 2 MB cada una).
         </p>
         <input
           ref={entrada}
           type="file"
           name="archivos"
           multiple
-          accept=".md"
+          accept=".md,.png,.jpg,.jpeg,.webp,.gif"
           className="hidden"
           onChange={(e) => recoger(e.target.files)}
         />

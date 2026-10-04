@@ -5,6 +5,15 @@ import { parse as parseYaml } from "yaml";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { codigoBaseDeFicha, construirCurso } from "@/lib/curso-markdown";
 import { esIconoCurso } from "@/lib/iconos-curso";
+import {
+  BUCKET_IMAGENES_CURSO,
+  MAX_BYTES_IMAGEN,
+  firmaImagenValida,
+  imagenesReferenciadas,
+  nombreImagenValido,
+  rutaEnBucket,
+  tipoImagen,
+} from "@/lib/imagenes-curso";
 
 export type EstadoPublicacion = { ok: boolean; error?: string; detalle?: string };
 
@@ -169,11 +178,27 @@ export async function publicarCurso(
   if (subidos.length === 0) return { ok: false, error: "No llegó ningún archivo." };
 
   const archivos = new Map<string, string>();
+  const imagenes = new Map<string, { tipo: string; bytes: Uint8Array }>();
   for (const f of subidos) {
-    if (!f.name.endsWith(".md")) {
-      return { ok: false, error: `«${f.name}» no es un archivo .md.` };
+    if (f.name.endsWith(".md")) {
+      archivos.set(f.name, await f.text());
+      continue;
     }
-    archivos.set(f.name, await f.text());
+    const tipo = tipoImagen(f.name);
+    if (!tipo) {
+      return { ok: false, error: `«${f.name}» no es un archivo .md ni una imagen PNG, JPG, WebP o GIF.` };
+    }
+    if (!nombreImagenValido(f.name)) {
+      return { ok: false, error: `«${f.name}»: el nombre de una imagen solo admite letras, números, punto, guion y guion bajo.` };
+    }
+    if (f.size > MAX_BYTES_IMAGEN) {
+      return { ok: false, error: `«${f.name}» supera los 2 MB por imagen.` };
+    }
+    const bytes = new Uint8Array(await f.arrayBuffer());
+    if (!firmaImagenValida(bytes, tipo)) {
+      return { ok: false, error: `«${f.name}» no tiene el formato que indica su extensión.` };
+    }
+    imagenes.set(f.name, { tipo, bytes });
   }
 
   if (!archivos.has("curso.md")) {
@@ -203,6 +228,38 @@ export async function publicarCurso(
     curso = construirCurso(slug, archivos);
   } catch (e) {
     return { ok: false, error: `El curso no se pudo leer: ${(e as Error).message}` };
+  }
+
+  // Cada imagen relativa que cite el Markdown debe llegar en este envío o
+  // estar ya en el bucket. Se comprueba antes de escribir nada: una sesión
+  // publicada no puede quedar apuntando a una figura que no existe.
+  const citadas = new Map<string, string>();
+  for (const [archivo, texto] of archivos) {
+    for (const ruta of imagenesReferenciadas(texto)) {
+      const destino = rutaEnBucket(slug, ruta);
+      if (!destino) {
+        return {
+          ok: false,
+          error: `${archivo} cita «${ruta}». Las imágenes del curso se citan como imagenes/nombre.png.`,
+        };
+      }
+      citadas.set(destino.slice(destino.lastIndexOf("/") + 1), archivo);
+    }
+  }
+  const faltantes = [...citadas.keys()].filter((nombre) => !imagenes.has(nombre));
+  if (faltantes.length > 0) {
+    const { data: enBucket, error: eListar } = await supabase.storage
+      .from(BUCKET_IMAGENES_CURSO)
+      .list(`${slug}/imagenes`, { limit: 1000 });
+    if (eListar) return { ok: false, error: `No se pudieron comprobar las imágenes del curso: ${eListar.message}` };
+    const existentes = new Set((enBucket ?? []).map((o) => o.name));
+    const ausentes = faltantes.filter((nombre) => !existentes.has(nombre));
+    if (ausentes.length > 0) {
+      return {
+        ok: false,
+        error: `Faltan imágenes: ${ausentes.map((n) => `${n} (en ${citadas.get(n)})`).join(", ")}. Súbelas junto con el Markdown.`,
+      };
+    }
   }
 
   const { data: existe, error: eExiste } = await supabase
@@ -236,6 +293,14 @@ export async function publicarCurso(
         slug: String(f.slug ?? `sesion-${numero}`),
       };
     });
+
+  // Las imágenes se suben antes que el Markdown que las cita.
+  for (const [nombre, { tipo, bytes }] of imagenes) {
+    const { error: eImagen } = await supabase.storage
+      .from(BUCKET_IMAGENES_CURSO)
+      .upload(`${slug}/imagenes/${nombre}`, bytes, { contentType: tipo, upsert: true });
+    if (eImagen) return { ok: false, error: `No se pudo subir «${nombre}»: ${eImagen.message}` };
+  }
 
   if (publicacion.ruta) {
     const { error: eRuta } = await supabase.from("rutas").upsert(
@@ -340,6 +405,8 @@ export async function publicarCurso(
   return {
     ok: true,
     detalle: `«${curso.titulo}» (${codigoPublicado}): ${curso.lecciones.length} sesiones guardadas${
+      imagenes.size > 0 ? ` y ${imagenes.size} imágenes` : ""
+    }${
       publicacion.ruta ? ` en la ruta «${publicacion.ruta.nombre}»` : ""
     }. Ya está en línea, sin desplegar.`,
   };

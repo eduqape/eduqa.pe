@@ -7,7 +7,7 @@ titulo: "La cuadrícula S × S y la celda responsable"
 
 YOLO divide la imagen de entrada en una cuadrícula de `S × S` celdas. Si el centro de un objeto cae dentro de una celda, esa celda es responsable de detectarlo. En PASCAL VOC (*Visual Object Classes*), el artículo usa `S = 7`.
 
-![El modelo YOLO](/cursos/yolo-deteccion-unificada/imagenes/figura-2-modelo.png)
+![El modelo YOLO](imagenes/figura-2-modelo.png)
 
 > Doc: [YOLO, sección 2 y figura 2](https://arxiv.org/abs/1506.02640)
 
