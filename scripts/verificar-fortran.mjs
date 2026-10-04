@@ -77,7 +77,7 @@ try {
     if (actualizar) writeFileSync(ruta, texto);
   }
   assert.ok(resultados.length > 0, "No hay ejemplos Fortran");
-  const { cargarCurso } = cargar(resolve("src/lib/curso-markdown.ts"));
+  const { cargarCurso } = cargar(resolve("src/lib/curso-markdown-local.ts"));
   const curso = cargarCurso(carpeta);
   const respuestas = JSON.parse(readFileSync("scripts/fortran-respuestas.json", "utf8"));
   let ejercicios = 0;
