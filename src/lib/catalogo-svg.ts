@@ -14,6 +14,15 @@ export type AssetSvg = {
 
 export const ASSETS_SVG: AssetSvg[] = [
   {
+    id: "llama",
+    nombre: "Llama parada",
+    archivo: "/llama.svg",
+    descripcion: "Llama de perfil, de pie, en trazo de línea. Es la llama de la marca.",
+    etiquetas: ["llama", "línea", "marca"],
+    origen: "Ilustración de marca de EDUQA.PE.",
+    usadoEn: "Barra lateral, certificados, PDF del curso e icono de marca.",
+  },
+  {
     id: "llama-rigor-verificable",
     nombre: "Llama · rigor verificable",
     archivo: "/llama-rigor-verificable.svg",
