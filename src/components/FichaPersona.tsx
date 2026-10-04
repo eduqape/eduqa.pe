@@ -1,5 +1,6 @@
-import { ETIQUETA_RED, IconoRed } from "@/components/Iconos";
-import { ETIQUETA_ROL } from "@/lib/personas-tipos";
+import { IconoRed } from "@/components/Iconos";
+import { ETIQUETA_RED } from "@/lib/redes";
+import { ETIQUETA_ROL, iniciales } from "@/lib/personas-tipos";
 import type { Persona } from "@/lib/personas";
 
 /**
@@ -21,9 +22,8 @@ function parrafos(biografia: string | null): string[] {
 /**
  * Ficha de una persona, tal como sale en la web.
  *
- * Sin borde alrededor: la jerarquía la dan el fondo, el espacio y el título,
- * que es lo que pide el resto de la página. El borde se reserva para los
- * enlaces de las redes, donde sí expresa que son cosas pulsables.
+ * Usa los mismos tokens que el resto de cards de contenido (`bg-fondo`, borde
+ * y `rounded-xl`, ver AGENTS.md), para que una ficha se lea igual que un curso.
  */
 export function FichaPersona({
   persona,
@@ -41,10 +41,10 @@ export function FichaPersona({
   return (
     <article
       id={conAncla ? persona.slug : undefined}
-      className="flex scroll-mt-24 flex-col rounded-xl bg-superficie p-6 shadow-sm"
+      className="flex scroll-mt-24 flex-col rounded-xl border border-borde bg-fondo p-6 target:border-rojo-acento"
     >
       <div className="flex items-start gap-4">
-        {persona.foto_url && (
+        {persona.foto_url ? (
           // Una foto de un tercero: la dirección viene de la base, no de un
           // archivo del repositorio, así que next/image no la puede medir.
           // eslint-disable-next-line @next/next/no-img-element
@@ -54,6 +54,15 @@ export function FichaPersona({
             loading="lazy"
             className="size-16 shrink-0 rounded-full object-cover"
           />
+        ) : (
+          // Sin foto, las iniciales: igual que en el panel, para que todas las
+          // fichas tengan la misma forma y no salten de alineación.
+          <span
+            aria-hidden="true"
+            className="flex size-16 shrink-0 items-center justify-center rounded-full bg-superficie text-lg font-semibold text-texto-suave"
+          >
+            {iniciales(persona.nombre)}
+          </span>
         )}
 
         <div className="min-w-0">
@@ -71,7 +80,7 @@ export function FichaPersona({
           {persona.roles.map((rol) => (
             <li
               key={rol}
-              className="rounded-full bg-fondo px-2.5 py-0.5 text-[11px] font-medium text-texto-suave"
+              className="rounded-full bg-superficie px-2.5 py-0.5 text-[11px] font-medium text-texto-suave"
             >
               {ETIQUETA_ROL[rol]}
             </li>

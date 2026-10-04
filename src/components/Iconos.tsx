@@ -4,19 +4,27 @@
 // Todo lo que dibuje un logo de marca vive detrás de este archivo.
 
 import type { ComponentType } from "react";
-import { BookOpen, CloudUpload, Database, Sigma, Pill, Dna } from "lucide-react";
+import { BookOpen, CloudUpload, Database, Globe, Sigma, Pill, Dna } from "lucide-react";
+import { REDES_PERSONA, type RedNombre } from "@/lib/redes";
 import type { IconoNombre } from "@/lib/iconos-curso";
 export type { IconoNombre } from "@/lib/iconos-curso";
 import { FaLinkedin } from "react-icons/fa6";
 import {
+  SiBehance,
+  SiBluesky,
   SiDocker,
+  SiDribbble,
+  SiFacebook,
   SiFastapi,
   SiFortran,
   SiGithub,
   SiGithubactions,
+  SiGitlab,
+  SiGooglescholar,
   SiGooglegemini,
   SiHuggingface,
   SiInstagram,
+  SiKaggle,
   SiLinux,
   SiMedium,
   SiN8N,
@@ -33,6 +41,7 @@ import {
   SiSqlite,
   SiSubstack,
   SiSupabase,
+  SiThreads,
   SiTiktok,
   SiX,
   SiYoutube,
@@ -118,54 +127,35 @@ export function IconoLinkedin({ className }: { className?: string }) {
   return <FaLinkedin className={className} aria-hidden="true" />;
 }
 
-/** Redes del perfil. Para añadir una, basta con sumar la clave y su componente. */
-export type RedNombre =
-  | "linkedin"
-  | "github"
-  | "instagram"
-  | "x"
-  | "youtube"
-  | "tiktok"
-  | "substack"
-  | "medium"
-  | "researchgate"
-  | "orcid";
+export type { RedNombre } from "@/lib/redes";
+export { ETIQUETA_RED } from "@/lib/redes";
 
+/** El icono de cada red. La lista y sus nombres viven en `@/lib/redes`. */
 const REDES: Record<RedNombre, ComponentType<{ className?: string }>> = {
+  web: Globe,
   linkedin: FaLinkedin,
   github: SiGithub,
-  instagram: SiInstagram,
+  gitlab: SiGitlab,
   x: SiX,
+  bluesky: SiBluesky,
+  threads: SiThreads,
+  instagram: SiInstagram,
+  facebook: SiFacebook,
   youtube: SiYoutube,
   tiktok: SiTiktok,
   substack: SiSubstack,
   medium: SiMedium,
+  huggingface: SiHuggingface,
+  kaggle: SiKaggle,
+  scholar: SiGooglescholar,
   researchgate: SiResearchgate,
   orcid: SiOrcid,
+  behance: SiBehance,
+  dribbble: SiDribbble,
 };
 
-/**
- * Los mismos nombres, en el orden del registro. Se exportan para poder armar
- * los selectores de redes sin tener que duplicar la lista en otro sitio.
- */
-export const REDES_NOMBRE = Object.keys(REDES) as RedNombre[];
-
-/**
- * Cómo se escribe cada red. Va aparte porque capitalizar el nombre sale mal en
- * media decena de ellas: "Linkedin" y "Github" no son nombres.
- */
-export const ETIQUETA_RED: Record<RedNombre, string> = {
-  linkedin: "LinkedIn",
-  github: "GitHub",
-  instagram: "Instagram",
-  x: "X",
-  youtube: "YouTube",
-  tiktok: "TikTok",
-  substack: "Substack",
-  medium: "Medium",
-  researchgate: "ResearchGate",
-  orcid: "ORCID",
-};
+/** Los mismos nombres, en el orden del selector del panel. */
+export const REDES_NOMBRE: readonly RedNombre[] = REDES_PERSONA;
 
 export function IconoRed({
   nombre,
@@ -174,7 +164,9 @@ export function IconoRed({
   nombre: RedNombre;
   className?: string;
 }) {
-  const C = REDES[nombre];
+  // Una red que la base conoce y este archivo no (p. ej. tras sumar una sin
+  // desplegar el icono) cae en el globo en vez de romper la ficha.
+  const C = REDES[nombre] ?? Globe;
   return <C className={className} aria-hidden="true" />;
 }
 

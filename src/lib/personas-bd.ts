@@ -3,7 +3,7 @@ import "server-only";
 import { revalidatePath } from "next/cache";
 import { clienteServidor } from "@/lib/supabase/servidor";
 import { esRolPersona, type RolPersona } from "@/lib/personas-tipos";
-import type { RedNombre } from "@/components/Iconos";
+import { detectarRed, esRedNombre, ETIQUETA_RED, hostDe, normalizarUrl, type RedNombre } from "@/lib/redes";
 
 /**
  * Las escrituras de `personas`.
@@ -172,29 +172,35 @@ export async function eliminarPersonaBD(id: string) {
 /**
  * Valida las redes que llegan del formulario.
  *
- * Una red sin URL no se guarda: en la tarjeta queda un icono que no lleva a
- * ningún sitio, que es peor que no tenerla. La URL tiene que ser `https` y
- * apuntar a un host con punto, porque un `https://` a secas es un error de
- * tecleo que se lleva por delante el enlace entero.
+ * Una fila sin enlace se ignora: es una fila vacía, no un error. El enlace se
+ * completa con `https://` si no lo trae, y si no se eligió la red se deduce del
+ * dominio. Dos filas con la misma red sí son un error y se avisa: antes la
+ * segunda desaparecía sin decir nada.
+ *
+ * `indice` señala la fila del fallo para que el panel la marque.
  */
 export function limpiarRedes(
   crudas: { red: string; url: string }[],
-): { redes: { red: RedNombre; url: string }[]; error?: string } {
+): { redes: { red: RedNombre; url: string }[]; error?: string; indice?: number } {
   const redes: { red: RedNombre; url: string }[] = [];
-  const vistas = new Set<string>();
+  const vistas = new Set<RedNombre>();
 
-  for (const cruda of crudas) {
-    const url = cruda.url.trim();
+  for (const [indice, cruda] of crudas.entries()) {
+    const url = normalizarUrl(cruda.url);
     if (!url) continue;
 
-    // El nombre de la red viene del `name` del select, que el navegador puede
-    // alterar a voluntad; la base lo vuelve a comprobar en el `check`.
-    const red = cruda.red as RedNombre;
-    if (!red) continue;
-    if (vistas.has(red)) continue;
+    if (!hostDe(url)) {
+      return { redes: [], indice, error: `«${cruda.url.trim()}» no parece un enlace.` };
+    }
 
-    if (!/^https:\/\/[^\s/]+\.[^\s/]+/i.test(url)) {
-      return { redes: [], error: `La dirección de ${red} no es un enlace https válido.` };
+    // El nombre viene del `value` del select, que el navegador puede alterar a
+    // voluntad; la base lo vuelve a comprobar en el `check`.
+    const red = esRedNombre(cruda.red) ? cruda.red : detectarRed(url);
+    if (!red) {
+      return { redes: [], indice, error: "Elige de qué red es este enlace." };
+    }
+    if (vistas.has(red)) {
+      return { redes: [], indice, error: `${ETIQUETA_RED[red]} está dos veces. Deja un solo enlace.` };
     }
 
     vistas.add(red);
@@ -202,6 +208,90 @@ export function limpiarRedes(
   }
 
   return { redes };
+}
+
+/** El orden que deja a una persona nueva al final del censo. */
+export async function siguienteOrden(): Promise<number> {
+  const supabase = await clienteServidor();
+  const { data } = await supabase
+    .from("personas")
+    .select("orden")
+    .order("orden", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return (data?.orden ?? 0) + 10;
+}
+
+/**
+ * Sube o baja a una persona un puesto en el orden del panel y de la web.
+ *
+ * Se renumera todo el censo de 10 en 10 en vez de intercambiar dos valores: con
+ * órdenes repetidos (el 50 por defecto de antes) un intercambio no movería
+ * nada. Solo se escriben las filas cuyo número cambia.
+ */
+export async function moverPersonaBD(id: string, direccion: "arriba" | "abajo") {
+  const supabase = await clienteServidor();
+  const { data, error } = await supabase
+    .from("personas")
+    .select("id, orden, nombre")
+    .order("orden")
+    .order("nombre");
+  if (error) throw new Error(`No se pudo leer el orden: ${error.message}`);
+
+  const filas = data ?? [];
+  const desde = filas.findIndex((fila) => fila.id === id);
+  if (desde === -1) throw new Error("No se encontró esa persona, o no tienes permiso.");
+
+  const hasta = direccion === "arriba" ? desde - 1 : desde + 1;
+  if (hasta < 0 || hasta >= filas.length) return;
+
+  const nuevas = [...filas];
+  [nuevas[desde], nuevas[hasta]] = [nuevas[hasta], nuevas[desde]];
+
+  for (const [posicion, fila] of nuevas.entries()) {
+    const orden = (posicion + 1) * 10;
+    if (fila.orden === orden) continue;
+    const { error: eOrden } = await supabase.from("personas").update({ orden }).eq("id", fila.id);
+    if (eOrden) throw new Error(`No se pudo guardar el orden: ${eOrden.message}`);
+  }
+
+  revalidarPersonas();
+}
+
+const BUCKET_FOTOS = "personas-fotos";
+
+/**
+ * Sube el retrato al bucket y devuelve su dirección pública.
+ *
+ * El nombre lleva la marca de tiempo para que el navegador no siga mostrando la
+ * foto anterior desde su caché al reemplazarla.
+ */
+export async function subirFotoPersonaBD(slug: string, archivo: File): Promise<string> {
+  const supabase = await clienteServidor();
+  const extension = archivo.type.split("/")[1]?.replace("jpeg", "jpg") ?? "jpg";
+  const ruta = `${slug}/${Date.now()}.${extension}`;
+
+  const { error } = await supabase.storage
+    .from(BUCKET_FOTOS)
+    .upload(ruta, archivo, { contentType: archivo.type });
+  if (error) throw new Error(`No se pudo subir la foto: ${error.message}`);
+
+  return supabase.storage.from(BUCKET_FOTOS).getPublicUrl(ruta).data.publicUrl;
+}
+
+/**
+ * Borra del bucket una foto que ya no usa nadie. Si la dirección no es de este
+ * bucket (una foto enlazada desde fuera) no hay nada que borrar. Un fallo aquí
+ * no debe deshacer el guardado: deja un archivo huérfano, no una ficha rota.
+ */
+export async function borrarFotoPersonaBD(url: string | null) {
+  if (!url) return;
+  const marca = `/${BUCKET_FOTOS}/`;
+  const posicion = url.indexOf(marca);
+  if (posicion === -1) return;
+
+  const supabase = await clienteServidor();
+  await supabase.storage.from(BUCKET_FOTOS).remove([decodeURIComponent(url.slice(posicion + marca.length))]);
 }
 
 export function rolesDesdeFormulario(valores: FormDataEntryValue[]): RolPersona[] {

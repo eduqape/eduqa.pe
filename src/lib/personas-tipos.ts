@@ -84,3 +84,77 @@ export function rolPrincipal(
   }
   return roles[0] ?? null;
 }
+
+/**
+ * En qué situación está una ficha, como un solo valor.
+ *
+ * La base guarda dos banderas (`visible` es editorial, `activo` es laboral),
+ * pero en el panel se elegían por separado y permitían combinaciones que nadie
+ * entendía: "visible" e "inactiva" a la vez no sale en la web, aunque la casilla
+ * dijera lo contrario. Se presentan como tres estados excluyentes.
+ */
+export const ESTADOS_FICHA = ["publicada", "oculta", "baja"] as const;
+
+export type EstadoFicha = (typeof ESTADOS_FICHA)[number];
+
+export const ETIQUETA_ESTADO_FICHA: Record<EstadoFicha, string> = {
+  publicada: "Publicada",
+  oculta: "Sin publicar",
+  baja: "De baja",
+};
+
+export const AYUDA_ESTADO_FICHA: Record<EstadoFicha, string> = {
+  publicada: "Sale en /equipo y, si enseña, en la portada.",
+  oculta: "Solo la ve el panel. Útil mientras completas la ficha.",
+  baja: "Ya no forma parte del equipo. Se conserva la ficha, fuera de la web.",
+};
+
+export function esEstadoFicha(valor: unknown): valor is EstadoFicha {
+  return typeof valor === "string" && (ESTADOS_FICHA as readonly string[]).includes(valor);
+}
+
+export function estadoFicha(persona: { visible: boolean; activo: boolean }): EstadoFicha {
+  if (!persona.activo) return "baja";
+  return persona.visible ? "publicada" : "oculta";
+}
+
+export function banderasDeEstado(estado: EstadoFicha): { visible: boolean; activo: boolean } {
+  if (estado === "publicada") return { visible: true, activo: true };
+  if (estado === "oculta") return { visible: false, activo: true };
+  return { visible: false, activo: false };
+}
+
+/** Las iniciales que ocupan el lugar de la foto mientras no haya una. */
+export function iniciales(nombre: string): string {
+  return nombre
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((parte) => parte[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+/**
+ * Lo que le falta a una ficha para verse completa en la web.
+ *
+ * No impide publicar: una persona recién llegada puede salir sin foto. Sirve
+ * para que el panel diga qué completar en vez de que haya que adivinarlo
+ * comparando tarjetas.
+ */
+export function faltantesFicha(persona: {
+  foto_url: string | null;
+  titulo_profesional: string | null;
+  biografia: string | null;
+  redes: readonly unknown[];
+}): string[] {
+  const faltan: string[] = [];
+  if (!persona.foto_url) faltan.push("foto");
+  if (!persona.titulo_profesional) faltan.push("título");
+  if (!persona.biografia) faltan.push("biografía");
+  if (persona.redes.length === 0) faltan.push("redes");
+  return faltan;
+}
+
+/** Lo que acepta el bucket `personas-fotos`; el panel lo comprueba antes de subir. */
+export const TIPOS_FOTO = ["image/jpeg", "image/png", "image/webp"] as const;
+export const PESO_MAXIMO_FOTO = 2 * 1024 * 1024;

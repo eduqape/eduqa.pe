@@ -8,7 +8,7 @@ import {
   ROLES_ENSENAN,
   type RolPersona,
 } from "@/lib/personas-tipos";
-import type { RedNombre } from "@/components/Iconos";
+import { esRedNombre, type RedNombre } from "@/lib/redes";
 
 export type Red = {
   red: RedNombre;
@@ -80,6 +80,7 @@ function normalizar(filas: Fila[]): Persona[] {
         .sort((a, b) => a.orden - b.orden)
         .map((r) => r.rol as RolPersona),
       redes: (fila.personas_redes ?? [])
+        .filter((r) => esRedNombre(r.red))
         .sort((a, b) => a.orden - b.orden)
         .map((r) => ({ red: r.red as RedNombre, url: r.url, orden: r.orden })),
     })),
