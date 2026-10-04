@@ -388,26 +388,38 @@ export default async function Page() {
           </div>
         </Seccion>
 
-        {/* Cierre */}
+        {/* Cierre. El papel rojo es de la cabecera: repetirlo aquí competía
+            con ella y dejaba un bloque suelto antes del pie. El cierre se lee
+            como una sección más, con su título a la misma escala, y la acción
+            lleva el botón principal de la página. */}
         <Seccion>
-          <div className="rounded-2xl bg-rojo px-6 py-12 text-center text-white sm:px-10">
-            <Llama className="mx-auto mb-6 h-20 w-auto text-white" />
-            <h2 className="mx-auto max-w-lg text-2xl font-semibold leading-tight tracking-tight">
-              {usuario
-                ? "Sigue donde lo dejaste"
-                : `Empieza con ${LIMITE_PLAN_GRATIS} cursos gratis`}
-            </h2>
-            <p className="mx-auto mt-3 max-w-md leading-relaxed text-sobre-rojo-suave">
-              {usuario
-                ? "Tus cursos y tu material te están esperando."
-                : "Crear la cuenta toma un minuto y no pide tarjeta. Te matriculas y el material se abre al instante."}
-            </p>
-            <Link href={usuario ? "/cursos" : "/registro"} className="mt-7 inline-block">
-              <Boton variante="sobreRojo">
-                {usuario ? "Ir a mis cursos" : "Crear cuenta gratis"}
-                <ArrowRight size={16} aria-hidden="true" />
-              </Boton>
-            </Link>
+          <div className="flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
+            <div className="max-w-md">
+              <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                {usuario
+                  ? "Sigue donde lo dejaste"
+                  : `Empieza con ${LIMITE_PLAN_GRATIS} cursos gratis`}
+              </h2>
+              <p className="mt-3 leading-relaxed text-texto-suave">
+                {usuario
+                  ? "Tus cursos y tu material te están esperando."
+                  : "Crear la cuenta toma un minuto y no pide tarjeta. Te matriculas y el material se abre al instante."}
+              </p>
+            </div>
+
+            <div className="flex shrink-0 flex-wrap items-center gap-3">
+              <Link href={usuario ? "/cursos" : "/registro"}>
+                <Boton>
+                  {usuario ? "Ir a mis cursos" : "Crear cuenta gratis"}
+                  <ArrowRight size={16} aria-hidden="true" />
+                </Boton>
+              </Link>
+              {!usuario && (
+                <Link href="/catalogo">
+                  <Boton variante="secundario">Ver cursos</Boton>
+                </Link>
+              )}
+            </div>
           </div>
         </Seccion>
       </main>
@@ -429,126 +441,120 @@ export default async function Page() {
                 <Radio size={14} aria-hidden="true" />
                 {marca.ciudad}
               </span>
+
+              {/* Las redes son de la marca, no un enlace más de navegación. */}
+              <div className="-ml-2 mt-4 flex items-center gap-1">
+                <a
+                  href="https://www.linkedin.com/company/eduqa-pe"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="EDUQA.PE en LinkedIn"
+                  className="flex size-9 items-center justify-center rounded-lg text-texto-suave transition-colors hover:bg-fondo hover:text-rojo-acento"
+                >
+                  <IconoRed nombre="linkedin" className="size-5" />
+                </a>
+              </div>
             </div>
 
-            <div>
-              <h2 className="mb-5 text-xs font-semibold uppercase tracking-[0.16em] text-texto">
-                Explora
-              </h2>
-              <ul className="space-y-3 text-sm text-texto-suave">
-                <li>
-                  <Link href="/catalogo" className="transition-colors hover:text-rojo-acento">
-                    Cursos
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/rutas" className="transition-colors hover:text-rojo-acento">
-                    Rutas de aprendizaje
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/calendario" className="transition-colors hover:text-rojo-acento">
-                    Calendario
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/blog" className="transition-colors hover:text-rojo-acento">
-                    Blog
-                  </Link>
-                </li>
-              </ul>
-            </div>
+            {/* Cada enlace tiene que servirle a quien lo ve. Sin sesión no se
+                muestran destinos que solo devuelven al login, y lo interno del
+                equipo (recursos) no se anuncia en la portada: se llega desde
+                la barra lateral según el rol. */}
+            <ColumnaPie
+              titulo="Explora"
+              enlaces={[
+                { href: "/catalogo", texto: "Cursos" },
+                { href: "/blog", texto: "Blog" },
+                { href: "/verificar", texto: "Verificar una constancia" },
+              ]}
+            />
 
-            <div>
-              <h2 className="mb-5 text-xs font-semibold uppercase tracking-[0.16em] text-texto">
-                Cuenta
-              </h2>
-              <ul className="space-y-3 text-sm text-texto-suave">
-                <li>
-                  <Link href="/registro" className="transition-colors hover:text-rojo-acento">
-                    Crear cuenta
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/acceder" className="transition-colors hover:text-rojo-acento">
-                    Acceder
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/perfil" className="transition-colors hover:text-rojo-acento">
-                    Perfil
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/ajustes" className="transition-colors hover:text-rojo-acento">
-                    Ajustes
-                  </Link>
-                </li>
-              </ul>
-            </div>
+            <ColumnaPie
+              titulo="Nosotros"
+              enlaces={[
+                { href: "/equipo", texto: "Equipo" },
+                {
+                  href: `mailto:${plazaLibre.correo}?subject=Quiero dictar en EDUQA.PE`,
+                  texto: "Quiero dictar en EDUQA",
+                },
+              ]}
+            />
 
-            <div>
-              <h2 className="mb-5 text-xs font-semibold uppercase tracking-[0.16em] text-texto">
-                Comunidad
-              </h2>
-              <ul className="space-y-3 text-sm text-texto-suave">
-                <li>
-                  <Link href="/recursos" className="transition-colors hover:text-rojo-acento">
-                    Recursos
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/certificaciones" className="transition-colors hover:text-rojo-acento">
-                    Certificaciones
-                  </Link>
-                </li>
-                <li>
-                  <a
-                    href={`mailto:${plazaLibre.correo}?subject=Quiero dictar en EDUQA.PE`}
-                    className="transition-colors hover:text-rojo-acento"
-                  >
-                    Quiero dictar en EDUQA
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="https://www.linkedin.com/company/eduqa-pe"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 transition-colors hover:text-rojo-acento"
-                  >
-                    <IconoRed nombre="linkedin" className="size-4" />
-                    LinkedIn
-                  </a>
-                </li>
-                <li>
-                  <Link
-                    href="/reclamaciones"
-                    className="inline-flex items-center gap-2 transition-colors hover:text-rojo-acento"
-                  >
-                    <span className="rounded bg-white px-1.5 py-1 ring-1 ring-borde">
-                      <img
-                        src="/libro-de-reclamaciones.svg"
-                        alt=""
-                        width={48}
-                        height={33}
-                        className="h-6 w-auto"
-                      />
-                    </span>
-                    Libro de Reclamaciones
-                  </Link>
-                </li>
-              </ul>
-            </div>
+            <ColumnaPie
+              titulo="Cuenta"
+              enlaces={
+                usuario
+                  ? [
+                      { href: "/cursos", texto: "Mis cursos" },
+                      { href: "/calendario", texto: "Calendario" },
+                      { href: "/certificaciones", texto: "Mis certificaciones" },
+                      { href: "/ajustes", texto: "Ajustes" },
+                    ]
+                  : [
+                      { href: "/registro", texto: "Crear cuenta" },
+                      { href: "/acceder", texto: "Acceder" },
+                    ]
+              }
+            />
           </div>
         </div>
 
+        {/* Franja legal: el Libro de Reclamaciones es una obligación del
+            proveedor, va junto al copyright y no entre redes o comunidad. */}
         <div className="border-t border-borde bg-fondo/60">
-          <div className="mx-auto w-full max-w-5xl px-6 py-5 text-sm text-texto-tenue">
-            © {new Date().getFullYear()} {marca.nombre}. Todos los derechos reservados.
+          <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-6 py-5 text-sm text-texto-tenue sm:flex-row sm:items-center sm:justify-between">
+            <p>
+              © {new Date().getFullYear()} {marca.nombre}. Todos los derechos reservados.
+            </p>
+            <Link
+              href="/reclamaciones"
+              className="inline-flex items-center gap-2.5 transition-colors hover:text-rojo-acento"
+            >
+              <span className="rounded bg-white px-1.5 py-1 ring-1 ring-borde">
+                <img
+                  src="/libro-de-reclamaciones.svg"
+                  alt=""
+                  width={48}
+                  height={33}
+                  className="h-5 w-auto"
+                />
+              </span>
+              Libro de Reclamaciones
+            </Link>
           </div>
         </div>
       </footer>
     </>
+  );
+}
+
+function ColumnaPie({
+  titulo,
+  enlaces,
+}: {
+  titulo: string;
+  enlaces: { href: string; texto: string }[];
+}) {
+  return (
+    <div className="min-w-0">
+      <h2 className="mb-5 text-xs font-semibold uppercase tracking-[0.16em] text-texto">
+        {titulo}
+      </h2>
+      <ul className="space-y-3 text-sm text-texto-suave">
+        {enlaces.map((enlace) => (
+          <li key={enlace.href}>
+            {enlace.href.startsWith("mailto:") ? (
+              <a href={enlace.href} className="transition-colors hover:text-rojo-acento">
+                {enlace.texto}
+              </a>
+            ) : (
+              <Link href={enlace.href} className="transition-colors hover:text-rojo-acento">
+                {enlace.texto}
+              </Link>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
