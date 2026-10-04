@@ -25,7 +25,12 @@ import { Llama } from "@/components/Llama";
 import { SelectorTema } from "@/components/Tema";
 import { Boton, Seccion } from "@/components/ui";
 
-const pilares = [
+/**
+ * `ilustracion` es la ruta de un SVG de `public/` que se pinta como máscara:
+ * rojo de marca en tema claro, casi blanco en oscuro. Sin ella, la card lleva
+ * la llama de la marca.
+ */
+const pilares: { titulo: string; texto: string; ilustracion?: string }[] = [
   {
     titulo: "Siempre en vivo",
     texto: "Clases en directo para preguntar, corregir y comprobar lo aprendido.",
@@ -37,10 +42,12 @@ const pilares = [
   {
     titulo: "Todo listo para practicar",
     texto: "Herramientas, ejemplos y ejercicios preparados para entrar y trabajar.",
+    ilustracion: "/llama-escritorio.svg",
   },
   {
     titulo: "Rigor verificable",
     texto: "Contenido respaldado por documentación oficial, libros y ejemplos ejecutados.",
+    ilustracion: "/llama-rigor-verificable.svg",
   },
 ];
 
@@ -151,14 +158,14 @@ export default async function Page() {
                 <div className="relative z-10 flex h-full min-h-[280px] flex-col px-5 pb-5 pt-8">
                   <div
                     aria-hidden="true"
-                    className="flex h-[112px] shrink-0 items-center justify-center"
+                    className="flex h-[134px] shrink-0 items-center justify-center"
                   >
-                    {indice === 3 ? (
+                    {pilar.ilustracion ? (
                       <span
-                        className="block h-24 w-24 bg-rojo-acento/70"
+                        className="block h-[7.2rem] w-[7.2rem] bg-rojo-acento/70 dark:bg-texto/80"
                         style={{
-                          WebkitMaskImage: "url('/llama-rigor-verificable.svg')",
-                          maskImage: "url('/llama-rigor-verificable.svg')",
+                          WebkitMaskImage: `url('${pilar.ilustracion}')`,
+                          maskImage: `url('${pilar.ilustracion}')`,
                           WebkitMaskRepeat: "no-repeat",
                           maskRepeat: "no-repeat",
                           WebkitMaskPosition: "center",
@@ -168,7 +175,7 @@ export default async function Page() {
                         }}
                       />
                     ) : (
-                      <Llama className="h-20 w-auto text-rojo-acento/70" />
+                      <Llama className="h-24 w-auto text-rojo-acento/70 dark:text-texto/80" />
                     )}
                   </div>
 
