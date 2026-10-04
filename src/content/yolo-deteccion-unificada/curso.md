@@ -9,6 +9,7 @@ nivel: "AVANZADO"
 formato: microcurso
 horas: 40
 paquetes: ["numpy"]
+estado: publico
 ---
 
 ```preludio
