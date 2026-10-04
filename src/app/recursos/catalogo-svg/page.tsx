@@ -7,19 +7,42 @@ import { esInterno } from "@/lib/roles";
 import { cerrarSesion } from "@/app/acceder/acciones";
 import { CabeceraApp } from "@/components/CabeceraApp";
 import { Migas } from "@/components/Migas";
+import { listarAssetsSvg } from "@/lib/catalogo-svg";
 import { GaleriaSvg } from "./GaleriaSvg";
+import { FormularioAsset } from "./FormularioAsset";
 
 export const metadata: Metadata = {
   title: "Catálogo de SVG — EDUQA.PE",
   robots: { index: false, follow: false },
 };
 
-export default async function Page() {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ estado?: string; detalle?: string }>;
+}) {
   const usuario = await usuarioActual();
   if (!usuario) redirect("/acceder?volverA=/recursos/catalogo-svg");
 
   const perfil = await perfilActual();
   if (!esInterno(perfil)) redirect("/cursos");
+
+  const administrador = Boolean(perfil?.es_admin || perfil?.rol === "admin");
+  const [assets, { estado, detalle }] = await Promise.all([listarAssetsSvg(), searchParams]);
+  const mensajes: Record<string, string> = {
+    subido: "El SVG se subió y ya está en el catálogo.",
+    eliminado: "El asset se quitó del catálogo.",
+    "datos-invalidos": "Escribe un nombre de al menos 2 caracteres.",
+    "sin-archivo": "Elige un archivo SVG.",
+    "muy-grande": "El SVG pesa más de 1 MB.",
+    // `detalle` llega por URL: solo se muestra si es un mensaje del validador.
+    "svg-invalido":
+      detalle && /^El SVG contiene [\w:()@ ]+; expórtalo como trazos simples\.$|^El archivo no es un SVG\.$/.test(detalle)
+        ? detalle
+        : "El archivo no es un SVG válido.",
+    duplicado: "Ya existe un asset con ese nombre.",
+    error: "No se pudo completar la operación. Inténtalo de nuevo.",
+  };
 
   return (
     <div className="mx-auto w-full max-w-5xl px-6 py-14 lg:pl-64 xl:pl-32 2xl:pl-6">
@@ -49,7 +72,13 @@ export default async function Page() {
         imagen, o descárgalo.
       </p>
 
-      <GaleriaSvg />
+      {estado && mensajes[estado] && (
+        <p role="status" className="mt-5 rounded-xl border border-borde bg-fondo p-3 text-sm">
+          {mensajes[estado]}
+        </p>
+      )}
+      {administrador && <FormularioAsset />}
+      <GaleriaSvg assets={assets} administrador={administrador} />
     </div>
   );
 }

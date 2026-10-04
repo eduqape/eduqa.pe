@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Copy, Download } from "lucide-react";
-import { ASSETS_SVG, type AssetSvg } from "@/lib/catalogo-svg";
+import { Check, Copy, Download, Trash2 } from "lucide-react";
+import type { AssetSvg } from "@/lib/catalogo-svg";
+import { eliminarAsset } from "./acciones";
 
 // Los SVG se pintan como máscara para que tomen el color del tema; así una
 // ilustración en negro sigue siendo visible en modo oscuro.
@@ -14,7 +15,7 @@ const TONOS = [
 
 type Tono = (typeof TONOS)[number];
 
-export function GaleriaSvg() {
+export function GaleriaSvg({ assets, administrador }: { assets: AssetSvg[]; administrador: boolean }) {
   const [tonoId, setTonoId] = useState<Tono["id"]>("texto");
   const tono = TONOS.find((opcion) => opcion.id === tonoId) ?? TONOS[0];
 
@@ -38,20 +39,20 @@ export function GaleriaSvg() {
           </button>
         ))}
         <span className="ml-auto text-sm text-texto-tenue">
-          {ASSETS_SVG.length} {ASSETS_SVG.length === 1 ? "asset" : "assets"}
+          {assets.length} {assets.length === 1 ? "asset" : "assets"}
         </span>
       </div>
 
       <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {ASSETS_SVG.map((asset) => (
-          <TarjetaSvg key={asset.id} asset={asset} tono={tono} />
+        {assets.map((asset) => (
+          <TarjetaSvg key={asset.id} asset={asset} tono={tono} administrador={administrador} />
         ))}
       </ul>
     </div>
   );
 }
 
-function TarjetaSvg({ asset, tono }: { asset: AssetSvg; tono: Tono }) {
+function TarjetaSvg({ asset, tono, administrador }: { asset: AssetSvg; tono: Tono; administrador: boolean }) {
   const mascara = `url('${asset.archivo}')`;
 
   return (
@@ -85,12 +86,12 @@ function TarjetaSvg({ asset, tono }: { asset: AssetSvg; tono: Tono }) {
           ))}
         </ul>
         <p className="mt-3 text-xs leading-relaxed text-texto-tenue">{asset.origen}</p>
-        {asset.usadoEn && (
-          <p className="mt-1 text-xs leading-relaxed text-texto-tenue">Uso: {asset.usadoEn}</p>
+        {asset.usado_en && (
+          <p className="mt-1 text-xs leading-relaxed text-texto-tenue">Uso: {asset.usado_en}</p>
         )}
 
         <div className="mt-auto flex items-center gap-2 border-t border-borde pt-4">
-          <code className="min-w-0 flex-1 truncate text-xs text-texto-suave">{asset.archivo}</code>
+          <code title={asset.archivo} className="min-w-0 flex-1 truncate text-xs text-texto-suave">{rutaVisible(asset)}</code>
           <BotonCopiar texto={asset.archivo} />
           <a
             href={asset.archivo}
@@ -101,6 +102,7 @@ function TarjetaSvg({ asset, tono }: { asset: AssetSvg; tono: Tono }) {
           >
             <Download size={15} aria-hidden="true" />
           </a>
+          {administrador && <BotonEliminar asset={asset} />}
         </div>
       </div>
     </li>
@@ -135,5 +137,35 @@ function BotonCopiar({ texto }: { texto: string }) {
     >
       {copiado ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />}
     </button>
+  );
+}
+
+// Las URLs del bucket son largas; en la card basta con el nombre del archivo.
+function rutaVisible(asset: AssetSvg) {
+  return asset.ruta_storage ? `assets-svg/${asset.ruta_storage}` : asset.archivo;
+}
+
+function BotonEliminar({ asset }: { asset: AssetSvg }) {
+  const aviso = asset.ruta_storage
+    ? `¿Eliminar «${asset.nombre}» del catálogo? También se borrará el archivo.`
+    : `¿Quitar «${asset.nombre}» del catálogo? El archivo sigue en /public porque lo usa el sitio.`;
+
+  return (
+    <form
+      action={eliminarAsset}
+      onSubmit={(evento) => {
+        if (!window.confirm(aviso)) evento.preventDefault();
+      }}
+    >
+      <input type="hidden" name="id" value={asset.id} />
+      <button
+        type="submit"
+        aria-label={`Eliminar ${asset.nombre}`}
+        title="Eliminar del catálogo"
+        className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-borde bg-fondo text-texto-tenue transition-colors hover:border-rojo-acento hover:text-rojo-acento"
+      >
+        <Trash2 size={15} aria-hidden="true" />
+      </button>
+    </form>
   );
 }
