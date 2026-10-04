@@ -41,7 +41,7 @@ export function SeccionPlegable({
           // contenedor de nivel 1 envuelve a los de nivel 2, así que siempre
           // estaría visible a la vez que sus hijos y el hijo nunca ganaría.
           data-titulo-de={id}
-          className={`flex w-full items-center gap-2 rounded-lg py-2 pr-2 text-left transition-colors hover:text-rojo-acento ${
+          className={`flex w-full items-center gap-2 py-2 pr-2 text-left transition-colors hover:text-rojo-acento ${
             nivel === 1 ? "border-b border-borde" : ""
           }`}
         >
