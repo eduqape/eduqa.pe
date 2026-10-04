@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BookOpenCheck, Library, Plug, Search, WandSparkles } from "lucide-react";
+import { BookOpenCheck, Library, Plug, Search, Shapes, WandSparkles } from "lucide-react";
 import type { Recurso } from "@/lib/recursos";
 
 const ICONOS = {
@@ -10,6 +10,7 @@ const ICONOS = {
   api: Plug,
   "tipos-de-preguntas": Library,
   "animaciones-ui": WandSparkles,
+  "catalogo-svg": Shapes,
 };
 
 export function BuscadorRecursos({ recursos }: { recursos: Recurso[] }) {
@@ -42,7 +43,7 @@ export function BuscadorRecursos({ recursos }: { recursos: Recurso[] }) {
             return (
               <li key={recurso.slug}>
                 <Link href={`/recursos/${recurso.slug}`}
-                  className="group flex items-start gap-4 rounded-xl border border-borde bg-superficie p-5 transition-colors hover:border-rojo-acento">
+                  className="group flex items-start gap-4 rounded-xl border border-borde bg-fondo p-5 transition-colors hover:border-rojo-acento">
                   <Icono size={22} className="mt-0.5 shrink-0 text-texto-tenue group-hover:text-rojo-acento" aria-hidden="true" />
                   <span className="min-w-0 flex-1">
                     <span className="flex flex-wrap items-center justify-between gap-2">

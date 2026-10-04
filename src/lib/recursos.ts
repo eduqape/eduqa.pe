@@ -1,6 +1,6 @@
 import { clienteServidor } from "@/lib/supabase/servidor";
 
-export const SLUGS_RECURSOS = ["redaccion", "api", "tipos-de-preguntas", "animaciones-ui"] as const;
+export const SLUGS_RECURSOS = ["redaccion", "api", "tipos-de-preguntas", "animaciones-ui", "catalogo-svg"] as const;
 export type SlugRecurso = (typeof SLUGS_RECURSOS)[number];
 
 export function esSlugRecurso(slug: string): slug is SlugRecurso {
