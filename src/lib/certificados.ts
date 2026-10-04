@@ -76,13 +76,19 @@ export async function verificarCertificado(
   if (!codigo) return null;
 
   const supabase = await clienteServidor();
+  // Por RPC y no por la vista: la vista listaría todos los certificados.
   const { data, error } = await supabase
-    .from("v_verificacion")
-    .select(
-      "codigo, alumno, curso_nombre, horas, dictada_en, docente, emitido_en, vigente",
-    )
-    .eq("codigo", codigo)
-    .maybeSingle();
+    .rpc("verificar_certificado", { p_codigo: codigo })
+    .maybeSingle<{
+      codigo: string;
+      alumno: string;
+      curso_nombre: string;
+      horas: number;
+      dictada_en: string;
+      docente: string;
+      emitido_en: string;
+      vigente: boolean;
+    }>();
 
   if (error || !data) return null;
 

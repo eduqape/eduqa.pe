@@ -41,11 +41,16 @@ function sanitizarSvg(svg: string) {
   if (limpio.length > 65536) {
     throw new Error("El SVG no puede superar 64 KB.");
   }
-  if (/<\s*(script|foreignObject|iframe|object|embed|style)\b/i.test(limpio)) {
+  // Misma regla que la restricción catalogo_propuestas_svg_seguro de la base.
+  if (/<\s*(script|foreignObject|iframe|object|embed|style|a|use|image|animate|set)\b/i.test(limpio)) {
     throw new Error("El SVG contiene elementos no permitidos.");
   }
-  if (/\son[a-z]+\s*=/i.test(limpio) || /\s(?:xlink:)?href\s*=/i.test(limpio)) {
+  // `[\s/"']` y no solo `\s`: `<svg/onload=…>` también es un atributo.
+  if (/[\s/"'](?:on[a-z]+|href|xlink:href)\s*=/i.test(limpio)) {
     throw new Error("El SVG contiene atributos no permitidos.");
+  }
+  if (/(?:javascript|data|vbscript)\s*:/i.test(limpio) || /<!\s*(?:entity|doctype)/i.test(limpio)) {
+    throw new Error("El SVG contiene referencias no permitidas.");
   }
   return limpio;
 }

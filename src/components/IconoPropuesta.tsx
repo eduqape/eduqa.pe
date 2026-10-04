@@ -16,12 +16,25 @@ export function IconoPropuesta({
     return <Icono nombre={nombre} className={className} />;
   }
 
+  // El SVG subido se usa como máscara y no como HTML: una imagen no ejecuta
+  // scripts aunque alguno pase los filtros, y la máscara toma el color del
+  // texto igual que los iconos propios.
   if (svg) {
+    const url = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
     return (
       <span
-        className={className}
+        className={`inline-block bg-current ${className ?? ""}`}
         aria-hidden="true"
-        dangerouslySetInnerHTML={{ __html: svg }}
+        style={{
+          maskImage: url,
+          WebkitMaskImage: url,
+          maskRepeat: "no-repeat",
+          WebkitMaskRepeat: "no-repeat",
+          maskPosition: "center",
+          WebkitMaskPosition: "center",
+          maskSize: "contain",
+          WebkitMaskSize: "contain",
+        }}
       />
     );
   }
