@@ -139,7 +139,7 @@ function leer(
     };
   }
   if (correo && !RE_CORREO.test(correo)) {
-    return { ok: false, campo: "correo", error: "Revisa el correo: debe verse como ana@eduqa.pe." };
+    return { ok: false, campo: "correo", error: "Revisa el correo: debe verse como ana@gmail.com." };
   }
   if (telefono && telefono.replace(/[\s()+-]/g, "").length < 6) {
     return { ok: false, campo: "telefono", error: "El teléfono debe tener al menos 6 dígitos." };

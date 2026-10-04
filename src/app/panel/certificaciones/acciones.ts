@@ -282,7 +282,7 @@ function origenPublico() {
   const dominio =
     process.env.VERCEL_PROJECT_PRODUCTION_URL ||
     process.env.VERCEL_URL ||
-    "eduqa-pe.vercel.app";
+    "eduqape.vercel.app";
   return dominio.startsWith("http") ? dominio : `https://${dominio}`;
 }
 
@@ -305,7 +305,11 @@ async function enviarConResend({
   }
 
   const origen = origenPublico();
-  const from = process.env.CERTIFICADOS_FROM_EMAIL || "EDUQA.PE <certificados@eduqa.pe>";
+  // Resend solo envía desde dominios verificados y EDUQA.PE no tiene dominio
+  // propio: sin CERTIFICADOS_FROM_EMAIL se usa el remitente compartido de
+  // Resend, que nunca suplanta un dominio ajeno. Las respuestas del alumno
+  // llegan al correo del equipo por `reply_to`.
+  const from = process.env.CERTIFICADOS_FROM_EMAIL || "EDUQA.PE <onboarding@resend.dev>";
   const urlCertificado = `${origen}/certificaciones/${certificadoId}`;
   const urlVerificacion = `${origen}/verificar/${encodeURIComponent(codigo)}`;
 
@@ -318,6 +322,7 @@ async function enviarConResend({
     body: JSON.stringify({
       from,
       to: [destinatario],
+      reply_to: "alejandroseminariomedina@gmail.com",
       subject: `Tu certificación de ${curso} — EDUQA.PE`,
       html: `
         <div style="font-family:Arial,sans-serif;line-height:1.6;color:#18181b">

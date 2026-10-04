@@ -186,7 +186,7 @@ salida sin bloque de código delante.
 ## Ejemplo completo
 
 \`\`\`bash
-curl -X POST https://eduqa-pe.vercel.app/api/v1/cursos \
+curl -X POST https://eduqape.vercel.app/api/v1/cursos \
   -H "Authorization: Bearer $EDUQA_CLAVE" \
   -H "Content-Type: application/json" \
   -d @curso.json
@@ -204,7 +204,7 @@ cuerpo = {
 }
 
 peticion = urllib.request.Request(
-    "https://eduqa-pe.vercel.app/api/v1/cursos",
+    "https://eduqape.vercel.app/api/v1/cursos",
     data=json.dumps(cuerpo).encode(),
     headers={
         "Authorization": f"Bearer {os.environ['EDUQA_CLAVE']}",

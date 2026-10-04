@@ -47,7 +47,7 @@ export const SNAPSHOT_ACTUAL: SnapshotMemoria = {
   version: "2.1.0",
   proyecto: {
     nombre: "EDUQA.PE",
-    url_produccion: "https://eduqa-pe.vercel.app",
+    url_produccion: "https://eduqape.vercel.app",
     repo: "seminarioA/eduqa.pe",
     descripcion:
       "Plataforma educativa de ingeniería, IA, Big Data, Bioinformática y Matemáticas para LATAM con ejercicios interactivos y certificaciones verificables.",

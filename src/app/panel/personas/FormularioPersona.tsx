@@ -665,7 +665,7 @@ export function FormularioPersona({
                     corregir("correo");
                     actualizar("correo", e.target.value);
                   }}
-                  placeholder="Ej.: ana@eduqa.pe"
+                  placeholder="Ej.: ana@gmail.com"
                   className={claseInput}
                 />
               </CampoFormulario>

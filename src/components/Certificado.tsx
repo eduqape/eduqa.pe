@@ -14,7 +14,7 @@ export type DatosCertificado = {
   codigo: string;
 };
 
-const VERIFICAR_EN = "eduqa.pe/verificar";
+const VERIFICAR_EN = "eduqape.vercel.app/verificar";
 
 /**
  * Se define en milímetros sobre A4 apaisado (297×210) para que lo que se ve

@@ -170,7 +170,7 @@ export const comoFunciona = [
 export const plazaLibre = {
   titulo: "Estamos buscando más docentes",
   texto: "Este espacio es para el siguiente. Si crees que es el tuyo, escríbenos.",
-  correo: "docentes@eduqa.pe",
+  correo: "alejandroseminariomedina@gmail.com",
 };
 
 export const faq = [

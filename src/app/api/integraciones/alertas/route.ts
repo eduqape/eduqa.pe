@@ -97,7 +97,7 @@ export async function POST(request: Request) {
     const dominio =
       process.env.VERCEL_PROJECT_PRODUCTION_URL ??
       process.env.VERCEL_URL ??
-      "eduqa-pe.vercel.app";
+      "eduqape.vercel.app";
     url = dominio.startsWith("http") ? dominio : `https://${dominio}`;
     metadata = {
       sha,

@@ -7,7 +7,7 @@ const produccionVercel = process.env.VERCEL_PROJECT_PRODUCTION_URL
 export const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL ??
   produccionVercel ??
-  "https://eduqa-pe.vercel.app"
+  "https://eduqape.vercel.app"
 ).replace(/\/+$/, "");
 
 export function urlAbsoluta(ruta: string) {
