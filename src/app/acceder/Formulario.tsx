@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState } from "react";
 import { AlertCircle, CheckCircle2, Eye, EyeOff, KeyRound, Loader2, Mail } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
@@ -80,6 +81,13 @@ export function Formulario({
         )}
         {enviandoGoogle ? "Abriendo Google…" : "Continuar con Google"}
       </Boton>
+      <p className="mt-2 text-center text-xs leading-relaxed text-texto-tenue">
+        Al continuar aceptas nuestra{" "}
+        <Link href="/privacidad" className="underline underline-offset-2 hover:text-rojo-acento">
+          Política de privacidad
+        </Link>
+        .
+      </p>
 
       <div className="my-5 flex items-center gap-3" aria-hidden="true">
         <span className="h-px flex-1 bg-borde" />

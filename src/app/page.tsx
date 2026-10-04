@@ -499,28 +499,34 @@ export default async function Page() {
           </div>
         </div>
 
-        {/* Franja legal: el Libro de Reclamaciones es una obligación del
-            proveedor, va junto al copyright y no entre redes o comunidad. */}
+        {/* Franja legal: el Libro de Reclamaciones y la política de privacidad
+            son obligaciones del proveedor; van junto al copyright y no entre
+            redes o comunidad. */}
         <div className="border-t border-borde bg-fondo/60">
           <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-6 py-5 text-sm text-texto-tenue sm:flex-row sm:items-center sm:justify-between">
             <p>
               © {new Date().getFullYear()} {marca.nombre}. Todos los derechos reservados.
             </p>
-            <Link
-              href="/reclamaciones"
-              className="inline-flex items-center gap-2.5 transition-colors hover:text-rojo-acento"
-            >
-              <span className="rounded bg-white px-1.5 py-1 ring-1 ring-borde">
-                <img
-                  src="/libro-de-reclamaciones.svg"
-                  alt=""
-                  width={48}
-                  height={33}
-                  className="h-5 w-auto"
-                />
-              </span>
-              Libro de Reclamaciones
-            </Link>
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+              <Link href="/privacidad" className="transition-colors hover:text-rojo-acento">
+                Política de privacidad
+              </Link>
+              <Link
+                href="/reclamaciones"
+                className="inline-flex items-center gap-2.5 transition-colors hover:text-rojo-acento"
+              >
+                <span className="rounded bg-white px-1.5 py-1 ring-1 ring-borde">
+                  <img
+                    src="/libro-de-reclamaciones.svg"
+                    alt=""
+                    width={48}
+                    height={33}
+                    className="h-5 w-auto"
+                  />
+                </span>
+                Libro de Reclamaciones
+              </Link>
+            </div>
           </div>
         </div>
       </footer>

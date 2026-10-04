@@ -32,6 +32,12 @@ export const metadata: Metadata = {
     // Sirve el SVG de la marca si hay uno guardado; si no, la llama original.
     icon: [{ url: "/icono-marca", type: "image/svg+xml" }],
   },
+  // Prueba ante Google Search Console de que eduqape.vercel.app es nuestro;
+  // la exige la marca de OAuth para publicar el acceso con Google (#106).
+  // El token vive en Vercel: sin la variable no se emite la etiqueta.
+  ...(process.env.GOOGLE_SITE_VERIFICATION && {
+    verification: { google: process.env.GOOGLE_SITE_VERIFICATION },
+  }),
 };
 
 export default async function RootLayout({
