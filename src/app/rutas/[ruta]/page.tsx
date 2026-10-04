@@ -47,7 +47,7 @@ export default async function Page({
   ]);
 
   const vistas = contarPorCurso(progreso);
-  const matriculado = new Set(matriculas.map((m) => m.curso_slug));
+  const matriculado = new Set(matriculas.map((m) => m.cursoSlug));
   const porSlug = new Map(catalogo.map((c) => [c.slug, c]));
 
   const pasos = ruta.cursos.flatMap((c) => {

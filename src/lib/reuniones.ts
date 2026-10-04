@@ -30,7 +30,7 @@ export const misReuniones = cache(async (): Promise<Reunion[]> => {
   const { data } = await supabase
     .from("reuniones")
     .select(
-      "id, titulo, inicia_en, minutos, enlace, cancelada_en, cohortes(curso_slug, curso_nombre, docente, enlace)",
+      "id, titulo, inicia_en, minutos, enlace, cancelada_en, cohortes(curso_nombre, docente, enlace, cursos(slug))",
     )
     .order("inicia_en");
 
@@ -42,10 +42,10 @@ export const misReuniones = cache(async (): Promise<Reunion[]> => {
     enlace: string | null;
     cancelada_en: string | null;
     cohortes: {
-      curso_slug: string | null;
       curso_nombre: string;
       docente: string;
       enlace: string | null;
+      cursos: { slug: string } | null;
     } | null;
   };
 
@@ -55,7 +55,7 @@ export const misReuniones = cache(async (): Promise<Reunion[]> => {
     iniciaEn: r.inicia_en,
     minutos: r.minutos,
     enlace: r.enlace ?? r.cohortes?.enlace ?? null,
-    cursoSlug: r.cohortes?.curso_slug ?? null,
+    cursoSlug: r.cohortes?.cursos?.slug ?? null,
     cursoNombre: r.cohortes?.curso_nombre ?? "",
     docente: r.cohortes?.docente ?? "",
     cancelada: r.cancelada_en !== null,

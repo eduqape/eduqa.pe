@@ -129,10 +129,10 @@ export default async function Page() {
           ) : (
             <div className="mt-6 space-y-3">
               {matriculas.map((m) => {
-                const info = cursosPorSlug.get(m.curso_slug);
+                const info = cursosPorSlug.get(m.cursoSlug);
                 return (
                   <div
-                    key={m.curso_slug}
+                    key={m.cursoSlug}
                     className="group flex items-center gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3 transition-colors hover:border-rojo-acento/60 hover:bg-white"
                   >
                     <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-white text-rojo-acento transition-colors group-hover:border-rojo-acento/40">
@@ -151,13 +151,13 @@ export default async function Page() {
                         )}
                       </div>
                       <h3 className="mt-0.5 truncate text-sm font-semibold text-zinc-950">
-                        {info?.titulo ?? m.curso_slug}
+                        {info?.titulo ?? m.cursoSlug}
                       </h3>
                     </div>
 
                     <Link
-                      href={`/cursos/${m.curso_slug}`}
-                      aria-label={`Continuar ${info?.titulo ?? m.curso_slug}`}
+                      href={`/cursos/${m.cursoSlug}`}
+                      aria-label={`Continuar ${info?.titulo ?? m.cursoSlug}`}
                       className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 transition-colors hover:border-rojo-acento hover:text-rojo-acento"
                     >
                       <span className="hidden sm:inline">Continuar</span>

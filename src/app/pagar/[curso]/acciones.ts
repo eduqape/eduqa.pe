@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { generarQr, niubizConfigurado } from "@/lib/niubiz";
 import { precioDe } from "@/lib/precios";
+import { idDeCurso } from "@/lib/curso-id";
 
 export type EstadoPago =
   | { ok: true; pagoId: string; imagen: string; venceEn: string; monto: number }
@@ -31,6 +32,8 @@ export async function generarQrDePago(
   const monto = await precioDe(cursoSlug);
   if (monto === null) return { ok: false, error: "Ese curso no existe." };
   if (monto <= 0) return { ok: false, error: "Ese curso no se paga." };
+  const cursoId = await idDeCurso(cursoSlug);
+  if (!cursoId) return { ok: false, error: "Ese curso no existe." };
 
   if (!niubizConfigurado()) {
     return {
@@ -49,7 +52,7 @@ export async function generarQrDePago(
     .from("pagos")
     .select("id, vence_en, crudo")
     .eq("usuario_id", usuario.id)
-    .eq("curso_slug", cursoSlug)
+    .eq("curso_id", cursoId)
     .eq("estado", "pendiente")
     .gt("vence_en", new Date().toISOString())
     .order("creado_en", { ascending: false })
@@ -76,7 +79,7 @@ export async function generarQrDePago(
     .from("pagos")
     .insert({
       usuario_id: usuario.id,
-      curso_slug: cursoSlug,
+      curso_id: cursoId,
       concepto: "curso",
       monto,
       vence_en: vence.toISOString(),

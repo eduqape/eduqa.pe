@@ -7,7 +7,9 @@ export type Compra = {
   monto: number;
   moneda: string;
   estado: string;
-  curso_slug: string | null;
+  curso_id: string | null;
+  /** Slug del curso para enlazarlo; sale de `cursos` (#112). */
+  cursoSlug: string | null;
   numero_operacion: string | null;
   creado_en: string;
   pagado_en: string | null;
@@ -27,11 +29,16 @@ export async function misCompras(): Promise<Compra[]> {
   const { data } = await supabase
     .from("pagos")
     .select(
-      "id, concepto, monto, moneda, estado, curso_slug, numero_operacion, creado_en, pagado_en",
+      "id, concepto, monto, moneda, estado, curso_id, numero_operacion, creado_en, pagado_en, cursos(slug)",
     )
     .order("creado_en", { ascending: false });
 
-  return (data ?? []).map((p) => ({ ...p, monto: Number(p.monto) })) as Compra[];
+  type Fila = Omit<Compra, "cursoSlug" | "monto"> & { monto: number | string; cursos: { slug: string } | null };
+  return ((data ?? []) as unknown as Fila[]).map(({ cursos, ...p }) => ({
+    ...p,
+    monto: Number(p.monto),
+    cursoSlug: cursos?.slug ?? null,
+  }));
 }
 
 /** Constancia emitida a nombre del alumno. */

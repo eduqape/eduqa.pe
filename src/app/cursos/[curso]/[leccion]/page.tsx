@@ -14,6 +14,7 @@ import { estaMatriculado, perfilActual } from "@/lib/matriculas";
 import { baseImagenesCurso } from "@/lib/imagenes-curso";
 import { codigoDeCurso, esAccesoLibre } from "@/lib/precios";
 import { vistasDe } from "@/lib/progreso";
+import { idDeCurso } from "@/lib/curso-id";
 import { AvanceLeccion } from "./AvanceLeccion";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import { marcaActual } from "@/lib/marca";
@@ -216,6 +217,7 @@ export default async function Page({
 
   // Sin sesión no hay progreso que guardar: el botón no se pinta.
   const vistas = usuario ? await vistasDe(cursoSlug) : new Set<string>();
+  const cursoId = await idDeCurso(cursoSlug);
   // La pantalla de cierre pinta la marca personalizada si la hay.
   const marca = await marcaActual();
   const secciones = agruparEnSecciones(leccion.bloques);
@@ -229,7 +231,7 @@ export default async function Page({
 
   return (
     <div className="flex min-h-dvh">
-      <SincronizarCurso curso={cursoSlug} />
+      {cursoId && <SincronizarCurso cursoId={cursoId} />}
       {/* El intérprete se trae al abrir la sesión, no al pulsar Ejecutar. */}
       {ejecutable && <CargandoCurso paquetes={curso.paquetes} />}
 

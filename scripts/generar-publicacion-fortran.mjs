@@ -28,8 +28,9 @@ const sql = [
   "begin;",
   `insert into public.rutas (slug, nombre, descripcion, orden) values (${literal(ruta.slug)}, ${literal(ruta.nombre)}, ${literal(ruta.descripcion)}, ${ruta.orden}) on conflict (slug) do update set nombre=excluded.nombre, descripcion=excluded.descripcion, orden=excluded.orden;`,
   `insert into public.cursos (slug, titulo, resumen, precio, estado, acceso_libre, orden, ruta, posicion, requisitos) values (${slug}, ${literal(curso.titulo)}, ${literal(curso.resumen)}, ${Number(curso.precio)}, ${literal(curso.estado)}, ${Boolean(curso.acceso_libre)}, ${curso.orden}, ${literal(ruta.slug)}, ${ruta.posicion}, array[${ruta.requisitos.map(literal).join(",")}]::text[]) on conflict (slug) do update set titulo=excluded.titulo, resumen=excluded.resumen, orden=excluded.orden, ruta=excluded.ruta, posicion=excluded.posicion, requisitos=excluded.requisitos, actualizado_en=now();`,
-  ...[...textos].map(([archivo, contenido]) => `insert into public.curso_contenido (curso_slug, archivo, contenido) values (${slug}, ${literal(archivo)}, ${literal(contenido)}) on conflict (curso_slug, archivo) do update set contenido=excluded.contenido, actualizado_en=now();`),
-  ...sesiones.map(s => `insert into public.curso_sesiones (curso_slug, archivo, numero, titulo, slug) values (${slug}, ${literal(s.archivo)}, ${s.numero}, ${literal(s.titulo)}, ${literal(s.slug ?? `sesion-${s.numero}`)}) on conflict (curso_slug, archivo) do update set numero=excluded.numero, titulo=excluded.titulo, slug=excluded.slug;`),
+  // El material se ata al id del curso, no a su slug (#112).
+  ...[...textos].map(([archivo, contenido]) => `insert into public.curso_contenido (curso_id, archivo, contenido) values ((select id from public.cursos where slug = ${slug}), ${literal(archivo)}, ${literal(contenido)}) on conflict (curso_id, archivo) do update set contenido=excluded.contenido, actualizado_en=now();`),
+  ...sesiones.map(s => `insert into public.curso_sesiones (curso_id, archivo, numero, titulo, slug) values ((select id from public.cursos where slug = ${slug}), ${literal(s.archivo)}, ${s.numero}, ${literal(s.titulo)}, ${literal(s.slug ?? `sesion-${s.numero}`)}) on conflict (curso_id, archivo) do update set numero=excluded.numero, titulo=excluded.titulo, slug=excluded.slug;`),
   "commit;",
   "",
 ].join("\n\n");

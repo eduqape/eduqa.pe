@@ -24,9 +24,9 @@ export const obtenerCursos = cache(async (): Promise<Curso[]> => {
     { data: archivos, error: errorArchivos },
     { data: indices, error: errorIndices },
   ] = await Promise.all([
-    supabase.from("cursos").select("slug"),
-    supabase.from("curso_contenido").select("curso_slug, archivo, contenido"),
-    supabase.from("curso_sesiones").select("curso_slug, numero, titulo, slug"),
+    supabase.from("cursos").select("id, slug"),
+    supabase.from("curso_contenido").select("curso_id, archivo, contenido"),
+    supabase.from("curso_sesiones").select("curso_id, numero, titulo, slug"),
   ]);
 
   const error = errorFichas ?? errorArchivos ?? errorIndices;
@@ -37,35 +37,36 @@ export const obtenerCursos = cache(async (): Promise<Curso[]> => {
     throw new Error(`No se pudo leer el catálogo de cursos desde Supabase: ${error.message}`);
   }
 
-  const registrados = new Set((fichas ?? []).map((fila) => fila.slug));
+  // El material se agrupa por el id del curso; el slug solo se usa para la URL.
+  const registrados = new Map((fichas ?? []).map((fila) => [fila.id as string, fila.slug as string]));
   if (!archivos?.length) return [];
 
   const porCurso = new Map<string, Map<string, string>>();
   for (const fila of archivos) {
-    if (!registrados.has(fila.curso_slug)) continue;
-    const mapa = porCurso.get(fila.curso_slug) ?? new Map<string, string>();
+    if (!registrados.has(fila.curso_id)) continue;
+    const mapa = porCurso.get(fila.curso_id) ?? new Map<string, string>();
     mapa.set(fila.archivo, fila.contenido);
-    porCurso.set(fila.curso_slug, mapa);
+    porCurso.set(fila.curso_id, mapa);
   }
 
   const indicePorCurso = new Map<string, { numero: number; titulo: string; slug: string }[]>();
   for (const fila of indices ?? []) {
-    if (!registrados.has(fila.curso_slug)) continue;
-    const lista = indicePorCurso.get(fila.curso_slug) ?? [];
+    if (!registrados.has(fila.curso_id)) continue;
+    const lista = indicePorCurso.get(fila.curso_id) ?? [];
     lista.push({ numero: fila.numero, titulo: fila.titulo, slug: fila.slug });
-    indicePorCurso.set(fila.curso_slug, lista);
+    indicePorCurso.set(fila.curso_id, lista);
   }
 
   const cursos: Curso[] = [];
-  for (const slug of registrados) {
-    const mapa = porCurso.get(slug);
+  for (const [id, slug] of registrados) {
+    const mapa = porCurso.get(id);
     if (!mapa?.has("curso.md")) {
       console.error(`El curso «${slug}» está registrado en Supabase pero no tiene curso.md visible.`);
       continue;
     }
 
     try {
-      cursos.push(construirCurso(slug, mapa, indicePorCurso.get(slug) ?? []));
+      cursos.push(construirCurso(slug, mapa, indicePorCurso.get(id) ?? []));
     } catch (e) {
       // Un curso inválido no debe tumbar el resto del catálogo, pero tampoco
       // puede sustituirse por una copia local.

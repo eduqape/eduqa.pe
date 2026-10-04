@@ -286,7 +286,6 @@ export async function publicarCurso(
       const f = frontmatter(texto);
       const numero = Number(f.numero);
       return {
-        curso_slug: slug,
         archivo,
         numero,
         titulo: String(f.titulo ?? ""),
@@ -315,7 +314,9 @@ export async function publicarCurso(
     if (eRuta) return { ok: false, error: `No se pudo guardar la ruta: ${eRuta.message}` };
   }
 
-  const { error: eCurso } = await supabase.from("cursos").upsert(
+  // El slug identifica al curso que llega en Markdown; dentro de la base todo
+  // se ata a su id (#112).
+  const { data: guardado, error: eCurso } = await supabase.from("cursos").upsert(
     {
       slug,
       codigo_base: codigoBase ?? existe?.codigo_base,
@@ -330,22 +331,28 @@ export async function publicarCurso(
       requisitos: publicacion.ruta?.requisitos ?? existe?.requisitos ?? [],
     },
     { onConflict: "slug" },
-  );
-  if (eCurso) return { ok: false, error: `No se pudo guardar la ficha: ${eCurso.message}` };
+  ).select("id").single();
+  if (eCurso || !guardado) {
+    return { ok: false, error: `No se pudo guardar la ficha: ${eCurso?.message ?? "sin respuesta"}` };
+  }
+  const cursoId = guardado.id as string;
 
   const contenido = [...archivos.entries()].map(([archivo, texto]) => ({
-    curso_slug: slug,
+    curso_id: cursoId,
     archivo,
     contenido: texto,
   }));
   const { error: eContenido } = await supabase
     .from("curso_contenido")
-    .upsert(contenido, { onConflict: "curso_slug,archivo" });
+    .upsert(contenido, { onConflict: "curso_id,archivo" });
   if (eContenido) return { ok: false, error: `No se pudo guardar el material: ${eContenido.message}` };
 
   const { error: eIndice } = await supabase
     .from("curso_sesiones")
-    .upsert(indice, { onConflict: "curso_slug,archivo" });
+    .upsert(
+      indice.map((fila) => ({ ...fila, curso_id: cursoId })),
+      { onConflict: "curso_id,archivo" },
+    );
   if (eIndice) return { ok: false, error: `No se pudo guardar el temario: ${eIndice.message}` };
 
   // Lo nuevo se guarda antes de retirar lo antiguo. Si falla una escritura,
@@ -354,7 +361,7 @@ export async function publicarCurso(
   const { data: contenidoActual, error: eLeerContenido } = await supabase
     .from("curso_contenido")
     .select("archivo")
-    .eq("curso_slug", slug);
+    .eq("curso_id", cursoId);
   if (eLeerContenido) {
     return { ok: false, error: `No se pudo comprobar el material guardado: ${eLeerContenido.message}` };
   }
@@ -365,7 +372,7 @@ export async function publicarCurso(
     const { error: eBorrarContenido } = await supabase
       .from("curso_contenido")
       .delete()
-      .eq("curso_slug", slug)
+      .eq("curso_id", cursoId)
       .in("archivo", contenidoObsoleto);
     if (eBorrarContenido) {
       return { ok: false, error: `No se pudo retirar material antiguo: ${eBorrarContenido.message}` };
@@ -376,7 +383,7 @@ export async function publicarCurso(
   const { data: sesionesActuales, error: eLeerSesiones } = await supabase
     .from("curso_sesiones")
     .select("archivo")
-    .eq("curso_slug", slug);
+    .eq("curso_id", cursoId);
   if (eLeerSesiones) {
     return { ok: false, error: `No se pudo comprobar el temario guardado: ${eLeerSesiones.message}` };
   }
@@ -387,7 +394,7 @@ export async function publicarCurso(
     const { error: eBorrarSesiones } = await supabase
       .from("curso_sesiones")
       .delete()
-      .eq("curso_slug", slug)
+      .eq("curso_id", cursoId)
       .in("archivo", sesionesObsoletas);
     if (eBorrarSesiones) {
       return { ok: false, error: `No se pudo retirar el temario antiguo: ${eBorrarSesiones.message}` };
@@ -474,7 +481,7 @@ export async function crearCurso(
   if (eCodigo) return { ok: false, error: `No se pudo comprobar el código: ${eCodigo.message}` };
   if (codigoOcupado) return { ok: false, error: `${codigoBase} ya pertenece a otro curso.` };
 
-  const { error: eCurso } = await supabase.from("cursos").insert({
+  const { data: creado, error: eCurso } = await supabase.from("cursos").insert({
     slug,
     codigo_base: codigoBase,
     titulo,
@@ -483,8 +490,10 @@ export async function crearCurso(
     estado: "borrador",
     acceso_libre: false,
     orden: 99,
-  });
-  if (eCurso) return { ok: false, error: `No se pudo crear: ${eCurso.message}` };
+  }).select("id").single();
+  if (eCurso || !creado) {
+    return { ok: false, error: `No se pudo crear: ${eCurso?.message ?? "sin respuesta"}` };
+  }
 
   const fichaMd = [
     "---",
@@ -518,13 +527,13 @@ export async function crearCurso(
   ].join("\n");
 
   const { error: eContenido } = await supabase.from("curso_contenido").insert([
-    { curso_slug: slug, archivo: "curso.md", contenido: fichaMd },
-    { curso_slug: slug, archivo: "sesion-1.md", contenido: sesionMd },
+    { curso_id: creado.id, archivo: "curso.md", contenido: fichaMd },
+    { curso_id: creado.id, archivo: "sesion-1.md", contenido: sesionMd },
   ]);
   if (eContenido) return { ok: false, error: `No se pudo guardar el esqueleto: ${eContenido.message}` };
 
   const { error: eIndice } = await supabase.from("curso_sesiones").insert({
-    curso_slug: slug,
+    curso_id: creado.id,
     archivo: "sesion-1.md",
     numero: 1,
     titulo: "Primera sesión",

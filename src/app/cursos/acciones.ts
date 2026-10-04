@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { buscarCurso } from "@/lib/catalogo-cursos";
+import { idDeCurso } from "@/lib/curso-id";
 
 export type EstadoMatricula =
   | { ok: true }
@@ -18,10 +19,13 @@ export async function matricularse(
   const usuario = await usuarioActual();
   if (!usuario) return { ok: false, error: "Entra a tu cuenta para matricularte." };
 
+  const cursoId = await idDeCurso(cursoSlug);
+  if (!cursoId) return { ok: false, error: "Ese curso no existe." };
+
   const supabase = await clienteServidor();
   const { error } = await supabase
     .from("matriculas")
-    .insert({ usuario_id: usuario.id, curso_slug: cursoSlug });
+    .insert({ usuario_id: usuario.id, curso_id: cursoId });
 
   if (error) {
     // El límite lo impone un trigger de la base, no esta función.
@@ -52,12 +56,15 @@ export async function completarCurso(
   const usuario = await usuarioActual();
   if (!usuario) return { ok: false, error: "Inicia sesión primero." };
 
+  const cursoId = await idDeCurso(cursoSlug);
+  if (!cursoId) return { ok: false, error: "Ese curso no existe." };
+
   const supabase = await clienteServidor();
   const { error } = await supabase
     .from("matriculas")
     .update({ estado: "completada", completada_en: new Date().toISOString() })
     .eq("usuario_id", usuario.id)
-    .eq("curso_slug", cursoSlug);
+    .eq("curso_id", cursoId);
 
   if (error) {
     console.error("[completarCurso]", error);

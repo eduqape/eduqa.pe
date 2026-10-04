@@ -32,9 +32,9 @@ export const miValoracion = cache(async (cursoSlug: string) => {
   const supabase = await clienteServidor();
   const { data } = await supabase
     .from("valoraciones")
-    .select("estrellas, comentario")
-    .eq("curso_slug", cursoSlug)
+    .select("estrellas, comentario, cursos!inner(slug)")
+    .eq("cursos.slug", cursoSlug)
     .maybeSingle();
 
-  return data ?? null;
+  return data ? { estrellas: data.estrellas, comentario: data.comentario } : null;
 });

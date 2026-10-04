@@ -12,7 +12,8 @@ import { clienteNavegador } from "@/lib/supabase/navegador";
  * recargar toda la pestaña. El pequeño debounce agrupa los múltiples eventos
  * que produce publicar una sesión completa.
  */
-export function SincronizarCurso({ curso }: { curso: string }) {
+/** `cursoId` y no el slug: los cambios se filtran por la clave del curso (#112). */
+export function SincronizarCurso({ cursoId }: { cursoId: string }) {
   const router = useRouter();
   const pendiente = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -28,14 +29,14 @@ export function SincronizarCurso({ curso }: { curso: string }) {
     }
 
     const canal = supabase
-      .channel(`curso:${curso}:cambios`)
+      .channel(`curso:${cursoId}:cambios`)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
           table: "curso_contenido",
-          filter: `curso_slug=eq.${curso}`,
+          filter: `curso_id=eq.${cursoId}`,
         },
         programarActualizacion,
       )
@@ -45,7 +46,7 @@ export function SincronizarCurso({ curso }: { curso: string }) {
           event: "*",
           schema: "public",
           table: "curso_sesiones",
-          filter: `curso_slug=eq.${curso}`,
+          filter: `curso_id=eq.${cursoId}`,
         },
         programarActualizacion,
       )
@@ -55,7 +56,7 @@ export function SincronizarCurso({ curso }: { curso: string }) {
           event: "*",
           schema: "public",
           table: "cursos",
-          filter: `slug=eq.${curso}`,
+          filter: `id=eq.${cursoId}`,
         },
         programarActualizacion,
       )
@@ -65,7 +66,7 @@ export function SincronizarCurso({ curso }: { curso: string }) {
       if (pendiente.current) clearTimeout(pendiente.current);
       void supabase.removeChannel(canal);
     };
-  }, [curso, router]);
+  }, [cursoId, router]);
 
   return null;
 }

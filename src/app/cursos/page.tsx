@@ -46,7 +46,7 @@ export default async function Page() {
   const nombre =
     perfil?.nombre?.trim().split(" ")[0] ?? usuario.email?.split("@")[0] ?? "";
 
-  const porCurso = new Map(matriculas.map((m) => [m.curso_slug, m]));
+  const porCurso = new Map(matriculas.map((m) => [m.cursoSlug, m]));
   const notas = await valoraciones();
   const itinerarios = await rutas();
   const catalogo = await obtenerCursos();

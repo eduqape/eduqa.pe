@@ -13,6 +13,7 @@ export type CursoCatalogoPublico = Curso & {
 };
 
 type FichaPublica = {
+  id: string;
   slug: string;
   codigo: string;
   titulo: string;
@@ -57,16 +58,16 @@ export const obtenerCatalogoPublico = cache(async (): Promise<CursoCatalogoPubli
   ] = await Promise.all([
     supabase
       .from("cursos")
-      .select("slug, codigo, titulo, resumen, precio, acceso_libre, actualizado_en")
+      .select("id, slug, codigo, titulo, resumen, precio, acceso_libre, actualizado_en")
       .eq("estado", "publico")
       .order("orden"),
     supabase
       .from("curso_contenido")
-      .select("curso_slug, archivo, contenido")
+      .select("curso_id, archivo, contenido")
       .eq("archivo", "curso.md"),
     supabase
       .from("curso_sesiones")
-      .select("curso_slug, numero, titulo, slug")
+      .select("curso_id, numero, titulo, slug")
       .order("numero"),
   ]);
 
@@ -76,7 +77,7 @@ export const obtenerCatalogoPublico = cache(async (): Promise<CursoCatalogoPubli
   }
 
   const fichaMarkdown = new Map(
-    (archivos ?? []).map((fila) => [fila.curso_slug, fila.contenido] as const),
+    (archivos ?? []).map((fila) => [fila.curso_id, fila.contenido] as const),
   );
   const indicePorCurso = new Map<
     string,
@@ -84,14 +85,14 @@ export const obtenerCatalogoPublico = cache(async (): Promise<CursoCatalogoPubli
   >();
 
   for (const fila of indices ?? []) {
-    const lista = indicePorCurso.get(fila.curso_slug) ?? [];
+    const lista = indicePorCurso.get(fila.curso_id) ?? [];
     lista.push({ numero: fila.numero, titulo: fila.titulo, slug: fila.slug });
-    indicePorCurso.set(fila.curso_slug, lista);
+    indicePorCurso.set(fila.curso_id, lista);
   }
 
   const cursos: CursoCatalogoPublico[] = [];
   for (const ficha of (fichas ?? []) as FichaPublica[]) {
-    const markdown = fichaMarkdown.get(ficha.slug);
+    const markdown = fichaMarkdown.get(ficha.id);
     if (!markdown) {
       console.error(`El curso público «${ficha.slug}» no tiene curso.md visible para anon.`);
       continue;
@@ -101,7 +102,7 @@ export const obtenerCatalogoPublico = cache(async (): Promise<CursoCatalogoPubli
       const curso = construirCurso(
         ficha.slug,
         new Map([["curso.md", markdown]]),
-        indicePorCurso.get(ficha.slug) ?? [],
+        indicePorCurso.get(ficha.id) ?? [],
       );
 
       cursos.push({

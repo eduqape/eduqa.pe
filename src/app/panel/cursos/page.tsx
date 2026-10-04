@@ -31,29 +31,34 @@ export default async function Page() {
     clienteServidor(),
   ]);
 
+  // El slug sale de `cursos` por el id (#112): es la llave para cruzar con el
+  // catálogo, que se identifica por su URL.
   const { data: enLaBase } = await supabase
     .from("curso_sesiones")
-    .select("curso_slug, archivo");
+    .select("archivo, cursos(slug)");
 
   const sesionesPorCurso = new Map<string, number>();
-  for (const s of enLaBase ?? []) {
-    sesionesPorCurso.set(s.curso_slug, (sesionesPorCurso.get(s.curso_slug) ?? 0) + 1);
+  for (const s of (enLaBase ?? []) as unknown as { cursos: { slug: string } | null }[]) {
+    const slug = s.cursos?.slug;
+    if (slug) sesionesPorCurso.set(slug, (sesionesPorCurso.get(slug) ?? 0) + 1);
   }
 
   // Creadores: el nombre sale de `perfiles`, que es donde vive el del alumno.
   const { data: autorias } = await supabase
     .from("curso_creadores")
-    .select("curso_slug, usuario_id, rol, orden")
+    .select("usuario_id, rol, orden, cursos(slug)")
     .order("orden");
 
   const { data: perfiles } = await supabase.from("perfiles").select("id, nombre");
   const nombrePorId = new Map((perfiles ?? []).map((p) => [p.id, p.nombre]));
 
   const creadoresPorCurso = new Map<string, string[]>();
-  for (const a of autorias ?? []) {
-    const lista = creadoresPorCurso.get(a.curso_slug) ?? [];
+  for (const a of (autorias ?? []) as unknown as { usuario_id: string; cursos: { slug: string } | null }[]) {
+    const slug = a.cursos?.slug;
+    if (!slug) continue;
+    const lista = creadoresPorCurso.get(slug) ?? [];
     lista.push(nombrePorId.get(a.usuario_id) || "sin nombre");
-    creadoresPorCurso.set(a.curso_slug, lista);
+    creadoresPorCurso.set(slug, lista);
   }
 
   const cursosGestion = catalogoCursos.map((curso) => {

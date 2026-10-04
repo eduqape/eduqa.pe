@@ -16,7 +16,9 @@ export type Perfil = {
 
 export type Matricula = {
   id: string;
-  curso_slug: string;
+  curso_id: string;
+  /** Slug del curso, para armar su URL. Sale de `cursos`, no de la matrícula (#112). */
+  cursoSlug: string;
   estado: "activa" | "completada" | "cancelada";
   creada_en: string;
 };
@@ -43,11 +45,15 @@ export async function misMatriculas(): Promise<Matricula[]> {
   const supabase = await clienteServidor();
   const { data } = await supabase
     .from("matriculas")
-    .select("id, curso_slug, estado, creada_en")
+    .select("id, curso_id, estado, creada_en, cursos(slug)")
     .eq("usuario_id", usuario.id)
     .order("creada_en", { ascending: false });
 
-  return (data as Matricula[]) ?? [];
+  type Fila = Omit<Matricula, "cursoSlug"> & { cursos: { slug: string } | null };
+  return ((data ?? []) as unknown as Fila[]).map(({ cursos, ...m }) => ({
+    ...m,
+    cursoSlug: cursos?.slug ?? "",
+  }));
 }
 
 /**
@@ -62,9 +68,9 @@ export async function estaMatriculado(cursoSlug: string) {
   const supabase = await clienteServidor();
   const { data } = await supabase
     .from("matriculas")
-    .select("id")
+    .select("id, cursos!inner(slug)")
     .eq("usuario_id", usuario.id)
-    .eq("curso_slug", cursoSlug)
+    .eq("cursos.slug", cursoSlug)
     .in("estado", ["activa", "completada"])
     .maybeSingle();
 

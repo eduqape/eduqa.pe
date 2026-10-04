@@ -9,6 +9,7 @@ import {
 } from "@/lib/proximos-cursos";
 import { esInterno } from "@/lib/roles";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+import { idDeCurso } from "@/lib/curso-id";
 
 async function contextoInterno() {
   const usuario = await usuarioActual();
@@ -183,6 +184,18 @@ export async function cargarIconoCatalogo(formData: FormData) {
   return { valor: data.valor, svg: data.svg ?? null };
 }
 
+/**
+ * El curso vinculado se escribe por slug en el formulario y se guarda por id
+ * (#112). Un slug que no corresponde a ningún curso se rechaza aquí, con un
+ * mensaje claro, en vez de dejar que falle la clave foránea.
+ */
+async function cursoVinculado(cursoSlug: string | null): Promise<string | null> {
+  if (!cursoSlug) return null;
+  const id = await idDeCurso(cursoSlug);
+  if (!id) throw new Error(`No existe un curso con la dirección «${cursoSlug}».`);
+  return id;
+}
+
 export async function crearPropuesta(formData: FormData) {
   const { usuario, supabase } = await contextoInterno();
   const datos = await leer(formData, supabase);
@@ -197,7 +210,7 @@ export async function crearPropuesta(formData: FormData) {
     estado: datos.estado,
     prioridad_interna: datos.prioridadInterna,
     creado_por: usuario.id,
-    curso_slug: datos.cursoSlug,
+    curso_id: await cursoVinculado(datos.cursoSlug),
   });
 
   if (error) throw new Error("No se pudo crear la propuesta.");
@@ -224,7 +237,7 @@ export async function actualizarPropuesta(formData: FormData) {
       area: datos.area,
       estado: datos.estado,
       prioridad_interna: datos.prioridadInterna,
-      curso_slug: datos.cursoSlug,
+      curso_id: await cursoVinculado(datos.cursoSlug),
     })
     .eq("id", id);
 

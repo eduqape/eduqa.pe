@@ -72,7 +72,7 @@ export default async function Page() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="font-medium">
-                    {c.curso_slug ? (titulos.get(c.curso_slug) ?? c.concepto) : c.concepto}
+                    {c.cursoSlug ? (titulos.get(c.cursoSlug) ?? c.concepto) : c.concepto}
                   </p>
                   <p className="mt-0.5 text-xs text-texto-tenue">
                     {new Date(c.pagado_en ?? c.creado_en).toLocaleDateString("es-PE", {

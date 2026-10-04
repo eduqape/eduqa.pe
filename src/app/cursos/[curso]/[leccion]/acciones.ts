@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
+import { idDeCurso } from "@/lib/curso-id";
 
 export type EstadoVista = { ok: boolean };
 
@@ -18,12 +19,15 @@ export async function marcarVista(
   const usuario = await usuarioActual();
   if (!usuario) return { ok: false };
 
+  const cursoId = await idDeCurso(curso);
+  if (!cursoId) return { ok: false };
+
   const supabase = await clienteServidor();
   // upsert y no insert: releer una lección ya marcada no debe fallar con
   // violación de clave primaria.
   const { error } = await supabase.from("progreso").upsert(
-    { usuario_id: usuario.id, curso_slug: curso, leccion_slug: leccion },
-    { onConflict: "usuario_id,curso_slug,leccion_slug" },
+    { usuario_id: usuario.id, curso_id: cursoId, leccion_slug: leccion },
+    { onConflict: "usuario_id,curso_id,leccion_slug" },
   );
 
   if (error) {
@@ -58,12 +62,15 @@ export async function valorarCurso(
   const usuario = await usuarioActual();
   if (!usuario) return { ok: false, error: "Entra a tu cuenta para valorar." };
 
+  const cursoId = await idDeCurso(curso);
+  if (!cursoId) return { ok: false, error: "Ese curso no existe." };
+
   const supabase = await clienteServidor();
   const { error } = await supabase
     .from("valoraciones")
     .upsert(
-      { curso_slug: curso, usuario_id: usuario.id, estrellas },
-      { onConflict: "curso_slug,usuario_id" },
+      { curso_id: cursoId, usuario_id: usuario.id, estrellas },
+      { onConflict: "curso_id,usuario_id" },
     );
 
   if (error) {

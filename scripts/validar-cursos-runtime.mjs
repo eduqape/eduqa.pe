@@ -6,7 +6,9 @@ function leer(ruta) {
 }
 
 const catalogo = leer("src/lib/catalogo-cursos.ts");
-assert.match(catalogo, /from\("cursos"\)\.select\("slug"\)/, "El catálogo debe leer los cursos registrados en Supabase.");
+assert.match(catalogo, /from\("cursos"\)\.select\("id, slug"\)/, "El catálogo debe leer los cursos registrados en Supabase.");
+// El material se ata al id del curso, nunca a su slug (#112).
+assert.doesNotMatch(catalogo, /\bcurso_slug\b/, "El catálogo debe agrupar el material por curso_id, no por slug.");
 assert.match(catalogo, /from\("curso_contenido"\)/, "El contenido debe leerse desde Supabase en runtime.");
 assert.match(catalogo, /from\("curso_sesiones"\)/, "El índice de sesiones debe leerse desde Supabase en runtime.");
 assert.doesNotMatch(catalogo, /cursosDelRepositorio|cargarCursosLocales|curso-markdown-local|return\s+cursosDelRepositorio/, "El catálogo no debe tener una fuente local alternativa.");
@@ -49,7 +51,9 @@ for (const ruta of rutasDinamicas) {
 const paginaLeccion = leer("src/app/cursos/[curso]/[leccion]/page.tsx");
 const sincronizador = leer("src/components/curso/SincronizarCurso.tsx");
 const migracionRealtime = leer("supabase/migrations/20260924070000_cursos_realtime.sql");
-assert.match(paginaLeccion, /<SincronizarCurso curso=\{cursoSlug\} \/>/, "La sesión abierta debe suscribirse a cambios del curso.");
+assert.match(paginaLeccion, /<SincronizarCurso cursoId=\{cursoId\} \/>/, "La sesión abierta debe suscribirse a cambios del curso.");
+assert.match(sincronizador, /curso_id=eq\./, "Realtime debe filtrar el material por curso_id.");
+assert.doesNotMatch(sincronizador, /curso_slug/, "Realtime no debe filtrar por slug (#112).");
 for (const tabla of ["curso_contenido", "curso_sesiones", "cursos"]) {
   assert.match(sincronizador, new RegExp(`table: "${tabla}"`), `Realtime debe observar ${tabla}.`);
   assert.match(migracionRealtime, new RegExp(`add table public\\.${tabla}`), `${tabla} debe estar en supabase_realtime.`);
