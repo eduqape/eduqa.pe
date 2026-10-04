@@ -3,6 +3,8 @@
 import { useActionState, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AlertCircle, Camera, Check, Loader2, Lock, Plus, Trash2 } from "lucide-react";
 import { Boton, claseInput, claseInputBase } from "@/components/ui";
+import { TelefonoInternacional } from "@/app/perfil/TelefonoInternacional";
+import { PAISES, paisPorCodigo } from "@/lib/paises";
 import { IconoRed } from "@/components/Iconos";
 import { detectarRed, ETIQUETA_RED, REDES_PERSONA, type RedNombre } from "@/lib/redes";
 import {
@@ -25,11 +27,6 @@ import { actualizarPersona, crearPersona, type CampoPersona, type EstadoPersona 
 
 const MAXIMO_BIOGRAFIA = 2000;
 
-/** Sugerencias del campo País; se puede escribir cualquier otro. */
-const PAISES = [
-  "Perú", "Argentina", "Bolivia", "Brasil", "Chile", "Colombia", "Ecuador", "España",
-  "Estados Unidos", "México", "Paraguay", "Uruguay", "Venezuela",
-];
 
 const NOMBRE_CAMPO: Record<CampoPersona, string> = {
   rol: "Rol en el equipo",
@@ -229,6 +226,9 @@ export function FormularioPersona({
   const siguienteClave = useRef(inicial.redes.length);
 
   const entradaFoto = useRef<HTMLInputElement>(null);
+  // El formulario vive dentro de un <dialog> modal; las listas desplegables
+  // tienen que montarse dentro de él para verse (ver TelefonoInternacional).
+  const [formulario, setFormulario] = useState<HTMLFormElement | null>(null);
   const [foto, setFoto] = useState<{ archivo: File; vista: string } | null>(null);
   const [quitarFoto, setQuitarFoto] = useState(false);
   const [errorFoto, setErrorFoto] = useState<string | null>(null);
@@ -344,7 +344,12 @@ export function FormularioPersona({
   return (
     // React reinicia el formulario tras cada acción; aquí el estado vive en
     // React y un error de validación no debe vaciar selects ni la foto elegida.
-    <form action={accion} onReset={(evento) => evento.preventDefault()} className="flex h-full flex-col">
+    <form
+      ref={setFormulario}
+      action={accion}
+      onReset={(evento) => evento.preventDefault()}
+      className="flex h-full flex-col"
+    >
       {persona && <input type="hidden" name="id" value={persona.id} />}
       <input type="hidden" name="slug" value={slugVisible} />
       <input type="hidden" name="quitar_foto" value={quitarFoto ? "1" : ""} />
@@ -645,62 +650,75 @@ export function FormularioPersona({
         <Seccion
           titulo="Contacto interno"
           icono={<Lock size={13} className="text-texto-tenue" aria-hidden="true" />}
-          descripcion="Opcional. Solo lo ve el panel; no se publica en la web."
+          descripcion="Opcional. Solo se ve en este panel; nunca aparece en el sitio web."
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <CampoFormulario id="persona-correo" etiqueta="Correo" opcional error={errorDe("correo")}>
-              <input
-                {...describir("persona-correo", errorDe("correo"))}
-                name="correo"
-                type="email"
-                autoComplete="off"
-                value={borrador.correo}
-                onChange={(e) => {
-                  corregir("correo");
-                  actualizar("correo", e.target.value);
-                }}
-                placeholder="Ej.: ana@eduqa.pe"
-                className={claseInput}
-              />
-            </CampoFormulario>
+            <div className="sm:col-span-2">
+              <CampoFormulario id="persona-correo" etiqueta="Correo" opcional error={errorDe("correo")}>
+                <input
+                  {...describir("persona-correo", errorDe("correo"))}
+                  name="correo"
+                  type="email"
+                  autoComplete="off"
+                  value={borrador.correo}
+                  onChange={(e) => {
+                    corregir("correo");
+                    actualizar("correo", e.target.value);
+                  }}
+                  placeholder="Ej.: ana@eduqa.pe"
+                  className={claseInput}
+                />
+              </CampoFormulario>
+            </div>
 
             <CampoFormulario id="persona-telefono" etiqueta="Teléfono" opcional error={errorDe("telefono")}>
-              <input
-                {...describir("persona-telefono", errorDe("telefono"))}
-                name="telefono"
-                type="tel"
-                autoComplete="off"
-                value={borrador.telefono}
-                onChange={(e) => {
+              {/* El mismo selector de país y prefijo que el perfil del alumno. */}
+              <TelefonoInternacional
+                telefonoInicial={persona?.telefono}
+                nombrePais={null}
+                contenedorLista={formulario}
+                idNumero="persona-telefono"
+                invalido={Boolean(errorDe("telefono"))}
+                descritoPor={errorDe("telefono") ? "persona-telefono-error" : undefined}
+                alCambiar={(telefono, codigo) => {
                   corregir("telefono");
-                  actualizar("telefono", e.target.value);
+                  // Si aún no se eligió país, el del teléfono es la mejor pista.
+                  setBorrador((b) => ({
+                    ...b,
+                    telefono,
+                    pais: b.pais || (telefono ? paisPorCodigo(codigo)?.nombre ?? "" : ""),
+                  }));
                 }}
-                placeholder="Ej.: +51 900 000 000"
-                className={claseInput}
               />
             </CampoFormulario>
 
             <CampoFormulario id="persona-pais" etiqueta="País" opcional>
-              <input
+              <select
                 id="persona-pais"
                 name="pais"
-                list="persona-paises"
-                autoComplete="off"
                 value={borrador.pais}
                 onChange={(e) => actualizar("pais", e.target.value)}
-                placeholder="Ej.: Perú"
                 className={claseInput}
-              />
-              <datalist id="persona-paises">
+              >
+                <option value="">Sin indicar</option>
+                {/* Un país escrito a mano antes de que hubiera lista no se pierde. */}
+                {borrador.pais && !PAISES.some((p) => p.nombre === borrador.pais) && (
+                  <option value={borrador.pais}>{borrador.pais}</option>
+                )}
                 {PAISES.map((pais) => (
-                  <option key={pais} value={pais} />
+                  <option key={pais.codigo} value={pais.nombre}>
+                    {pais.nombre}
+                  </option>
                 ))}
-              </datalist>
+              </select>
             </CampoFormulario>
           </div>
         </Seccion>
 
-        <Seccion titulo="Publicación">
+        <Seccion
+          titulo="¿Se muestra en el sitio web?"
+          descripcion="El sitio web es lo que ve cualquier visitante en la página /equipo y en la portada."
+        >
           <fieldset id="persona-estado" tabIndex={-1} className="grid gap-2 outline-none sm:grid-cols-3">
             <legend className="sr-only">Estado de la ficha</legend>
             {ESTADOS_FICHA.map((opcion) => {
@@ -784,8 +802,8 @@ export function FormularioPersona({
                   ? "Guardar cambios"
                   : "Sin cambios"
                 : borrador.estado === "publicada"
-                  ? "Dar de alta y publicar"
-                  : "Dar de alta"}
+                  ? "Agregar y mostrar en la web"
+                  : "Agregar persona"}
           </Boton>
         </div>
       </div>

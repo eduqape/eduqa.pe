@@ -200,9 +200,9 @@ function mensajeGuardado(nombre: string, estado: EstadoFicha, creada: boolean): 
   // "Ficha de …" y no "… quedó dada de alta": el participio obligaría a
   // adivinar el género de la persona por su nombre.
   const accion = creada ? `Ficha de ${nombre} creada` : `Cambios guardados en la ficha de ${nombre}`;
-  if (estado === "publicada") return `${accion}. Ya sale en la web.`;
-  if (estado === "baja") return `${accion}. Está de baja, fuera de la web.`;
-  return `${accion}, sin publicar.`;
+  if (estado === "publicada") return `${accion}. Ya aparece en el sitio web.`;
+  if (estado === "baja") return `${accion}. Figura como ex-integrante, fuera del sitio.`;
+  return `${accion}. Está oculta: no aparece en el sitio web.`;
 }
 
 export async function crearPersona(
@@ -374,9 +374,9 @@ export async function cambiarEstado(id: string, estado: EstadoFicha): Promise<Es
   }
 
   const detalle: Record<EstadoFicha, string> = {
-    publicada: "Publicada: ya sale en la web.",
-    oculta: "Sin publicar: ya no sale en la web; la ficha se conserva.",
-    baja: "De baja: fuera de la web; la ficha se conserva.",
+    publicada: "Ahora aparece en el sitio web.",
+    oculta: "Oculta: ya no aparece en el sitio web. La ficha se conserva.",
+    baja: "Marcada como ex-integrante: fuera del sitio web. La ficha se conserva.",
   };
   return { ok: true, id, estado, detalle: detalle[estado] };
 }

@@ -98,15 +98,19 @@ export const ESTADOS_FICHA = ["publicada", "oculta", "baja"] as const;
 export type EstadoFicha = (typeof ESTADOS_FICHA)[number];
 
 export const ETIQUETA_ESTADO_FICHA: Record<EstadoFicha, string> = {
-  publicada: "Publicada",
-  oculta: "Sin publicar",
-  baja: "De baja",
+  publicada: "Visible en la web",
+  oculta: "Oculta",
+  baja: "Ex-integrante",
 };
 
+/**
+ * Qué significa cada estado, dicho sin jerga: "publicar" no le dice nada a
+ * quien no sabe que hay una página pública detrás del panel.
+ */
 export const AYUDA_ESTADO_FICHA: Record<EstadoFicha, string> = {
-  publicada: "Sale en /equipo y, si enseña, en la portada.",
-  oculta: "Solo la ve el panel. Útil mientras completas la ficha.",
-  baja: "Ya no forma parte del equipo. Se conserva la ficha, fuera de la web.",
+  publicada: "Aparece en la página pública /equipo y, si enseña, en la portada del sitio.",
+  oculta: "No aparece en el sitio público; solo se ve aquí. Útil mientras completas la ficha.",
+  baja: "Ya no forma parte del equipo. No aparece en el sitio, pero la ficha se conserva.",
 };
 
 export function esEstadoFicha(valor: unknown): valor is EstadoFicha {

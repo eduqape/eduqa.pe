@@ -9,8 +9,10 @@ import {
   EyeOff,
   Globe,
   Loader2,
+  Mail,
   MoreHorizontal,
   Pencil,
+  Phone,
   RotateCcw,
   Trash2,
   UserMinus,
@@ -61,8 +63,8 @@ function InsigniaEstado({ estado }: { estado: EstadoFicha }) {
   );
 }
 
-function Retrato({ persona, tamano }: { persona: Persona; tamano: "md" | "sm" }) {
-  const clase = tamano === "md" ? "size-12 text-sm" : "size-10 text-xs";
+function Retrato({ persona, tamano }: { persona: Persona; tamano: "lg" | "sm" }) {
+  const clase = tamano === "lg" ? "size-14 text-sm sm:size-16 sm:text-base" : "size-10 text-xs";
   if (persona.foto_url) {
     return (
       // Foto del bucket: next/image no tiene declarado ese dominio.
@@ -132,19 +134,19 @@ function MenuAcciones({
         aria-expanded={abierto}
         aria-label="Más acciones"
         title="Más acciones"
-        className="flex size-8 items-center justify-center rounded-lg text-texto-tenue transition-colors hover:bg-superficie hover:text-texto focus-visible:outline-2 focus-visible:outline-rojo-acento disabled:opacity-50"
+        className="flex size-7 items-center justify-center rounded-lg text-texto-tenue transition-colors sm:size-8 hover:bg-superficie hover:text-texto focus-visible:outline-2 focus-visible:outline-rojo-acento disabled:opacity-50"
       >
         <MoreHorizontal size={16} aria-hidden="true" />
       </button>
       {abierto && (
         <div
           role="menu"
-          className="absolute right-0 bottom-full z-20 mb-1 w-48 overflow-hidden rounded-lg border border-borde bg-fondo py-1 shadow-lg"
+          className="absolute right-0 bottom-full z-20 mb-1 w-56 text-left overflow-hidden rounded-lg border border-borde bg-fondo py-1 shadow-lg"
         >
           {estado !== "baja" && (
             <button type="button" role="menuitem" onClick={() => elegir(alDarDeBaja)} className={claseItem}>
               <UserMinus size={13} aria-hidden="true" />
-              Dar de baja
+              Marcar como ex-integrante
             </button>
           )}
           <button
@@ -208,12 +210,13 @@ export function TarjetaPersona({
       () => cambiarEstado(persona.id, estado),
     );
 
-  // El siguiente paso natural de cada estado: publicar lo oculto, ocultar lo
-  // publicado y reactivar lo que está de baja (vuelve sin publicar).
+  // El siguiente paso natural de cada estado, dicho por lo que hace en el
+  // sitio y no con jerga: mostrar lo oculto, ocultar lo visible y reincorporar
+  // a quien dejó el equipo (vuelve oculta, para revisarla antes de mostrarla).
   const siguiente: Record<EstadoFicha, { a: EstadoFicha; texto: string; Icono: typeof Eye }> = {
     publicada: { a: "oculta", texto: "Ocultar", Icono: EyeOff },
-    oculta: { a: "publicada", texto: "Publicar", Icono: Eye },
-    baja: { a: "oculta", texto: "Reactivar", Icono: RotateCcw },
+    oculta: { a: "publicada", texto: "Mostrar en la web", Icono: Eye },
+    baja: { a: "oculta", texto: "Reincorporar", Icono: RotateCcw },
   };
   const { a: destino, texto: textoEstado, Icono: IconoSiguiente } = siguiente[estado];
 
@@ -222,7 +225,7 @@ export function TarjetaPersona({
       type="button"
       onClick={() => aEstado(destino)}
       disabled={pendiente}
-      className="inline-flex items-center gap-1.5 rounded-lg border border-borde-fuerte px-3 py-1.5 text-xs font-medium text-texto-suave transition-colors hover:border-rojo-acento hover:text-rojo-acento focus-visible:outline-2 focus-visible:outline-rojo-acento disabled:opacity-50"
+      className="inline-flex items-center gap-1.5 rounded-lg border border-borde-fuerte px-2.5 py-1.5 text-xs font-medium text-texto-suave transition-colors sm:px-3 hover:border-rojo-acento hover:text-rojo-acento focus-visible:outline-2 focus-visible:outline-rojo-acento disabled:opacity-50"
     >
       {pendiente ? (
         <Loader2 size={13} className="animate-spin" aria-hidden="true" />
@@ -241,7 +244,7 @@ export function TarjetaPersona({
         disabled={pendiente || !mover.arriba}
         aria-label={`Subir a ${persona.nombre} un puesto`}
         title="Subir un puesto"
-        className="flex size-8 items-center justify-center rounded-lg text-texto-tenue transition-colors hover:bg-superficie hover:text-texto focus-visible:outline-2 focus-visible:outline-rojo-acento disabled:opacity-30"
+        className="flex size-7 items-center justify-center rounded-lg text-texto-tenue transition-colors sm:size-8 hover:bg-superficie hover:text-texto focus-visible:outline-2 focus-visible:outline-rojo-acento disabled:opacity-30"
       >
         <ArrowUp size={15} aria-hidden="true" />
       </button>
@@ -251,20 +254,24 @@ export function TarjetaPersona({
         disabled={pendiente || !mover.abajo}
         aria-label={`Bajar a ${persona.nombre} un puesto`}
         title="Bajar un puesto"
-        className="flex size-8 items-center justify-center rounded-lg text-texto-tenue transition-colors hover:bg-superficie hover:text-texto focus-visible:outline-2 focus-visible:outline-rojo-acento disabled:opacity-30"
+        className="flex size-7 items-center justify-center rounded-lg text-texto-tenue transition-colors sm:size-8 hover:bg-superficie hover:text-texto focus-visible:outline-2 focus-visible:outline-rojo-acento disabled:opacity-30"
       >
         <ArrowDown size={15} aria-hidden="true" />
       </button>
     </div>
   );
 
+  const centrada = vista === "grilla";
+
   const acciones = confirmando ? (
     <div role="alertdialog" aria-labelledby={`borrar-${persona.id}`} className="space-y-2.5">
       <p id={`borrar-${persona.id}`} className="text-xs leading-relaxed text-texto">
         <span className="font-semibold">¿Eliminar la ficha de {persona.nombre}?</span> No se puede
-        deshacer.{estado !== "baja" && " Si solo dejó el equipo, mejor dala de baja: sale de la web y se conserva."}
+        deshacer.
+        {estado !== "baja" &&
+          " Si solo dejó el equipo, mejor márcala como ex-integrante: sale del sitio y la ficha se conserva."}
       </p>
-      <div className="flex flex-wrap gap-2">
+      <div className={`flex flex-wrap gap-2 ${centrada ? "justify-center" : ""}`}>
         <button
           type="button"
           autoFocus
@@ -282,7 +289,7 @@ export function TarjetaPersona({
             }}
             className="rounded-lg border border-borde-fuerte px-3 py-1.5 text-xs font-medium text-texto transition-colors hover:bg-superficie"
           >
-            Dar de baja
+            Es ex-integrante
           </button>
         )}
         <button
@@ -297,18 +304,18 @@ export function TarjetaPersona({
       </div>
     </div>
   ) : (
-    <div className="flex items-center gap-1.5">
+    <div className={`flex flex-wrap items-center gap-1.5 ${centrada ? "justify-center" : ""}`}>
       <button
         type="button"
         onClick={alEditar}
         disabled={pendiente}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-borde-fuerte px-3 py-1.5 text-xs font-medium text-texto transition-colors hover:border-rojo-acento hover:text-rojo-acento focus-visible:outline-2 focus-visible:outline-rojo-acento disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-borde-fuerte px-2.5 py-1.5 text-xs font-medium text-texto transition-colors sm:px-3 hover:border-rojo-acento hover:text-rojo-acento focus-visible:outline-2 focus-visible:outline-rojo-acento disabled:opacity-50"
       >
         <Pencil size={13} aria-hidden="true" />
         Editar
       </button>
       {botonEstado}
-      <div className="ml-auto flex items-center">
+      <div className={`flex items-center ${centrada ? "" : "ml-auto"}`}>
         {flechas}
         <MenuAcciones
           estado={estado}
@@ -320,9 +327,46 @@ export function TarjetaPersona({
     </div>
   );
 
-  const redes =
-    persona.redes.length > 0 ? (
-      <ul className="flex flex-wrap items-center gap-0.5">
+  const claseIcono =
+    "flex size-8 items-center justify-center rounded-md text-texto-tenue transition-colors hover:bg-superficie hover:text-rojo-acento focus-visible:outline-2 focus-visible:outline-rojo-acento";
+
+  // Correo y teléfono son contacto interno: solo se enlazan aquí, en el panel,
+  // nunca en la ficha pública. Van primero y separados de las redes.
+  const contacto: { clave: string; href: string; texto: string; Icono: typeof Mail; nombre: string }[] = [];
+  if (persona.correo) {
+    contacto.push({ clave: "correo", href: `mailto:${persona.correo}`, texto: persona.correo, Icono: Mail, nombre: "Correo" });
+  }
+  if (persona.telefono) {
+    contacto.push({
+      clave: "telefono",
+      href: `tel:${persona.telefono.replace(/[^\d+]/g, "")}`,
+      texto: persona.telefono,
+      Icono: Phone,
+      nombre: "Teléfono",
+    });
+  }
+
+  const enlaces =
+    contacto.length > 0 || persona.redes.length > 0 ? (
+      <ul
+        aria-label="Contacto y redes"
+        className={`flex flex-wrap items-center gap-0.5 ${centrada ? "justify-center" : ""}`}
+      >
+        {contacto.map(({ clave, href, texto, Icono, nombre }) => (
+          <li key={clave}>
+            <a
+              href={href}
+              title={`${nombre}: ${texto}`}
+              aria-label={`${nombre} de ${persona.nombre}: ${texto}`}
+              className={claseIcono}
+            >
+              <Icono size={15} aria-hidden="true" />
+            </a>
+          </li>
+        ))}
+        {contacto.length > 0 && persona.redes.length > 0 && (
+          <li aria-hidden="true" className="mx-1 h-4 w-px bg-borde" />
+        )}
         {persona.redes.map((red) => (
           <li key={red.red}>
             <a
@@ -331,9 +375,9 @@ export function TarjetaPersona({
               rel="noopener noreferrer"
               title={`${ETIQUETA_RED[red.red]}: ${red.url}`}
               aria-label={`${ETIQUETA_RED[red.red]} de ${persona.nombre} (se abre en otra pestaña)`}
-              className="flex size-7 items-center justify-center rounded-md text-texto-tenue transition-colors hover:bg-superficie hover:text-rojo-acento focus-visible:outline-2 focus-visible:outline-rojo-acento"
+              className={claseIcono}
             >
-              <IconoRed nombre={red.red} className="size-3.5" />
+              <IconoRed nombre={red.red} className="size-[15px]" />
             </a>
           </li>
         ))}
@@ -349,13 +393,13 @@ export function TarjetaPersona({
         className="inline-flex items-center gap-1 text-xs font-medium text-texto-suave transition-colors hover:text-rojo-acento"
       >
         <Globe size={12} aria-hidden="true" />
-        Ver en la web
+        Ver en el sitio
       </a>
     ) : null;
 
   const pendientes =
     faltan.length > 0 ? (
-      <p className="flex items-center gap-1.5 text-xs text-texto-tenue">
+      <p className={`flex items-center gap-1.5 text-xs text-texto-tenue ${centrada ? "justify-center" : ""}`}>
         <CircleDashed size={12} aria-hidden="true" />
         Falta: {faltan.join(", ")}
       </p>
@@ -380,54 +424,55 @@ export function TarjetaPersona({
             </p>
           </div>
         </div>
-        <div className="hidden lg:block">{redes}</div>
-        <div className="md:w-[22rem]">{acciones}</div>
+        <div className="hidden lg:block">{enlaces}</div>
+        <div className="md:w-[24rem]">{acciones}</div>
       </article>
     );
   }
 
+  // Cuadrada y centrada. `aspect-square` deja crecer la tarjeta si el
+  // contenido no cabe (p. ej. con la confirmación de borrado abierta), en vez
+  // de recortarlo.
   return (
     <article
       aria-busy={pendiente}
-      className="flex flex-col rounded-xl border border-borde bg-fondo p-5 transition-colors hover:border-borde-fuerte"
+      className="relative flex aspect-square flex-col items-center rounded-xl border border-borde bg-fondo p-4 text-center sm:p-5 transition-colors hover:border-borde-fuerte"
     >
-      {/* El estado va junto al retrato y no junto al nombre: en una columna
-          estrecha le quitaba ancho al nombre y el título se partía en tres. */}
-      <div className="flex items-start justify-between gap-3">
-        <Retrato persona={persona} tamano="md" />
+      <div className="absolute right-4 top-4">
         <InsigniaEstado estado={estado} />
       </div>
-      <h3 className="mt-3 text-base font-semibold leading-snug text-texto">{persona.nombre}</h3>
-      {persona.titulo_profesional && (
-        <p className="mt-0.5 text-sm leading-snug text-rojo-acento">{persona.titulo_profesional}</p>
-      )}
 
-      <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Roles">
-        {persona.roles.map((rol) => (
-          <li
-            key={rol}
-            className="rounded-full bg-superficie px-2 py-0.5 text-[11px] font-medium text-texto-suave"
-          >
-            {ETIQUETA_ROL[rol]}
-          </li>
-        ))}
-      </ul>
+      <div className="flex w-full flex-1 flex-col items-center justify-center pt-4">
+        <Retrato persona={persona} tamano="lg" />
+        <h3 className="mt-3 text-base font-semibold leading-snug text-texto">{persona.nombre}</h3>
+        {persona.titulo_profesional && (
+          <p className="mt-0.5 text-sm leading-snug text-rojo-acento">{persona.titulo_profesional}</p>
+        )}
 
-      {persona.biografia ? (
-        <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-texto-suave">{persona.biografia}</p>
-      ) : null}
+        <ul className="mt-3 flex flex-wrap justify-center gap-1.5" aria-label="Roles">
+          {persona.roles.map((rol) => (
+            <li key={rol} className="rounded-full bg-superficie px-2 py-0.5 text-[11px] font-medium text-texto-suave">
+              {ETIQUETA_ROL[rol]}
+            </li>
+          ))}
+        </ul>
 
-      <div className="mt-3 flex-1 space-y-2">
-        {pendientes}
-        {(redes || enlaceWeb) && (
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            {redes ?? <span />}
-            {enlaceWeb}
+        {/* En un teléfono la biografía no cabe en un cuadrado; se lee al editar. */}
+        {persona.biografia && (
+          <div className="mt-3 hidden max-w-sm sm:block">
+            <p className="line-clamp-2 text-sm leading-relaxed text-texto-suave">{persona.biografia}</p>
           </div>
         )}
+
+        {enlaces && <div className="mt-3">{enlaces}</div>}
+
+        <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+          {pendientes}
+          {enlaceWeb}
+        </div>
       </div>
 
-      <div className="mt-4 border-t border-borde pt-3">{acciones}</div>
+      <div className="mt-4 w-full border-t border-borde pt-3">{acciones}</div>
     </article>
   );
 }

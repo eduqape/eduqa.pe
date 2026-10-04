@@ -1,8 +1,8 @@
 /**
  * Esqueleto del panel de equipo.
  *
- * Reproduce la forma de la página (encabezado, contadores, filtros y tres
- * tarjetas) para que al llegar los datos nada salte de sitio.
+ * Reproduce la forma de la página (encabezado, pestañas, filtros y dos
+ * tarjetas cuadradas) para que al llegar los datos nada salte de sitio.
  */
 export default function CargandoEquipo() {
   const bloque = "animate-pulse rounded bg-borde";
@@ -27,13 +27,10 @@ export default function CargandoEquipo() {
           <div className={`h-10 w-44 rounded-lg ${bloque}`} />
         </div>
 
-        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {Array.from({ length: 4 }, (_, i) => (
-            <div key={i} className="rounded-xl border border-borde bg-fondo p-4">
-              <div className={`h-3 w-16 ${bloque}`} />
-              <div className={`mt-2 h-7 w-8 ${bloque}`} />
-            </div>
-          ))}
+        <div className="mt-8 flex gap-6 border-b border-borde pb-3">
+          <div className={`h-5 w-16 ${bloque}`} />
+          <div className={`h-5 w-20 ${bloque}`} />
+          <div className={`h-5 w-40 ${bloque}`} />
         </div>
 
         <div className="mt-6 flex flex-col gap-3 lg:flex-row">
@@ -45,27 +42,27 @@ export default function CargandoEquipo() {
           </div>
         </div>
 
-        <div className="mt-7 grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
-          {Array.from({ length: 3 }, (_, i) => (
-            <div key={i} className="rounded-xl border border-borde bg-fondo p-5">
-              <div className="flex items-start justify-between">
-                <div className={`size-12 rounded-full ${bloque}`} />
-                <div className={`h-5 w-20 rounded-full ${bloque}`} />
+        <div className="mt-7 grid grid-cols-1 gap-4 md:grid-cols-2">
+          {Array.from({ length: 2 }, (_, i) => (
+            <div
+              key={i}
+              className="relative flex aspect-square flex-col items-center rounded-xl border border-borde bg-fondo p-5"
+            >
+              <div className={`absolute right-4 top-4 h-5 w-24 rounded-full ${bloque}`} />
+              <div className="flex w-full flex-1 flex-col items-center justify-center pt-4">
+                <div className={`size-16 rounded-full ${bloque}`} />
+                <div className={`mt-3 h-4 w-1/2 ${bloque}`} />
+                <div className={`mt-2 h-3.5 w-2/5 ${bloque}`} />
+                <div className="mt-3 flex gap-1.5">
+                  <div className={`h-5 w-16 rounded-full ${bloque}`} />
+                  <div className={`h-5 w-24 rounded-full ${bloque}`} />
+                </div>
+                <div className={`mt-4 h-3.5 w-4/5 ${bloque}`} />
+                <div className={`mt-2 h-3.5 w-3/5 ${bloque}`} />
               </div>
-              <div className={`mt-3 h-4 w-3/4 ${bloque}`} />
-              <div className={`mt-2 h-3.5 w-1/2 ${bloque}`} />
-              <div className="mt-4 flex gap-1.5">
-                <div className={`h-5 w-16 rounded-full ${bloque}`} />
-                <div className={`h-5 w-24 rounded-full ${bloque}`} />
-              </div>
-              <div className="mt-4 space-y-2">
-                <div className={`h-3.5 w-full ${bloque}`} />
-                <div className={`h-3.5 w-11/12 ${bloque}`} />
-                <div className={`h-3.5 w-2/3 ${bloque}`} />
-              </div>
-              <div className="mt-5 flex gap-2 border-t border-borde pt-3">
+              <div className="mt-4 flex w-full justify-center gap-2 border-t border-borde pt-3">
                 <div className={`h-8 w-20 rounded-lg ${bloque}`} />
-                <div className={`h-8 w-24 rounded-lg ${bloque}`} />
+                <div className={`h-8 w-32 rounded-lg ${bloque}`} />
               </div>
             </div>
           ))}

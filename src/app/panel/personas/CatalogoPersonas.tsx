@@ -24,16 +24,17 @@ import type { VistaGestion } from "../TarjetaGestion";
 
 type OrdenPersonas = "manual" | "nombre-az" | "recientes";
 type FiltroEstado = "todas" | EstadoFicha;
+type FiltroGrupo = typeof TODOS | GrupoPersona;
 type Hoja = { modo: "crear" } | { modo: "editar"; persona: Persona };
 
 const TODOS = "todos";
 const CLAVE_VISTA = "panel-personas-vista";
 
-const TITULO_TESELA: Record<FiltroEstado, string> = {
-  todas: "Todas",
-  publicada: "Publicadas",
-  oculta: "Sin publicar",
-  baja: "De baja",
+const TITULO_FILTRO_ESTADO: Record<FiltroEstado, string> = {
+  todas: "Toda visibilidad",
+  publicada: "Visibles en la web",
+  oculta: "Ocultas",
+  baja: "Ex-integrantes",
 };
 
 /**
@@ -86,6 +87,7 @@ export function CatalogoPersonas({
 }) {
   const vista = useSyncExternalStore(suscribirVista, leerVista, () => "grilla" as const);
   const [busqueda, setBusqueda] = useState("");
+  const [grupo, setGrupo] = useState<FiltroGrupo>(TODOS);
   const [rol, setRol] = useState<string>(TODOS);
   const [filtroEstado, setFiltroEstado] = useState<FiltroEstado>("todas");
   const [soloIncompletas, setSoloIncompletas] = useState(false);
@@ -113,12 +115,16 @@ export function CatalogoPersonas({
 
   const conteo = useMemo(() => {
     const porEstado: Record<FiltroEstado, number> = { todas: personas.length, publicada: 0, oculta: 0, baja: 0 };
+    const porGrupo: Record<FiltroGrupo, number> = { [TODOS]: personas.length, interna: 0, huesped: 0 };
     let incompletas = 0;
     for (const persona of personas) {
       porEstado[estadoFicha(persona)] += 1;
+      for (const clave of Object.keys(GRUPOS_PERSONA) as GrupoPersona[]) {
+        if (persona.roles.some((r) => grupoDeRol(r) === clave)) porGrupo[clave] += 1;
+      }
       if (faltantesFicha(persona).length > 0) incompletas += 1;
     }
-    return { porEstado, incompletas };
+    return { porEstado, porGrupo, incompletas };
   }, [personas]);
 
   const visibles = useMemo(() => {
@@ -129,12 +135,8 @@ export function CatalogoPersonas({
     const filtradas = personas.filter((persona) => {
       if (filtroEstado !== "todas" && estadoFicha(persona) !== filtroEstado) return false;
       if (soloIncompletas && faltantesFicha(persona).length === 0) return false;
-      if (rol.startsWith("grupo:")) {
-        const grupo = rol.slice(6) as GrupoPersona;
-        if (!persona.roles.some((r) => grupoDeRol(r) === grupo)) return false;
-      } else if (rol !== TODOS && !persona.roles.includes(rol as RolPersona)) {
-        return false;
-      }
+      if (grupo !== TODOS && !persona.roles.some((r) => grupoDeRol(r) === grupo)) return false;
+      if (rol !== TODOS && !persona.roles.includes(rol as RolPersona)) return false;
       if (palabras.length === 0) return true;
 
       const texto = sinTildes(
@@ -152,14 +154,16 @@ export function CatalogoPersonas({
       }
       return a.orden - b.orden || a.nombre.localeCompare(b.nombre, "es");
     });
-  }, [personas, busqueda, rol, filtroEstado, soloIncompletas, orden]);
+  }, [personas, busqueda, grupo, rol, filtroEstado, soloIncompletas, orden]);
 
-  const hayFiltros = busqueda !== "" || rol !== TODOS || filtroEstado !== "todas" || soloIncompletas;
+  const hayFiltros =
+    busqueda !== "" || grupo !== TODOS || rol !== TODOS || filtroEstado !== "todas" || soloIncompletas;
   // Las flechas solo tienen sentido si lo que se ve es el orden real completo.
   const sePuedeMover = orden === "manual" && !hayFiltros && personas.length > 1;
 
   const limpiar = () => {
     setBusqueda("");
+    setGrupo(TODOS);
     setRol(TODOS);
     setFiltroEstado("todas");
     setSoloIncompletas(false);
@@ -183,18 +187,18 @@ export function CatalogoPersonas({
       let accion: Aviso["accion"];
       if (id && estado === "oculta") {
         accion = {
-          etiqueta: "Publicar ahora",
+          etiqueta: "Mostrar en la web",
           ejecutar: async () => {
             const publicado = await cambiarEstado(id, "publicada");
             avisar(
               publicado.ok
-                ? { tipo: "ok", texto: publicado.detalle ?? "Publicada." }
-                : { tipo: "error", texto: publicado.error ?? "No se pudo publicar." },
+                ? { tipo: "ok", texto: publicado.detalle ?? "Ahora aparece en el sitio web." }
+                : { tipo: "error", texto: publicado.error ?? "No se pudo mostrar en la web." },
             );
           },
         };
       } else if (slug && estado === "publicada") {
-        accion = { etiqueta: "Ver en la web", ejecutar: () => window.open(`/equipo#${slug}`, "_blank", "noopener") };
+        accion = { etiqueta: "Ver en el sitio", ejecutar: () => window.open(`/equipo#${slug}`, "_blank", "noopener") };
       }
       avisar({ tipo: "ok", texto: resultado.detalle ?? "Guardado.", accion });
     },
@@ -232,7 +236,7 @@ export function CatalogoPersonas({
           />
           <h2 className="mt-5 text-base font-semibold text-texto">Todavía no hay nadie en el equipo</h2>
           <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-texto-suave">
-            Agrega a la primera persona. Se guarda sin publicar hasta que decidas mostrarla en la web.
+            Agrega a la primera persona. Se guarda oculta hasta que decidas mostrarla en el sitio web.
           </p>
           <Boton type="button" onClick={() => abrir({ modo: "crear" })} className="mt-5 px-4 py-2.5">
             <Plus size={16} aria-hidden="true" />
@@ -241,25 +245,41 @@ export function CatalogoPersonas({
         </div>
       ) : (
         <>
-          {/* Resumen y filtro de estado a la vez. */}
-          <div role="group" aria-label="Filtrar por estado" className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {(["todas", ...ESTADOS_FICHA] as FiltroEstado[]).map((clave) => {
-              const activa = filtroEstado === clave;
+          {/* Las pestañas son los grupos del equipo, que es como se piensa en
+              él. La visibilidad en la web es un filtro más, no la portada. */}
+          <div role="group" aria-label="Grupo" className="mt-8 flex gap-x-5 border-b border-borde sm:gap-x-6">
+            {([TODOS, ...(Object.keys(GRUPOS_PERSONA) as GrupoPersona[])] as FiltroGrupo[]).map((clave) => {
+              const activa = grupo === clave;
               return (
                 <button
                   key={clave}
                   type="button"
                   aria-pressed={activa}
-                  onClick={() => setFiltroEstado(activa && clave !== "todas" ? "todas" : clave)}
-                  className={`rounded-xl border p-4 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rojo-acento ${
-                    activa ? "border-rojo-acento bg-fondo" : "border-borde bg-fondo hover:border-borde-fuerte"
+                  onClick={() => {
+                    setGrupo(clave);
+                    setRol(TODOS);
+                  }}
+                  className={`-mb-px inline-flex shrink-0 items-center gap-2 border-b-2 pb-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-rojo-acento ${
+                    activa ? "border-rojo-acento text-texto" : "border-transparent text-texto-suave hover:text-texto"
                   }`}
                 >
-                  <span className={`block text-xs ${activa ? "text-rojo-acento" : "text-texto-tenue"}`}>
-                    {TITULO_TESELA[clave]}
-                  </span>
-                  <span className="mt-1 block text-2xl font-semibold tabular-nums text-texto">
-                    {conteo.porEstado[clave]}
+                  {clave === TODOS ? (
+                    "Todos"
+                  ) : clave === "huesped" ? (
+                    // En un teléfono las tres pestañas no caben con el nombre largo.
+                    <>
+                      <span className="sm:hidden">Invitados</span>
+                      <span className="hidden sm:inline">{ETIQUETA_GRUPO[clave]}</span>
+                    </>
+                  ) : (
+                    ETIQUETA_GRUPO[clave]
+                  )}
+                  <span
+                    className={`rounded-full px-1.5 py-px text-xs tabular-nums ${
+                      activa ? "bg-rojo-tenue text-rojo-acento" : "bg-superficie text-texto-tenue"
+                    }`}
+                  >
+                    {conteo.porGrupo[clave]}
                   </span>
                 </button>
               );
@@ -293,24 +313,36 @@ export function CatalogoPersonas({
               )}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
               <label className="sr-only" htmlFor="filtro-rol-persona">Filtrar por rol</label>
               <select
                 id="filtro-rol-persona"
                 value={rol}
                 onChange={(e) => setRol(e.target.value)}
-                className={`${claseSelect} min-w-0 flex-1 lg:flex-none`}
+                className={`${claseSelect} min-w-0 sm:flex-1 lg:flex-none`}
               >
                 <option value={TODOS}>Todos los roles</option>
-                {(Object.keys(GRUPOS_PERSONA) as GrupoPersona[]).map((grupo) => (
-                  <optgroup key={grupo} label={ETIQUETA_GRUPO[grupo]}>
-                    <option value={`grupo:${grupo}`}>Todo: {ETIQUETA_GRUPO[grupo].toLowerCase()}</option>
-                    {GRUPOS_PERSONA[grupo].map((r) => (
-                      <option key={r} value={r}>
-                        {ETIQUETA_ROL[r]}
-                      </option>
-                    ))}
-                  </optgroup>
+                {(grupo === TODOS ? (Object.keys(GRUPOS_PERSONA) as GrupoPersona[]) : [grupo]).flatMap((g) =>
+                  GRUPOS_PERSONA[g].map((r) => (
+                    <option key={r} value={r}>
+                      {ETIQUETA_ROL[r]}
+                    </option>
+                  )),
+                )}
+              </select>
+
+              <label className="sr-only" htmlFor="filtro-visibilidad-persona">Filtrar por visibilidad en la web</label>
+              <select
+                id="filtro-visibilidad-persona"
+                value={filtroEstado}
+                onChange={(e) => setFiltroEstado(e.target.value as FiltroEstado)}
+                className={`${claseSelect} min-w-0 sm:flex-1 lg:flex-none`}
+              >
+                {(["todas", ...ESTADOS_FICHA] as FiltroEstado[]).map((clave) => (
+                  <option key={clave} value={clave}>
+                    {TITULO_FILTRO_ESTADO[clave]}
+                    {clave !== "todas" && ` (${conteo.porEstado[clave]})`}
+                  </option>
                 ))}
               </select>
 
@@ -319,14 +351,14 @@ export function CatalogoPersonas({
                 id="orden-personas"
                 value={orden}
                 onChange={(e) => setOrden(e.target.value as OrdenPersonas)}
-                className={`${claseSelect} min-w-0 flex-1 lg:flex-none`}
+                className={`${claseSelect} min-w-0 sm:flex-1 lg:flex-none`}
               >
-                <option value="manual">Orden de la web</option>
+                <option value="manual">Orden manual</option>
                 <option value="nombre-az">Nombre (A–Z)</option>
                 <option value="recientes">Editadas recientemente</option>
               </select>
 
-              <div className="hidden h-10 shrink-0 items-center rounded-lg border border-borde-fuerte bg-fondo p-0.5 md:flex" role="group" aria-label="Vista">
+              <div className="flex h-10 shrink-0 items-center justify-self-start rounded-lg border border-borde-fuerte bg-fondo p-0.5" role="group" aria-label="Vista">
                 {(
                   [
                     ["grilla", LayoutGrid, "Ver como grilla"],
@@ -396,7 +428,7 @@ export function CatalogoPersonas({
             <div
               className={
                 vista === "grilla"
-                  ? "mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3"
+                  ? "mt-4 grid grid-cols-1 gap-4 md:grid-cols-2"
                   : "mt-4 flex flex-col gap-3"
               }
             >
@@ -420,7 +452,7 @@ export function CatalogoPersonas({
         titulo={hoja?.modo === "editar" ? `Editar a ${hoja.persona.nombre}` : "Agregar persona"}
         subtitulo={
           hoja?.modo === "editar"
-            ? "Los cambios se ven en la web al guardar si la ficha está publicada."
+            ? "Si la ficha es visible en la web, los cambios aparecen ahí al guardar."
             : "Solo nombre y rol son obligatorios. Lo demás puedes completarlo después."
         }
         sucio={sucio}

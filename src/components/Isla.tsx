@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Library,
-  CalendarDays,
   BadgeCheck,
   Bug,
+  CalendarDays,
   GraduationCap,
   LayoutDashboard,
+  Library,
   ListChecks,
   LogIn,
   Megaphone,
@@ -18,6 +18,7 @@ import {
   Receipt,
   Settings,
   Stamp,
+  UserCog,
   UserRound,
   UserRoundPlus,
   Users,
@@ -135,7 +136,7 @@ export function Isla({
         ...(esAdmin
           ? [
               { href: "/panel/cursos", etiqueta: "Gestión académica", Icono: GraduationCap, roles: "Administrador" },
-              { href: "/panel/personas", etiqueta: "Equipo", Icono: Users, roles: "Administrador" },
+              { href: "/panel/personas", etiqueta: "Gestión de equipo", Icono: UserCog, roles: "Administrador" },
               { href: "/panel/avisos", etiqueta: "Avisos", Icono: Megaphone, roles: "Administrador" },
               { href: "/panel/reportes", etiqueta: "Reportes", Icono: Bug, roles: "Administrador" },
               { href: "/panel/marca", etiqueta: "Marca", Icono: Stamp, roles: "Administrador" },

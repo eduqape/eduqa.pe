@@ -24,9 +24,28 @@ function Bandera({ codigo }: { codigo: string }) {
 export function TelefonoInternacional({
   telefonoInicial,
   paisInicial,
+  nombrePais = "pais",
+  idNumero,
+  invalido,
+  descritoPor,
+  alCambiar,
+  contenedorLista,
 }: {
   telefonoInicial?: string | null;
   paisInicial?: string | null;
+  /** `null` omite el campo oculto del país, para formularios que ya tienen uno. */
+  nombrePais?: string | null;
+  idNumero?: string;
+  invalido?: boolean;
+  descritoPor?: string;
+  /** Avisa del teléfono completo cada vez que cambia el país o el número. */
+  alCambiar?: (telefono: string, codigoPais: string) => void;
+  /**
+   * Dónde montar la lista de países. Dentro de un `<dialog>` modal tiene que
+   * ser un nodo del propio diálogo: montada en `body` queda debajo de la capa
+   * superior del diálogo, invisible e inerte.
+   */
+  contenedorLista?: HTMLElement | null;
 }) {
   const paisDetectado =
     paisPorCodigo(paisInicial) ??
@@ -49,13 +68,26 @@ export function TelefonoInternacional({
   const prefijo = pais.prefijo.replace(/\D/g, "");
   const telefonoCompleto = digitos ? `+${prefijo}${digitos}` : "";
 
+  const avisar = (codigo: string, valor: string) => {
+    if (!alCambiar) return;
+    const elegido = paisPorCodigo(codigo) ?? pais;
+    const soloDigitos = valor.replace(/\D/g, "");
+    alCambiar(soloDigitos ? `+${elegido.prefijo.replace(/\D/g, "")}${soloDigitos}` : "", elegido.codigo);
+  };
+
   return (
     <div>
-      <input type="hidden" name="pais" value={pais.codigo} />
+      {nombrePais && <input type="hidden" name={nombrePais} value={pais.codigo} />}
       <input type="hidden" name="telefono" value={telefonoCompleto} />
 
       <div className="flex w-full overflow-hidden rounded-lg border border-borde-fuerte bg-fondo transition-colors focus-within:border-rojo-acento focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-rojo-acento">
-        <Select.Root value={codigoPais} onValueChange={setCodigoPais}>
+        <Select.Root
+          value={codigoPais}
+          onValueChange={(codigo) => {
+            setCodigoPais(codigo);
+            avisar(codigo, numero);
+          }}
+        >
           <Select.Trigger
             aria-label="País del teléfono"
             className="flex shrink-0 items-center gap-2 border-r border-borde-fuerte px-3 py-2.5 text-sm text-texto outline-none transition-colors hover:bg-superficie"
@@ -67,7 +99,7 @@ export function TelefonoInternacional({
             </Select.Icon>
           </Select.Trigger>
 
-          <Select.Portal>
+          <Select.Portal container={contenedorLista ?? undefined}>
             <Select.Content
               position="popper"
               sideOffset={6}
@@ -112,7 +144,13 @@ export function TelefonoInternacional({
           inputMode="tel"
           autoComplete="tel-national"
           value={numero}
-          onChange={(event) => setNumero(event.target.value)}
+          id={idNumero}
+          aria-invalid={invalido || undefined}
+          aria-describedby={descritoPor}
+          onChange={(event) => {
+            setNumero(event.target.value);
+            avisar(codigoPais, event.target.value);
+          }}
           maxLength={20}
           placeholder="987 654 321"
           aria-label="Número de teléfono"
