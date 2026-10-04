@@ -294,4 +294,16 @@ for (const [i, [slug, titulo, programas]] of ruta.entries()) {
     }
   }
 }
+// Tiempo mínimo de lectura: palabras de teoría y código a 238 palabras por minuto.
+{
+  const lectura = cargar(path.resolve('src/lib/lectura.ts'));
+  const bloques = [
+    { tipo: 'teoria', contenido: Array(238).fill('palabra').join(' '), nota: 'una nota' },
+    { tipo: 'codigo', contenido: 'print(1)', lenguaje: 'python', salida: '1' },
+    { tipo: 'venn', izquierda: 'a', derecha: 'b', resalta: 'union' },
+  ];
+  assert.equal(lectura.palabrasDeLeccion(bloques), 238 + 2 + 1 + 1);
+  assert.equal(lectura.segundosMinimosDeLectura(bloques), 61);
+  assert.equal(lectura.segundosMinimosDeLectura([]), lectura.SEGUNDOS_MINIMOS_ABSOLUTOS);
+}
 console.log(`Detección automática verificada con una carpeta nueva; ${cursos.length} cursos locales y 16 sesiones Fortran válidos.`);

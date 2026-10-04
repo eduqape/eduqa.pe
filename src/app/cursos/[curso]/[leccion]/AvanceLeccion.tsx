@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
 import { marcarVista } from "./acciones";
@@ -8,12 +8,17 @@ import { MarcaInline } from "@/components/LlamaMarca";
 import { Boton } from "@/components/ui";
 
 /**
- * Marca la sesión como completada cuando el lector llega al final.
+ * Marca la sesión como completada cuando el lector llega al final y, además,
+ * ha pasado en ella el tiempo mínimo de lectura.
  *
- * El disparador es un centinela colocado justo antes de la navegación entre
- * sesiones: si aparece en pantalla, es que se recorrió todo el contenido. No
- * hay botón porque marcar el avance no es una decisión del alumno, es una
- * consecuencia de haber leído.
+ * Llegar al centinela no basta: plegando todas las secciones se alcanza el
+ * final en segundos. El tiempo mínimo se calcula en el servidor a partir de
+ * las palabras de la sesión (ver `src/lib/lectura.ts`) y solo corre con la
+ * pestaña visible. Se conserva en el navegador para que recargar la página no
+ * obligue a empezar de cero.
+ *
+ * Quien ya conoce el material la completa pasando a la siguiente sesión
+ * (`EnlaceAvance`), sin esperar el tiempo mínimo.
  *
  * Al marcarse por primera vez se celebra a pantalla completa. La celebración
  * solo aparece en ese momento: quien vuelve a una sesión que ya tenía hecha
@@ -27,6 +32,7 @@ export function AvanceLeccion({
   siguiente,
   volverA,
   marcaCierre = null,
+  segundosMinimos,
 }: {
   curso: string;
   leccion: string;
@@ -38,38 +44,98 @@ export function AvanceLeccion({
   volverA: string;
   /** SVG personalizado de la marca para el cierre; null usa la llama original. */
   marcaCierre?: string | null;
+  /** Tiempo mínimo de lectura de la sesión, en segundos. */
+  segundosMinimos: number;
 }) {
   const [celebrando, setCelebrando] = useState(false);
+  const [completada, setCompletada] = useState(vista);
+  const [segundosLeidos, setSegundosLeidos] = useState(0);
+  const [error, setError] = useState(false);
   const centinela = useRef<HTMLDivElement>(null);
-  // Evita una segunda escritura si el centinela vuelve a entrar en pantalla
-  // al desplazarse hacia arriba y hacia abajo otra vez.
+  // Evita una segunda escritura mientras la primera sigue en curso.
   const yaPedido = useRef(vista);
+  // El temporizador y el observador consultan el estado del otro por ref:
+  // la sesión se marca en el callback que completa la segunda condición.
+  const alFinal = useRef(false);
+  const tiempoCumplido = useRef(false);
+  // Tras un fallo de escritura la marca automática se detiene: reintentar
+  // cada segundo solo repetiría el error. El enlace «Siguiente» lo reintenta.
+  const autoDetenido = useRef(false);
+  const clave = `eduqa:lectura:${curso}/${leccion}`;
 
+  const marcar = useCallback(async () => {
+    if (yaPedido.current || autoDetenido.current) return;
+    yaPedido.current = true;
+    const resultado = await marcarVista(curso, leccion);
+    if (!resultado.ok) {
+      yaPedido.current = false;
+      autoDetenido.current = true;
+      setError(true);
+      return;
+    }
+    setError(false);
+    setCompletada(true);
+    setCelebrando(true);
+  }, [curso, leccion]);
+
+  // Cuenta el tiempo solo con la pestaña visible.
+  useEffect(() => {
+    if (vista) return;
+    let acumulado = 0;
+    try {
+      acumulado = Number(sessionStorage.getItem(clave)) || 0;
+    } catch {}
+    const intervalo = window.setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      acumulado += 1;
+      setSegundosLeidos(acumulado);
+      try {
+        sessionStorage.setItem(clave, String(acumulado));
+      } catch {}
+      if (acumulado >= segundosMinimos) {
+        tiempoCumplido.current = true;
+        if (alFinal.current) void marcar();
+      }
+    }, 1000);
+    return () => window.clearInterval(intervalo);
+  }, [clave, vista, segundosMinimos, marcar]);
+
+  // Detecta que el lector llegó al final de la sesión.
   useEffect(() => {
     const nodo = centinela.current;
-    if (!nodo || yaPedido.current) return;
-
+    if (!nodo || vista) return;
     const observador = new IntersectionObserver(
-      async ([entrada]) => {
-        if (!entrada.isIntersecting || yaPedido.current) return;
-        yaPedido.current = true;
-        observador.disconnect();
-
-        const resultado = await marcarVista(curso, leccion);
-        // Si falló, no se celebra nada y se reintentará en la próxima visita:
-        // insistir aquí solo repetiría el error.
-        if (resultado.ok) setCelebrando(true);
+      ([entrada]) => {
+        if (!entrada.isIntersecting) return;
+        alFinal.current = true;
+        if (tiempoCumplido.current) void marcar();
       },
       { rootMargin: "0px 0px -80px 0px" },
     );
-
     observador.observe(nodo);
     return () => observador.disconnect();
-  }, [curso, leccion]);
+  }, [vista, marcar]);
+
+  const restantes = Math.max(0, segundosMinimos - segundosLeidos);
 
   return (
     <>
-      <div ref={centinela} className="mt-12 border-t border-borde pt-6" />
+      <div ref={centinela} className="mt-12 border-t border-borde pt-6">
+        {completada ? (
+          <p className="flex items-center gap-2 text-sm text-exito">
+            <Check size={16} aria-hidden="true" />
+            Sesión completada
+          </p>
+        ) : (
+          <p className="text-sm text-texto-suave" aria-live="polite">
+            {error
+              ? "No se pudo guardar tu avance. Se guardará al pasar a la siguiente sesión."
+              : segundosLeidos >= segundosMinimos
+                ? "Tiempo de lectura cumplido: la sesión se marcará al llegar aquí."
+                : `Lectura mínima: ${duracion(segundosMinimos)}. Faltan ${duracion(restantes)} con la pestaña abierta, o pasa a la siguiente sesión para darla por completada.`}
+          </p>
+        )}
+      </div>
       {celebrando && (
         <Celebracion
           tituloLeccion={tituloLeccion}
@@ -82,6 +148,14 @@ export function AvanceLeccion({
       )}
     </>
   );
+}
+
+/** «4 min 05 s», «45 s». */
+function duracion(segundos: number) {
+  const minutos = Math.floor(segundos / 60);
+  const resto = segundos % 60;
+  if (minutos === 0) return `${resto} s`;
+  return `${minutos} min ${String(resto).padStart(2, "0")} s`;
 }
 
 function Celebracion({

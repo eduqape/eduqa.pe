@@ -16,6 +16,8 @@ import { codigoDeCurso, esAccesoLibre } from "@/lib/precios";
 import { vistasDe } from "@/lib/progreso";
 import { idDeCurso } from "@/lib/curso-id";
 import { AvanceLeccion } from "./AvanceLeccion";
+import { EnlaceAvance } from "./EnlaceAvance";
+import { segundosMinimosDeLectura } from "@/lib/lectura";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import { marcaActual } from "@/lib/marca";
 import { Boton } from "@/components/ui";
@@ -317,6 +319,7 @@ export default async function Page({
               }
               volverA="/cursos"
               marcaCierre={marca.cierre ?? null}
+              segundosMinimos={segundosMinimosDeLectura(leccion.bloques)}
             />
           )}
 
@@ -341,8 +344,11 @@ export default async function Page({
             {/* En la última sesión no hay "Siguiente": el curso se acabó y lo
                 que toca es volver, no quedarse en un callejón sin salida. */}
             {!siguiente && (
-              <Link
+              <EnlaceAvance
                 href={usuario ? "/cursos" : "/"}
+                curso={curso.slug}
+                leccion={leccion.slug}
+                marcar={!!usuario && !vistas.has(leccion.slug)}
                 className="group ml-auto flex flex-col rounded-lg border border-borde px-4 py-3 text-right transition-colors hover:border-rojo-acento"
               >
                 <span className="flex items-center justify-end gap-1.5 text-xs text-texto-tenue">
@@ -352,12 +358,16 @@ export default async function Page({
                 <span className="mt-0.5 text-sm font-medium group-hover:text-rojo-acento">
                   {usuario ? "Volver a mis cursos" : "Ir al inicio"}
                 </span>
-              </Link>
+              </EnlaceAvance>
             )}
 
+            {/* Pasar a la siguiente sesión también da esta por completada. */}
             {siguiente && (
-              <Link
+              <EnlaceAvance
                 href={`/cursos/${curso.slug}/${siguiente.slug}`}
+                curso={curso.slug}
+                leccion={leccion.slug}
+                marcar={!!usuario && !vistas.has(leccion.slug)}
                 className="group ml-auto flex max-w-[47%] flex-col rounded-lg border border-borde px-4 py-3 text-right transition-colors hover:border-rojo-acento"
               >
                 <span className="flex items-center justify-end gap-1.5 text-xs text-texto-tenue">
@@ -367,7 +377,7 @@ export default async function Page({
                 <span className="mt-0.5 text-sm font-medium group-hover:text-rojo-acento">
                   {siguiente.titulo}
                 </span>
-              </Link>
+              </EnlaceAvance>
             )}
           </nav>
 
