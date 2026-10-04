@@ -2,9 +2,9 @@
 
 import { revalidatePath, updateTag } from "next/cache";
 import { perfilActual } from "@/lib/matriculas";
-import { obtenerArticulosMedium } from "@/lib/blog-medium";
+import { estadoFeedMedium, type EstadoFeedMedium } from "@/lib/blog-medium";
 
-export async function actualizarArticulosMedium() {
+export async function actualizarArticulosMedium(): Promise<EstadoFeedMedium> {
   const perfil = await perfilActual();
   if (!perfil?.es_admin) {
     throw new Error("No tienes permisos para actualizar el blog.");
@@ -12,5 +12,5 @@ export async function actualizarArticulosMedium() {
 
   updateTag("medium-blog");
   revalidatePath("/blog");
-  return (await obtenerArticulosMedium()).length;
+  return estadoFeedMedium();
 }

@@ -2,11 +2,12 @@ import "server-only";
 
 import { cache } from "react";
 import { articuloJev } from "@/content/blog/jev-typesafe-ai";
-import type { ArticuloBlog } from "@/lib/blog-types";
+import { articuloPython315 } from "@/content/blog/python-315";
+import type { ArticuloBlog, EstadoFeedMedium } from "@/lib/blog-types";
 
-export type { ArticuloBlog } from "@/lib/blog-types";
+export type { ArticuloBlog, EstadoFeedMedium } from "@/lib/blog-types";
 
-const articulosLocales: ArticuloBlog[] = [articuloJev];
+const articulosLocales: ArticuloBlog[] = [articuloPython315, articuloJev];
 
 function extraerImagen(html: string): string | null {
   const m = html.match(/<img[^>]+src=["']([^"']+)["']/i);
@@ -34,35 +35,57 @@ function slugificar(texto: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+/** Dirección del feed: la variable de entorno manda; el usuario es el respaldo. */
+function urlFeedMedium(): string {
+  return (
+    process.env.MEDIUM_FEED_URL ||
+    (process.env.NEXT_PUBLIC_MEDIUM_USERNAME
+      ? `https://medium.com/feed/@${process.env.NEXT_PUBLIC_MEDIUM_USERNAME.replace(/^@/, "")}`
+      : "https://medium.com/feed/@seminarioA")
+  );
+}
+
+const consultarFeedMedium = cache(
+  async (): Promise<{ articulos: ArticuloBlog[]; estado: EstadoFeedMedium }> => {
+    const url = urlFeedMedium();
+
+    try {
+      const res = await fetch(url, {
+        next: { revalidate: 3600, tags: ["medium-blog"] },
+        headers: { Accept: "application/rss+xml, application/xml, text/xml" },
+      });
+
+      if (!res.ok) {
+        console.warn(`El feed de Medium respondió ${res.status}: ${url}`);
+        return { articulos: [], estado: { tipo: "http", url, codigo: res.status } };
+      }
+
+      const articulos = parsearRssMedium(await res.text());
+      return {
+        articulos,
+        estado:
+          articulos.length > 0
+            ? { tipo: "ok", url, articulos: articulos.length }
+            : { tipo: "vacio", url },
+      };
+    } catch (error) {
+      console.warn("No se pudo consultar el feed de Medium:", error);
+      return { articulos: [], estado: { tipo: "red", url } };
+    }
+  },
+);
+
 /**
  * Obtiene los artículos sincronizados desde el feed de Medium de la empresa.
  * Si el feed falla o no contiene entradas, no se publican artículos ficticios.
  */
-export const obtenerArticulosMedium = cache(async (): Promise<ArticuloBlog[]> => {
-  const feedUrl =
-    process.env.MEDIUM_FEED_URL ||
-    (process.env.NEXT_PUBLIC_MEDIUM_USERNAME
-      ? `https://medium.com/feed/@${process.env.NEXT_PUBLIC_MEDIUM_USERNAME.replace(/^@/, "")}`
-      : "https://medium.com/feed/@seminarioA");
+export const obtenerArticulosMedium = cache(
+  async (): Promise<ArticuloBlog[]> => (await consultarFeedMedium()).articulos,
+);
 
-  try {
-    const res = await fetch(feedUrl, {
-      next: { revalidate: 3600, tags: ["medium-blog"] },
-      headers: { Accept: "application/rss+xml, application/xml, text/xml" },
-    });
-
-    if (!res.ok) {
-      console.warn(`El feed de Medium respondió ${res.status}: ${feedUrl}`);
-      return [];
-    }
-
-    const xml = await res.text();
-    return parsearRssMedium(xml);
-  } catch (error) {
-    console.warn("No se pudo consultar el feed de Medium:", error);
-    return [];
-  }
-});
+export const estadoFeedMedium = cache(
+  async (): Promise<EstadoFeedMedium> => (await consultarFeedMedium()).estado,
+);
 
 export const obtenerArticulosBlog = cache(async (): Promise<ArticuloBlog[]> => {
   const medium = await obtenerArticulosMedium();

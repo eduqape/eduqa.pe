@@ -11,6 +11,11 @@ type BotonCompartirArticuloProps = {
 
 type ContenidoArticuloProps = {
   contenido: string;
+  /**
+   * Oculta el `<nav>` de índice escrito dentro del artículo. La página genera
+   * uno a partir de los títulos, y mostrar los dos repite la misma lista.
+   */
+  ocultarIndiceInterno?: boolean;
 };
 
 async function copiarTexto(texto: string) {
@@ -85,7 +90,7 @@ export function BotonCompartirArticulo({
   );
 }
 
-export function ContenidoArticulo({ contenido }: ContenidoArticuloProps) {
+export function ContenidoArticulo({ contenido, ocultarIndiceInterno = false }: ContenidoArticuloProps) {
   const contenedor = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -96,6 +101,8 @@ export function ContenidoArticulo({ contenido }: ContenidoArticuloProps) {
 
     raiz.querySelectorAll("pre").forEach((bloque) => {
       if (bloque.querySelector(":scope > .boton-copiar-codigo-blog")) return;
+      // Una salida se lee, no se pega en la terminal.
+      if (bloque.classList.contains("salida")) return;
 
       const codigo = bloque.querySelector("code");
       const boton = document.createElement("button");
@@ -144,7 +151,7 @@ export function ContenidoArticulo({ contenido }: ContenidoArticuloProps) {
     <>
       <div
         ref={contenedor}
-        className="contenido-blog"
+        className={`contenido-blog${ocultarIndiceInterno ? " sin-indice-interno" : ""}`}
         dangerouslySetInnerHTML={{ __html: contenido }}
       />
 
@@ -308,6 +315,15 @@ export function ContenidoArticulo({ contenido }: ContenidoArticuloProps) {
           font-size: 0.9em;
         }
 
+        /* En un título, el código se marca solo con la tipografía: la caja del
+           código en línea, a ese tamaño, compite con el propio título. */
+        .contenido-blog :is(h1, h2, h3, h4) code {
+          border: 0;
+          background: transparent;
+          padding: 0;
+          font-size: 0.92em;
+        }
+
         .contenido-blog pre {
           position: relative;
           margin: 1.75rem 0;
@@ -320,6 +336,29 @@ export function ContenidoArticulo({ contenido }: ContenidoArticuloProps) {
           font-size: 0.9rem;
           line-height: 1.65;
           tab-size: 2;
+        }
+
+        /* La salida de un bloque: se distingue del código por fondo y rótulo,
+           para que no haya que adivinar qué se escribe y qué imprime. */
+        .contenido-blog pre.salida {
+          margin-top: -0.75rem;
+          border-color: var(--color-borde);
+          background: var(--color-superficie);
+          color: var(--color-texto-suave);
+          padding-top: 2.3rem;
+        }
+
+        .contenido-blog pre.salida::before {
+          content: "Salida";
+          position: absolute;
+          top: 0.8rem;
+          left: 1.1rem;
+          color: var(--color-texto-tenue);
+          font-family: var(--font-sans);
+          font-size: 0.68rem;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
         }
 
         .contenido-blog pre code {
@@ -396,6 +435,10 @@ export function ContenidoArticulo({ contenido }: ContenidoArticuloProps) {
           border-radius: 1rem;
           background: var(--color-superficie);
           padding: 1rem 1.2rem;
+        }
+
+        .contenido-blog.sin-indice-interno > nav {
+          display: none;
         }
 
         .contenido-blog details {
