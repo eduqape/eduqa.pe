@@ -39,4 +39,12 @@ export const ASSETS_SVG: AssetSvg[] = [
     etiquetas: ["llama", "línea", "descanso"],
     origen: "Vectorizada con potrace a partir de una ilustración blanca sobre rojo.",
   },
+  {
+    id: "llama-pastando",
+    nombre: "Llama pastando",
+    archivo: "/llama-pastando.svg",
+    descripcion: "Llama de pie con la cabeza baja, comiendo pasto, en trazo de línea grueso.",
+    etiquetas: ["llama", "línea", "pasto"],
+    origen: "Vectorizada con potrace a partir de una ilustración blanca sobre rojo.",
+  },
 ];
