@@ -34,6 +34,7 @@ const pilares: { titulo: string; texto: string; ilustracion?: string }[] = [
   {
     titulo: "Siempre en vivo",
     texto: "Clases en directo para preguntar, corregir y comprobar lo aprendido.",
+    ilustracion: "/llama-en-vivo.svg",
   },
   {
     titulo: "Nichos técnicos poco atendidos",
@@ -131,11 +132,12 @@ export default async function Page() {
             La propuesta educativa de EDUQA.PE se sostiene en cuatro principios claros.
           </p>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* 2×2 desde el móvil: debajo de `sm` el contenido se compacta para caber en media pantalla. */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {pilares.map((pilar, indice) => (
               <article
                 key={pilar.titulo}
-                className="relative min-h-[280px]"
+                className="relative min-h-[230px] sm:min-h-[280px]"
               >
                 <svg
                   aria-hidden="true"
@@ -151,18 +153,18 @@ export default async function Page() {
                   />
                 </svg>
 
-                <span className="absolute left-5 top-4 z-10 text-sm font-semibold tabular-nums text-rojo-acento">
+                <span className="absolute left-3 top-3 z-10 text-xs font-semibold tabular-nums text-rojo-acento sm:left-5 sm:top-4 sm:text-sm">
                   0{indice + 1}
                 </span>
 
-                <div className="relative z-10 flex h-full min-h-[280px] flex-col px-5 pb-5 pt-8">
+                <div className="relative z-10 flex h-full min-h-[230px] flex-col px-3 pb-4 pt-8 sm:min-h-[280px] sm:px-5 sm:pb-5">
                   <div
                     aria-hidden="true"
-                    className="flex h-[134px] shrink-0 items-center justify-center"
+                    className="flex h-[96px] shrink-0 items-center justify-center sm:h-[134px]"
                   >
                     {pilar.ilustracion ? (
                       <span
-                        className="block h-[7.2rem] w-[7.2rem] bg-rojo-acento/70 dark:bg-texto/80"
+                        className="block size-20 bg-rojo-acento/70 sm:size-[7.2rem] dark:bg-texto/80"
                         style={{
                           WebkitMaskImage: `url('${pilar.ilustracion}')`,
                           maskImage: `url('${pilar.ilustracion}')`,
@@ -175,14 +177,14 @@ export default async function Page() {
                         }}
                       />
                     ) : (
-                      <Llama className="h-24 w-auto text-rojo-acento/70 dark:text-texto/80" />
+                      <Llama className="h-16 w-auto text-rojo-acento/70 sm:h-24 dark:text-texto/80" />
                     )}
                   </div>
 
-                  <h3 className="mt-5 flex min-h-[2.5rem] items-center justify-center text-center text-[13px] font-semibold leading-snug tracking-tight text-texto">
+                  <h3 className="mt-3 flex min-h-[2.5rem] items-center justify-center text-center text-xs font-semibold leading-snug tracking-tight text-texto sm:mt-5 sm:text-[13px]">
                     {pilar.titulo}
                   </h3>
-                  <p className="mt-3 text-center text-sm leading-relaxed text-texto-suave">
+                  <p className="mt-2 text-center text-xs leading-relaxed text-texto-suave sm:mt-3 sm:text-sm">
                     {pilar.texto}
                   </p>
                 </div>
