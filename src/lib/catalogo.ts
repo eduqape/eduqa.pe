@@ -7,7 +7,7 @@ export const marca = {
   nombre: "EDUQA.PE",
   lema: "Democratizando la educación en tecnología",
   gancho:
-    "Cursos cortos de tecnología dictados en directo, en español y desde Perú. Nada pregrabado, nada de ver videos solo a las once de la noche.",
+    "Cursos cortos de tecnología en vivo, en español y desde Perú, donde puedes preguntar y aprender acompañado.",
   precio: 20,
   moneda: "S/",
   ciudad: "Lima, Perú",
@@ -15,24 +15,24 @@ export const marca = {
 
 export const promesas = [
   {
-    titulo: "Nunca vamos a ser pregrabados",
+    titulo: "En vivo por decisión",
     texto:
-      "No es una limitación de arranque, es la decisión de fondo. Si algo no se entiende, se explica ahí mismo. Un video no hace eso.",
+      "Si algo no queda claro, lo resolvemos en el momento, contigo.",
   },
   {
-    titulo: "Nichos que nadie dicta acá",
+    titulo: "Temas que cuesta encontrar en español",
     texto:
-      "Visión por computadora, MLOps, ingeniería de datos, despliegue real. No otro curso de Excel avanzado.",
+      "Visión por computadora, MLOps, ingeniería de datos y despliegue real, explicados desde cero.",
   },
   {
     titulo: "Quien dicta construye esto en producción",
     texto:
-      "Los ejemplos salen de sistemas que corren de verdad, no de un notebook armado para la clase.",
+      "Los ejemplos vienen de sistemas reales, para que aprendas lo que se usa en el trabajo.",
   },
   {
     titulo: "Precio de acá, pago de acá",
     texto:
-      "Veinte soles por curso. Se paga por Yape o Plin, sin tarjeta internacional ni suscripción que se renueva sola.",
+      "Veinte soles por curso. Pagas con Yape o Plin, sin tarjeta internacional ni suscripciones.",
   },
 ];
 
@@ -192,10 +192,10 @@ export const faq = [
   },
   {
     p: "¿Cómo se paga?",
-    r: "La plataforma genera un código QR y lo escaneas con Yape o Plin desde el celular. El acceso se abre cuando el pago se confirma, sin que tengas que mandar el número de operación a nadie.",
+    r: "La plataforma genera un código QR y lo escaneas con Yape o Plin desde el celular. El acceso se activa solo en cuanto se confirma el pago.",
   },
   {
     p: "¿Dan certificado?",
-    r: "Constancia de participación con tu nombre, las horas cursadas y un código de emisión. No es un título universitario y no te lo vamos a vender como tal.",
+    r: "Sí. Al terminar recibes una constancia de participación con tu nombre, las horas cursadas y un código de verificación.",
   },
 ];

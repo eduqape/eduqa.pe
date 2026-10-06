@@ -2,7 +2,6 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   ArrowRight,
-  BadgeCheck,
   Check,
   ChevronDown,
   Mail,
@@ -19,6 +18,8 @@ import {
 import { personasQueEnsenan } from "@/lib/personas";
 import { LIMITE_PLAN_GRATIS } from "@/lib/matriculas";
 import { usuarioActual } from "@/lib/supabase/servidor";
+import type { DatosCertificado } from "@/components/Certificado";
+import { CertificadoFluido } from "@/components/CertificadoFluido";
 import { FichaPersona } from "@/components/FichaPersona";
 import { IconoRed, Stack } from "@/components/Iconos";
 import { Llama } from "@/components/Llama";
@@ -51,6 +52,17 @@ const pilares: { titulo: string; texto: string; ilustracion?: string }[] = [
     ilustracion: "/llama-rigor-verificable.svg",
   },
 ];
+
+// Datos de ejemplo para la vista previa de la constancia: no es una emitida.
+const CERTIFICADO_MUESTRA: DatosCertificado = {
+  alumno: "Ana Lucía Quispe Rojas",
+  curso: "Docker avanzado",
+  horas: 4,
+  fecha: "23 de agosto de 2026",
+  docente: "Alejandro Seminario",
+  directorAcademico: "Director Académico EDUQA.PE",
+  codigo: "EDUQA-DK03-2026-XGPGBC",
+};
 
 export default async function Page() {
   // La portada cambia según haya sesión: a quien ya entró no se le ofrece
@@ -282,25 +294,29 @@ export default async function Page() {
         </Seccion>
 
         {/* Certificados */}
-        <Seccion titulo="La constancia lleva código">
-          <div className="flex flex-col gap-4 rounded-xl border border-borde bg-superficie p-6 sm:flex-row sm:items-start">
-            <BadgeCheck size={34} className="shrink-0 text-rojo-acento" aria-hidden="true" />
-            <div>
-              <p className="leading-relaxed text-texto-suave">
-                Quien asiste a un dictado en vivo recibe una constancia de participación
-                con su nombre completo, las horas cursadas, la fecha y un código único
-                de emisión. Es una constancia, no un título universitario, y no se
-                vende como tal.
-              </p>
-            </div>
-          </div>
+        <Seccion titulo="La constancia que recibes">
+          <p className="-mt-4 mb-8 leading-relaxed text-texto-suave">
+            Al terminar un curso en vivo recibes una constancia de participación con
+            tu nombre, las horas cursadas y un código para verificarla.
+          </p>
+
+          <figure>
+            <CertificadoFluido
+              datos={CERTIFICADO_MUESTRA}
+              variante="solido"
+              className="rounded-xl shadow-lg ring-1 ring-black/5"
+            />
+            <figcaption className="mt-3 text-center text-xs text-texto-tenue">
+              Constancia de muestra. Los datos son de ejemplo.
+            </figcaption>
+          </figure>
         </Seccion>
 
         {/* Stack */}
         <Seccion titulo="Las herramientas de las clases" ancho="amplio">
           <p className="-mt-4 mb-9 leading-relaxed text-texto-suave">
-            Lo que vas a tocar en las sesiones. Nada de pseudocódigo ni entornos de
-            juguete.
+            Las mismas herramientas que se usan en proyectos reales, listas para
+            practicar desde la primera sesión.
           </p>
           <Stack />
         </Seccion>
