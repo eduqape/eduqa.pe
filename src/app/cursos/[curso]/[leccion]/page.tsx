@@ -33,6 +33,7 @@ import { Teoria } from "@/components/curso/Teoria";
 import { Venn } from "@/components/curso/Venn";
 import { CargandoCurso } from "@/components/curso/CargandoCurso";
 import { PreparacionFortran } from "@/components/curso/PreparacionFortran";
+import { PreparacionBash } from "@/components/curso/PreparacionBash";
 import { rutaDeCadaCurso } from "@/lib/rutas";
 import { Ejercicios } from "@/components/curso/Ejercicios";
 import { EjercicioPunto } from "@/components/curso/EjercicioPunto";
@@ -80,7 +81,7 @@ function renderCuerpoSeccion(sec: Seccion, op: Opciones) {
               salida={b.salida}
               docs={b.docs}
               nota={b.nota}
-              ejecutable={(b.lenguaje === "fortran" || ejecutable) && !b.sinConsola}
+              ejecutable={(b.lenguaje === "fortran" || b.lenguaje === "bash" || ejecutable) && !b.sinConsola}
               entrada={b.entrada}
               archivos={b.archivos}
               paquetes={op.paquetes}
@@ -193,6 +194,9 @@ export default async function Page({
 
   const ejecutable = CON_CONSOLA.has(`${cursoSlug}/${leccionSlug}`);
   const esFortran = curso.icono === "fortran" || leccion.bloques.some(b => b.tipo === "codigo" && b.lenguaje === "fortran");
+  const esBash =
+    leccion.bloques.some((b) => b.tipo === "codigo" && b.lenguaje === "bash" && !b.sinConsola) ||
+    Object.values(leccion.ejercicios ?? {}).some((e) => (e.tipo ?? "codigo") === "codigo" && "lenguaje" in e && e.lenguaje === "bash");
   const rutaFortran = esFortran ? (await rutaDeCadaCurso()).get(cursoSlug) : undefined;
   const herramientas: HerramientaCurso[] = rutaFortran
     ? [
@@ -268,6 +272,7 @@ export default async function Page({
               {leccion.titulo}
             </h1>
             {esFortran && <PreparacionFortran />}
+            {esBash && <PreparacionBash />}
           </header>
 
           <div className="mt-8">

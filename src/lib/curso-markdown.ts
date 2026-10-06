@@ -319,8 +319,8 @@ function leerSesion(texto: string, donde: string): ResultadoSesion {
 
       if (valla.lenguaje === "entrada" || valla.lenguaje === "archivo") {
         const bloque = ultimo();
-        if (!bloque || bloque.tipo !== "codigo" || bloque.lenguaje !== "fortran") {
-          throw new Error(`Datos de entrada sin programa Fortran delante, en ${donde}.`);
+        if (!bloque || bloque.tipo !== "codigo" || !["fortran", "bash"].includes(bloque.lenguaje)) {
+          throw new Error(`Datos de entrada sin programa Fortran o Bash delante, en ${donde}.`);
         }
         if (valla.lenguaje === "entrada") bloque.entrada = valla.contenido + "\n";
         else {
@@ -371,7 +371,9 @@ function leerSesion(texto: string, donde: string): ResultadoSesion {
             ...leerEjercicio(valla.contenido, donde),
             ...(valla.modificadores.includes("fortran")
               ? { lenguaje: "fortran" as const }
-              : {}),
+              : valla.modificadores.includes("bash")
+                ? { lenguaje: "bash" as const }
+                : {}),
           };
         }
         continue;

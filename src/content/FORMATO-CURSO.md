@@ -430,3 +430,24 @@ sandbox, que conserva un borrador local y permite descargar el fuente `.f90`.
 tiene un límite de tiempo y de salida. Las fuentes del alumno permanecen en su
 navegador. Consulta `public/vendor/xlfortran/README.md` para las versiones,
 licencias, comprobaciones y limitaciones conocidas del motor.
+
+## Bash en el navegador
+
+Una valla `bash` en un curso cuyo slug contiene `bash` se ejecuta en el
+navegador con GNU Bash 5.1 compilado a WebAssembly (Wasmer/WASIX), junto con
+coreutils, GNU grep, GNU sed y `find`. Cada bloque corre solo, en un sandbox
+nuevo con directorio `/workspace`: no ve variables ni archivos de otro bloque.
+
+- Después del bloque pueden ir `entrada` (entrada estándar) y
+  `archivo nombre.txt` (archivo virtual en `/workspace`), igual que en Fortran.
+- Si el código usa algo que el motor no tiene —red, `awk`, Bash 5.2/5.3—, la
+  valla va como `bash !sin-consola` y su salida se obtiene en una terminal real.
+- Ejercicio de completado: `ejercicio bash`, con las secciones de siempre. La
+  salida debe coincidir exactamente, espacios incluidos.
+- Un bloque sin valla `salida` no debe imprimir nada.
+
+Las salidas no se escriben a mano: `node scripts/verificar-bash.mjs
+--curso=<slug> --escribir` las rellena ejecutando cada bloque en el mismo motor
+y `npm run test:bash` comprueba que siguen coincidiendo. Las respuestas
+correcta e incorrecta de cada ejercicio van en `scripts/bash-respuestas.json`.
+Detalles del motor y sus diferencias con Linux: `public/vendor/bash/README.md`.

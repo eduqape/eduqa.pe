@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { ejecutarPython, estadoPython, suscribirsePython } from "@/lib/pyodide";
 import { ejecutarFortran } from "@/lib/fortran-web";
+import { ejecutarBash } from "@/lib/bash-web";
 import type {
   Ejercicio,
   EjercicioCodigo,
@@ -128,7 +129,9 @@ function EjercicioCodigoPunto({
     const { salida, error } =
       ejercicio.lenguaje === "fortran"
         ? await ejecutarFortran(codigo, { signal: controlador.current.signal })
-        : await ejecutarPython(codigo, { aislado: true, paquetes, preludio });
+        : ejercicio.lenguaje === "bash"
+          ? await ejecutarBash(codigo, { signal: controlador.current.signal })
+          : await ejecutarPython(codigo, { aislado: true, paquetes, preludio });
 
     setComprobando(false);
     setResultado({
@@ -147,7 +150,10 @@ function EjercicioCodigoPunto({
     () => "sin-empezar" as const,
   );
   const preparando =
-    comprobando && ejercicio.lenguaje !== "fortran" && preparacion !== "listo";
+    comprobando &&
+    ejercicio.lenguaje !== "fortran" &&
+    ejercicio.lenguaje !== "bash" &&
+    preparacion !== "listo";
 
   return (
     <CajaEjercicio correcto={resultado?.acierto}>
@@ -175,7 +181,7 @@ function EjercicioCodigoPunto({
       </pre>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        {comprobando && ejercicio.lenguaje === "fortran" && (
+        {comprobando && (ejercicio.lenguaje === "fortran" || ejercicio.lenguaje === "bash") && (
           <button
             type="button"
             onClick={() => controlador.current?.abort()}

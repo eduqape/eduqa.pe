@@ -40,7 +40,7 @@ export type Bloque =
        * dos veces.
        */
       sinConsola?: boolean;
-      /** Datos de entrada y archivos virtuales de una ejecución Fortran. */
+      /** Datos de entrada y archivos virtuales de una ejecución Fortran o Bash. */
       entrada?: string;
       archivos?: Record<string, string>;
     }
@@ -99,8 +99,8 @@ export const REGIONES_VENN: RegionVenn[] = [
 export type EjercicioCodigo = {
   /** Ausente en cursos antiguos; equivale a `codigo`. */
   tipo?: "codigo";
-  /** Python por omisión; Fortran se compila a WebAssembly en el navegador. */
-  lenguaje?: "python" | "fortran";
+  /** Python por omisión; Fortran y Bash se ejecutan en WebAssembly en el navegador. */
+  lenguaje?: "python" | "fortran" | "bash";
   enunciado: string;
   /** Lleva exactamente un hueco marcado con `___`. */
   plantilla: string;

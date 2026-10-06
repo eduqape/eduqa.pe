@@ -16,6 +16,22 @@ const nextConfig: NextConfig = {
    * en lugar de borrarse: un 301 conserva el enlace de quien lo guardó y le
    * pasa el posicionamiento al destino nuevo.
    */
+  /*
+   * El runtime de Bash arranca Workers desde `/vendor/bash`. Dentro de una
+   * lección aislada (ver `proxy.ts`), el script de un Worker tiene que
+   * declarar también su política de incrustación.
+   */
+  async headers() {
+    return [
+      {
+        source: "/vendor/bash/:ruta*",
+        headers: [
+          { key: "Cross-Origin-Embedder-Policy", value: "credentialless" },
+          { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
+        ],
+      },
+    ];
+  },
   async redirects() {
     return [
       { source: "/courses", destination: "/cursos", permanent: true },

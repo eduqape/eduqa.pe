@@ -81,8 +81,22 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.redirect(destino);
   }
 
+  if (RE_LECCION_BASH.test(ruta)) {
+    respuesta.headers.set("Cross-Origin-Opener-Policy", "same-origin");
+    respuesta.headers.set("Cross-Origin-Embedder-Policy", "credentialless");
+  }
+
   return respuesta;
 }
+
+/*
+ * Bash corre en WebAssembly con varios Workers que comparten memoria, y eso
+ * exige un documento aislado. `credentialless` en lugar de `require-corp`
+ * permite seguir cargando imágenes y scripts de otros orígenes sin que
+ * declaren CORP. Se limita a las lecciones de cursos cuyo slug contiene
+ * `bash` para no cambiar el comportamiento del resto del sitio.
+ */
+const RE_LECCION_BASH = /^\/cursos\/[a-z0-9-]*bash[a-z0-9-]*\/(?!informacion$)[a-z0-9-]+$/;
 
 export const config = {
   // Se excluyen estáticos e imágenes: no necesitan sesión y encarecerían

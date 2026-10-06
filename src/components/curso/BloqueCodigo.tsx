@@ -6,6 +6,7 @@ import { Citas } from "./Citas";
 import { NotaTecnica } from "./NotaTecnica";
 import { Consola } from "./Consola";
 import { ConsolaFortran } from "./ConsolaFortran";
+import { ConsolaBash } from "./ConsolaBash";
 
 /** Nombres editoriales que Shiki registra con otro identificador. */
 const LENGUAJES_SHIKI: Record<string, string> = {
@@ -50,7 +51,8 @@ export async function BloqueCodigo({
     defaultColor: "light",
   });
 
-  const tendraConsola = ejecutable && (lenguaje === "python" || lenguaje === "fortran");
+  const tendraConsola =
+    ejecutable && (lenguaje === "python" || lenguaje === "fortran" || lenguaje === "bash");
 
   return (
     <div className="my-6">
@@ -68,9 +70,9 @@ export async function BloqueCodigo({
 
         {/* La salida del temario se pinta salvo cuando va a haber consola:
             ahí la produce el botón y repetirla sería decir dos veces lo mismo.
-            La condición mira el lenguaje y no solo si la sesión es ejecutable,
-            porque un bloque de shell nunca recibe consola y su salida tiene
-            que verse igual. */}
+            La condición mira el lenguaje y no solo si la sesión es ejecutable:
+            un bloque de shell que no sea `bash` (sh, console…) nunca recibe
+            consola y su salida tiene que verse igual. */}
         {salida && !tendraConsola && (
           <div className="border-t border-borde bg-superficie">
             <div className="flex items-center gap-1.5 px-4 pt-2.5 text-[11px] uppercase tracking-wide text-texto-tenue">
@@ -82,6 +84,7 @@ export async function BloqueCodigo({
             </pre>
           </div>
         )}
+        {tendraConsola && lenguaje === "bash" && <ConsolaBash key={codigo} codigo={codigo} salida={salida} entrada={entrada} archivos={archivos} />}
         {tendraConsola && lenguaje === "fortran" && <ConsolaFortran key={codigo} codigo={codigo} entrada={entrada} archivos={archivos} />}
         {tendraConsola && lenguaje === "python" && (
           <Consola codigo={codigo} paquetes={paquetes} preludio={preludio} />
