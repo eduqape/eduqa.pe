@@ -1,7 +1,18 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { parse as parseYaml } from "yaml";
 import { codigoBaseDeFicha, construirCurso } from "@/lib/curso-markdown";
+import { esIconoCurso } from "@/lib/iconos-curso";
 import { PREFIJO, resumir } from "@/lib/claves-api";
+
+/** Devuelve el frontmatter de un archivo Markdown, o {} si no lo lleva. */
+function frontmatter(texto: string): Record<string, unknown> {
+  const limpio = texto.replace(/^﻿/, "");
+  if (!limpio.startsWith("---")) return {};
+  const cierre = limpio.indexOf("\n---", 3);
+  if (cierre === -1) return {};
+  return (parseYaml(limpio.slice(3, cierre)) ?? {}) as Record<string, unknown>;
+}
 
 /**
  * Publica o actualiza un curso.
@@ -62,6 +73,10 @@ export async function POST(peticion: Request) {
 
   const mapa = new Map(Object.entries(archivos));
 
+  if (!esIconoCurso(frontmatter(archivos["curso.md"]).icono)) {
+    return error(400, "Todo curso debe declarar un icono válido en curso.md.");
+  }
+
   // Se construye antes de guardar: un temario mal escrito se rechaza aquí y no
   // cuando un alumno abra la página.
   let curso;
@@ -78,20 +93,32 @@ export async function POST(peticion: Request) {
     return error(400, "El slug solo admite minúsculas, números y guiones.");
   }
 
+  // El índice se lee del frontmatter de cada archivo, como en el panel. Buscar
+  // el archivo por el slug de la sesión confundía `sesion-1` con `sesion-10.md`.
+  const sesiones = nombres
+    .filter((archivo) => archivo !== "curso.md")
+    .map((archivo) => {
+      const f = frontmatter(archivos[archivo]);
+      const numero = Number(f.numero);
+      return {
+        archivo,
+        numero,
+        titulo: String(f.titulo ?? ""),
+        slug: String(f.slug ?? `sesion-${numero}`),
+      };
+    });
+  const slugsSesion = new Set(sesiones.map((s) => s.slug));
+  if (slugsSesion.size !== sesiones.length) {
+    return error(422, "Dos sesiones comparten el mismo slug o número.");
+  }
+
   const { data: codigo, error: eGuardado } = await supabase.rpc("publicar_curso_por_api", {
     p_resumen: resumir(clave),
     p_slug: slug,
     p_titulo: curso.titulo,
     p_resumen_curso: curso.resumen,
     p_archivos: archivos,
-    p_sesiones: curso.lecciones.map((l) => ({
-      archivo: [...mapa.keys()].find(
-        (n) => n !== "curso.md" && n.includes(l.slug.replace(/[^a-z0-9-]/g, "")),
-      ) ?? `${l.slug}.md`,
-      numero: l.numero,
-      titulo: l.titulo,
-      slug: l.slug,
-    })),
+    p_sesiones: sesiones,
     p_codigo_base: codigoBase,
   });
 
