@@ -15,7 +15,7 @@ import { X } from "lucide-react";
  * Si hay cambios sin guardar, cerrar (con la X, con Escape o pulsando fuera)
  * pide confirmación en vez de tirar lo escrito.
  */
-export function HojaPersona({
+export function HojaLateral({
   abierta,
   titulo,
   subtitulo,
@@ -49,7 +49,7 @@ export function HojaPersona({
   return (
     <dialog
       ref={ref}
-      aria-labelledby="hoja-persona-titulo"
+      aria-labelledby="hoja-lateral-titulo"
       onCancel={(evento) => {
         evento.preventDefault();
         pedirCierre();
@@ -65,7 +65,7 @@ export function HojaPersona({
         <div className="flex h-full flex-col">
           <header className="flex items-start justify-between gap-4 border-b border-borde px-6 py-4">
             <div className="min-w-0">
-              <h2 id="hoja-persona-titulo" className="truncate text-lg font-semibold">
+              <h2 id="hoja-lateral-titulo" className="truncate text-lg font-semibold">
                 {titulo}
               </h2>
               {subtitulo && <p className="mt-0.5 text-xs text-texto-tenue">{subtitulo}</p>}
@@ -83,10 +83,10 @@ export function HojaPersona({
           {confirmando && (
             <div
               role="alertdialog"
-              aria-labelledby="hoja-persona-descartar"
+              aria-labelledby="hoja-lateral-descartar"
               className="flex flex-wrap items-center justify-between gap-3 border-b border-borde bg-rojo-tenue px-6 py-3"
             >
-              <p id="hoja-persona-descartar" className="text-sm text-texto">
+              <p id="hoja-lateral-descartar" className="text-sm text-texto">
                 Hay cambios sin guardar. ¿Descartarlos?
               </p>
               <div className="flex gap-2">

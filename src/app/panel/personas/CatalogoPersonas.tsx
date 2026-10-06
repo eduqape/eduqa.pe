@@ -18,7 +18,7 @@ import {
 import type { Persona } from "@/lib/personas";
 import { cambiarEstado, type EstadoPersona } from "./acciones";
 import { FormularioPersona } from "./FormularioPersona";
-import { HojaPersona } from "./HojaPersona";
+import { HojaLateral } from "@/components/HojaLateral";
 import { TarjetaPersona, type Aviso } from "./TarjetaPersona";
 import type { VistaGestion } from "../TarjetaGestion";
 
@@ -447,7 +447,7 @@ export function CatalogoPersonas({
         </>
       )}
 
-      <HojaPersona
+      <HojaLateral
         abierta={hoja !== null}
         titulo={hoja?.modo === "editar" ? `Editar a ${hoja.persona.nombre}` : "Agregar persona"}
         subtitulo={
@@ -469,7 +469,7 @@ export function CatalogoPersonas({
             />
           )
         }
-      </HojaPersona>
+      </HojaLateral>
 
       {aviso && (
         <div

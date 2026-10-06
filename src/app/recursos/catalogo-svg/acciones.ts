@@ -20,14 +20,18 @@ function texto(formData: FormData, campo: string, maximo: number) {
   return String(formData.get(campo) ?? "").trim().slice(0, maximo);
 }
 
-function volver(estado: string, detalle?: string): never {
-  const parametros = new URLSearchParams({ estado });
-  if (detalle) parametros.set("detalle", detalle);
-  redirect(`${RUTA}?${parametros}`);
+function volver(estado: string): never {
+  redirect(`${RUTA}?${new URLSearchParams({ estado })}`);
 }
 
-export async function subirAsset(formData: FormData) {
-  const usuario = await validarAdmin();
+export type EstadoSubida = { estado: "inicial" } | { estado: "error"; mensaje: string } | { estado: "subido"; nombre: string };
+
+// Devuelve el resultado en vez de redirigir: el formulario vive en un panel y
+// los errores se muestran ahí, sin perder lo escrito.
+export async function subirAsset(_previo: EstadoSubida, formData: FormData): Promise<EstadoSubida> {
+  const error = (mensaje: string): EstadoSubida => ({ estado: "error", mensaje });
+  const usuario = await validarAdmin().catch(() => null);
+  if (!usuario) return error("Tu sesión no tiene permisos de administrador. Vuelve a entrar.");
   const nombre = texto(formData, "nombre", 120);
   const descripcion = texto(formData, "descripcion", 400);
   const origen = texto(formData, "origen", 300);
@@ -40,13 +44,13 @@ export async function subirAsset(formData: FormData) {
   const archivo = formData.get("archivo");
   const slug = slugAsset(nombre);
 
-  if (nombre.length < 2 || slug.length < 2) volver("datos-invalidos");
-  if (!(archivo instanceof File) || archivo.size === 0) volver("sin-archivo");
-  if (archivo.size > TAMANO_MAXIMO_SVG) volver("muy-grande");
+  if (nombre.length < 2 || slug.length < 2) return error("Escribe un nombre de al menos 2 caracteres.");
+  if (!(archivo instanceof File) || archivo.size === 0) return error("Elige un archivo SVG.");
+  if (archivo.size > TAMANO_MAXIMO_SVG) return error("El SVG pesa más de 1 MB.");
 
   const contenido = await archivo.text();
   const problema = problemaSvg(contenido);
-  if (problema) volver("svg-invalido", problema);
+  if (problema) return error(problema);
 
   const supabase = await clienteServidor();
   const ruta = `${slug}-${Date.now().toString(36)}.svg`;
@@ -55,7 +59,7 @@ export async function subirAsset(formData: FormData) {
     cacheControl: "31536000",
     upsert: false,
   });
-  if (subida.error) volver("error");
+  if (subida.error) return error("No se pudo subir el archivo. Inténtalo de nuevo.");
 
   const publica = supabase.storage.from(BUCKET_ASSETS).getPublicUrl(ruta).data.publicUrl;
   const { data: ultimo } = await supabase
@@ -65,7 +69,7 @@ export async function subirAsset(formData: FormData) {
     .limit(1)
     .maybeSingle();
 
-  const { error } = await supabase.from("recurso_assets").insert({
+  const insercion = await supabase.from("recurso_assets").insert({
     slug,
     nombre,
     archivo: publica,
@@ -77,14 +81,18 @@ export async function subirAsset(formData: FormData) {
     posicion: (ultimo?.posicion ?? 0) + 10,
     creado_por: usuario.id,
   });
-  if (error) {
+  if (insercion.error) {
     // Sin fila no hay forma de llegar al archivo: se borra para no dejar huérfanos.
     await supabase.storage.from(BUCKET_ASSETS).remove([ruta]);
-    volver(error.code === "23505" ? "duplicado" : "error");
+    return error(
+      insercion.error.code === "23505"
+        ? "Ya existe un asset con ese nombre."
+        : "No se pudo guardar el asset. Inténtalo de nuevo.",
+    );
   }
 
   revalidatePath(RUTA);
-  volver("subido");
+  return { estado: "subido", nombre };
 }
 
 export async function eliminarAsset(formData: FormData) {
