@@ -20,6 +20,7 @@ import {
 import { ejecutarPython, estadoPython, suscribirsePython } from "@/lib/pyodide";
 import { ejecutarFortran } from "@/lib/fortran-web";
 import { ejecutarBash } from "@/lib/bash-web";
+import { Selector } from "@/components/Selector";
 import type {
   Ejercicio,
   EjercicioCodigo,
@@ -352,75 +353,164 @@ function EjercicioOrdenarPunto({ ejercicio }: { ejercicio: EjercicioOrdenar }) {
           );
         })}
       </ol>
-      <button
-        type="button"
-        onClick={comprobar}
-        className="mt-3 flex items-center gap-1.5 rounded-md border border-borde-fuerte bg-fondo px-2.5 py-1 text-xs font-medium text-texto-suave transition-colors hover:border-rojo-acento hover:text-rojo-acento"
-      >
-        <Check size={12} aria-hidden="true" />
-        Comprobar orden
-      </button>
+      <PieEjercicio pista={ejercicio.pista}>
+        <BotonComprobar onClick={comprobar}>Comprobar orden</BotonComprobar>
+      </PieEjercicio>
       <Retroalimentacion acierto={resultado} explicacion={ejercicio.explicacion} />
-      <Pista texto={ejercicio.pista} />
     </CajaEjercicio>
   );
 }
 
+/** Fisher-Yates sobre una copia. */
+function barajar<T>(lista: T[]): T[] {
+  const copia = [...lista];
+  for (let i = copia.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copia[i], copia[j]] = [copia[j], copia[i]];
+  }
+  return copia;
+}
+
+/**
+ * Pie de los ejercicios con botón: la pista a la izquierda y, a la derecha, el
+ * estado y la acción. El texto de la pista se abre debajo de la franja para no
+ * desplazar el botón.
+ */
+function PieEjercicio({ pista, children }: { pista: string; children: ReactNode }) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-borde pt-3">
+        <button
+          type="button"
+          onClick={() => setVisible((valor) => !valor)}
+          aria-expanded={visible}
+          className="flex items-center gap-1.5 rounded-md py-1 text-xs font-medium text-texto-tenue transition-colors hover:text-rojo-acento"
+        >
+          <Lightbulb size={12} aria-hidden="true" />
+          {visible ? "Ocultar la pista" : "Ver una pista"}
+        </button>
+        <div className="ml-auto flex items-center gap-3">{children}</div>
+      </div>
+      {visible && <p className="mt-2 text-xs leading-relaxed text-texto-suave">{pista}</p>}
+    </>
+  );
+}
+
+function BotonComprobar({ onClick, children }: { onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex items-center gap-1.5 rounded-md border border-borde-fuerte bg-fondo px-3 py-1.5 text-xs font-medium text-texto transition-colors hover:border-rojo-acento hover:text-rojo-acento"
+    >
+      <Check size={13} aria-hidden="true" />
+      {children}
+    </button>
+  );
+}
+
 function EjercicioRelacionarPunto({ ejercicio }: { ejercicio: EjercicioRelacionar }) {
-  const opciones = [...ejercicio.pares.map((par) => par.derecha)].reverse();
+  const soluciones = ejercicio.pares.map((par) => par.derecha);
+  // Barajar en el inicializador no rompe la hidratación: el cuerpo del
+  // ejercicio está plegado y las opciones solo se pintan al abrir el
+  // desplegable, así que nada de esto llega al HTML del servidor.
+  const [opciones] = useState(() => {
+    if (soluciones.length < 2) return soluciones;
+    let nuevas = barajar(soluciones);
+    while (nuevas.every((opcion, i) => opcion === soluciones[i])) nuevas = barajar(soluciones);
+    return nuevas;
+  });
+
   const [selecciones, setSelecciones] = useState(() => ejercicio.pares.map(() => ""));
-  const [resultado, setResultado] = useState<boolean | null>(null);
-  const completo = selecciones.every(Boolean);
+  const [comprobado, setComprobado] = useState(false);
+  const [aviso, setAviso] = useState(false);
+  const elegidas = selecciones.filter(Boolean).length;
+  const aciertos = ejercicio.pares.filter((par, i) => selecciones[i] === par.derecha).length;
+  const todoBien = comprobado && aciertos === ejercicio.pares.length;
 
   function elegir(indice: number, valor: string) {
-    setSelecciones((actual) =>
-      actual.map((seleccion, i) => (i === indice ? valor : seleccion)),
-    );
-    setResultado(null);
+    setSelecciones((actual) => actual.map((s, i) => (i === indice ? valor : s)));
+    setComprobado(false);
+    setAviso(false);
   }
 
   function comprobar() {
-    if (!completo) return;
-    setResultado(
-      ejercicio.pares.every((par, indice) => selecciones[indice] === par.derecha),
-    );
+    if (elegidas < ejercicio.pares.length) {
+      setAviso(true);
+      return;
+    }
+    setComprobado(true);
   }
 
   return (
-    <CajaEjercicio correcto={resultado === true}>
+    <CajaEjercicio correcto={todoBien}>
       <p className="text-sm leading-relaxed text-texto-suave">{ejercicio.enunciado}</p>
       <div className="mt-4 space-y-2">
-        {ejercicio.pares.map((par, indice) => (
-          <div
-            key={par.izquierda}
-            className="grid gap-2 rounded-lg border border-borde bg-fondo p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:items-center"
-          >
-            <span className="text-sm font-medium">{par.izquierda}</span>
-            <select
-              value={selecciones[indice]}
-              onChange={(evento) => elegir(indice, evento.target.value)}
-              aria-label={`Relaciona ${par.izquierda}`}
-              className="min-w-0 rounded-md border border-borde-fuerte bg-superficie px-3 py-2 text-sm text-texto outline-none focus:border-rojo-acento"
+        {ejercicio.pares.map((par, indice) => {
+          const estado = !comprobado ? null : selecciones[indice] === par.derecha;
+          return (
+            <div
+              key={par.izquierda}
+              className={`grid gap-2 rounded-lg border bg-fondo p-3 transition-colors sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)_auto] sm:items-center ${
+                estado === null ? "border-borde" : estado ? "border-exito/50" : "border-rojo-acento/60"
+              }`}
             >
-              <option value="">Selecciona la relación</option>
-              {opciones.map((opcion) => (
-                <option key={opcion} value={opcion}>{opcion}</option>
-              ))}
-            </select>
-          </div>
-        ))}
+              <span className="flex items-center justify-between gap-2 text-sm font-medium">
+                {par.izquierda}
+                {/* En móvil la marca va junto al nombre; desde sm, en su columna. */}
+                <span className="sm:hidden">
+                  {estado === true && <Check size={16} className="text-exito" aria-hidden="true" />}
+                  {estado === false && <X size={16} className="text-rojo-acento" aria-hidden="true" />}
+                </span>
+              </span>
+              <Selector
+                valor={selecciones[indice]}
+                onCambio={(valor) => elegir(indice, valor)}
+                opciones={opciones.map((opcion) => ({ valor: opcion, etiqueta: opcion }))}
+                etiqueta={`Relaciona ${par.izquierda}`}
+                marcador="Elige una relación"
+                className="w-full min-w-0 text-left [&>span:first-child]:min-w-0 [&>span:first-child]:whitespace-normal"
+              />
+              <span className="hidden w-4 sm:block" aria-hidden={estado === null}>
+                {estado === true && <Check size={16} className="text-exito" aria-label="Correcta" />}
+                {estado === false && <X size={16} className="text-rojo-acento" aria-label="Incorrecta" />}
+              </span>
+            </div>
+          );
+        })}
       </div>
-      <button
-        type="button"
-        onClick={comprobar}
-        disabled={!completo}
-        className="mt-3 flex items-center gap-1.5 rounded-md border border-borde-fuerte bg-fondo px-2.5 py-1 text-xs font-medium text-texto-suave transition-colors hover:border-rojo-acento hover:text-rojo-acento disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        <Check size={12} aria-hidden="true" />
-        Comprobar relaciones
-      </button>
-      <Retroalimentacion acierto={resultado} explicacion={ejercicio.explicacion} />
-      <Pista texto={ejercicio.pista} />
+
+      <PieEjercicio pista={ejercicio.pista}>
+        <span className="text-xs text-texto-tenue" aria-live="polite">
+          {elegidas} de {ejercicio.pares.length}
+        </span>
+        <BotonComprobar onClick={comprobar}>Comprobar</BotonComprobar>
+      </PieEjercicio>
+
+      {aviso && (
+        <p role="alert" className="mt-3 text-xs text-rojo-acento">
+          Relaciona todos los elementos antes de comprobar.
+        </p>
+      )}
+      {comprobado && (
+        <div
+          role="status"
+          className={`mt-3 rounded-lg border p-3 text-sm leading-relaxed ${
+            todoBien ? "border-borde-fuerte bg-fondo" : "border-rojo-acento/40 bg-rojo-tenue"
+          }`}
+        >
+          <p className={`flex items-center gap-1.5 font-medium ${todoBien ? "text-exito" : "text-rojo-acento"}`}>
+            {todoBien ? <Check size={14} aria-hidden="true" /> : <X size={14} aria-hidden="true" />}
+            {todoBien
+              ? "Correcto"
+              : `${aciertos} de ${ejercicio.pares.length} relaciones correctas`}
+          </p>
+          <p className="mt-1.5 text-texto-suave">
+            {todoBien ? ejercicio.explicacion : "Corrige las marcadas en rojo y vuelve a comprobar."}
+          </p>
+        </div>
+      )}
     </CajaEjercicio>
   );
 }

@@ -19,6 +19,7 @@ export function Selector({
   opciones,
   etiqueta,
   talla = "campo",
+  marcador,
   className,
 }: {
   valor: string;
@@ -33,6 +34,8 @@ export function Selector({
    * más de lo que la densidad de la tabla admite.
    */
   talla?: "campo" | "compacta";
+  /** Texto que se muestra mientras no hay nada elegido (`valor` vacío). */
+  marcador?: string;
   className?: string;
 }) {
   return (
@@ -43,7 +46,7 @@ export function Selector({
           talla === "campo" ? "py-2.5" : "py-1.5"
         } text-sm text-texto transition-colors hover:border-rojo-acento focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rojo-acento ${className ?? ""}`}
       >
-        <Select.Value />
+        <Select.Value placeholder={marcador} />
         <Select.Icon>
           <ChevronDown size={14} aria-hidden="true" className="text-texto-tenue" />
         </Select.Icon>
@@ -53,14 +56,14 @@ export function Selector({
         <Select.Content
           position="popper"
           sideOffset={6}
-          className="z-50 overflow-hidden rounded-lg border border-borde bg-fondo shadow-lg"
+          className="z-50 max-h-[var(--radix-select-content-available-height)] min-w-[var(--radix-select-trigger-width)] max-w-[min(32rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-borde bg-fondo shadow-lg"
         >
           <Select.Viewport className="p-1">
             {opciones.map((o) => (
               <Select.Item
                 key={o.valor}
                 value={o.valor}
-                className="flex cursor-pointer select-none items-center justify-between gap-3 rounded-md px-3 py-1.5 text-sm text-texto-suave outline-none data-[highlighted]:bg-superficie data-[state=checked]:font-medium data-[highlighted]:text-texto data-[state=checked]:text-rojo-acento"
+                className="flex cursor-pointer select-none items-center justify-between gap-3 rounded-md px-3 py-1.5 text-left text-sm text-texto-suave outline-none data-[highlighted]:bg-superficie data-[state=checked]:font-medium data-[highlighted]:text-texto data-[state=checked]:text-rojo-acento"
               >
                 <Select.ItemText>{o.etiqueta}</Select.ItemText>
                 <Select.ItemIndicator>

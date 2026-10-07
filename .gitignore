@@ -42,3 +42,6 @@ next-env.d.ts
 
 # caché local de Supabase CLI
 supabase/.temp/
+
+# Caché de paquetes del SDK de Wasmer al verificar los cursos de Bash
+.wasmer/
