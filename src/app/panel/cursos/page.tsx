@@ -4,6 +4,7 @@ import { BookOpen, Database, HardDrive, User, Sparkles } from "lucide-react";
 import { usuarioActual, clienteServidor } from "@/lib/supabase/servidor";
 import { perfilActual } from "@/lib/matriculas";
 import { obtenerCursos } from "@/lib/catalogo-cursos";
+import { leerTodo } from "@/lib/supabase/paginar";
 import { precios } from "@/lib/precios";
 import { Migas } from "@/components/Migas";
 import { PanelFormacionNav } from "@/components/PanelFormacionNav";
@@ -33,9 +34,14 @@ export default async function Page() {
 
   // El slug sale de `cursos` por el id (#112): es la llave para cruzar con el
   // catálogo, que se identifica por su URL.
-  const { data: enLaBase } = await supabase
-    .from("curso_sesiones")
-    .select("archivo, cursos(slug)");
+  const { data: enLaBase } = await leerTodo((desde, hasta) =>
+    supabase
+      .from("curso_sesiones")
+      .select("archivo, cursos(slug)")
+      .order("curso_id")
+      .order("archivo")
+      .range(desde, hasta),
+  );
 
   const sesionesPorCurso = new Map<string, number>();
   for (const s of (enLaBase ?? []) as unknown as { cursos: { slug: string } | null }[]) {

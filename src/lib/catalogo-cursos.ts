@@ -4,6 +4,7 @@ import { cache } from "react";
 import { construirCurso } from "@/lib/curso-markdown";
 import type { Curso } from "@/lib/curso-tipos";
 import { clienteServidor } from "@/lib/supabase/servidor";
+import { leerTodo } from "@/lib/supabase/paginar";
 
 /**
  * Catálogo de runtime.
@@ -25,8 +26,14 @@ export const obtenerCursos = cache(async (): Promise<Curso[]> => {
     { data: indices, error: errorIndices },
   ] = await Promise.all([
     supabase.from("cursos").select("id, slug"),
-    supabase.from("curso_contenido").select("curso_id, archivo, contenido"),
-    supabase.from("curso_sesiones").select("curso_id, numero, titulo, slug"),
+    // Paginadas: juntas superan las 1000 filas que PostgREST entrega por
+    // petición, y lo que excede se pierde sin error.
+    leerTodo<{ curso_id: string; archivo: string; contenido: string }>((desde, hasta) =>
+      supabase.from("curso_contenido").select("curso_id, archivo, contenido")
+        .order("curso_id").order("archivo").range(desde, hasta)),
+    leerTodo<{ curso_id: string; numero: number; titulo: string; slug: string }>((desde, hasta) =>
+      supabase.from("curso_sesiones").select("curso_id, numero, titulo, slug")
+        .order("curso_id").order("archivo").range(desde, hasta)),
   ]);
 
   const error = errorFichas ?? errorArchivos ?? errorIndices;

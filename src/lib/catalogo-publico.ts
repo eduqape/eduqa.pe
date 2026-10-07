@@ -1,5 +1,6 @@
 import "server-only";
 
+import { leerTodo } from "@/lib/supabase/paginar";
 import { cache } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { construirCurso } from "@/lib/curso-markdown";
@@ -65,10 +66,14 @@ export const obtenerCatalogoPublico = cache(async (): Promise<CursoCatalogoPubli
       .from("curso_contenido")
       .select("curso_id, archivo, contenido")
       .eq("archivo", "curso.md"),
-    supabase
-      .from("curso_sesiones")
-      .select("curso_id, numero, titulo, slug")
-      .order("numero"),
+    leerTodo<{ curso_id: string; numero: number; titulo: string; slug: string }>((desde, hasta) =>
+      supabase
+        .from("curso_sesiones")
+        .select("curso_id, numero, titulo, slug")
+        .order("numero")
+        .order("curso_id")
+        .order("archivo")
+        .range(desde, hasta)),
   ]);
 
   const error = errorFichas ?? errorArchivos ?? errorIndices;
