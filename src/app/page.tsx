@@ -78,8 +78,9 @@ export default async function Page() {
     <>
       <main className="flex-1">
         {/* Hero */}
-        <header className="bg-rojo px-6 py-14 text-white sm:py-20">
-          <div className="mx-auto w-full max-w-5xl">
+        {/* Ocupa toda la pantalla: la primera vista es solo el color de marca. */}
+        <header className="flex min-h-svh flex-col bg-rojo px-6 py-14 text-white sm:py-20">
+          <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-2.5">
                 <Llama className="h-7 w-auto text-white" />
@@ -90,7 +91,7 @@ export default async function Page() {
               <SelectorTema />
             </div>
 
-            <div className="mt-10 grid items-center gap-12 sm:grid-cols-[1fr_auto]">
+            <div className="my-auto grid items-center gap-12 pt-10 sm:grid-cols-[1fr_auto]">
               <div>
                 <h1 className="text-4xl font-semibold leading-[1.08] tracking-tight sm:text-5xl">
                   {marca.lema}

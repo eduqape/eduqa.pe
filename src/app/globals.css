@@ -92,9 +92,11 @@ html.mono {
   --color-exito: #09090b;
 }
 
+/* En oscuro la marca es negro puro: un gris medio se veía lavado junto al
+   fondo de la página. El hover sube un peldaño para que se note. */
 html.dark.mono {
-  --color-rojo: #52525b;
-  --color-rojo-hover: #6b6b75;
+  --color-rojo: #000000;
+  --color-rojo-hover: #1c1c1f;
   --color-rojo-tenue: #1f1f23;
   --color-rojo-acento: #ffffff;
 

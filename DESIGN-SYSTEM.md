@@ -55,6 +55,10 @@ En mono no hay tono, así que la jerarquía es por valor: el énfasis pasa a ser
 la tinta más fuerte y el texto corriente baja un peldaño. Acierto y error se
 distinguen por icono y palabra, no por color.
 
+La marca en mono es negra en ambos temas: `#1c1c1f` en claro y negro puro
+(`#000000`, hover `#1c1c1f`) en oscuro. Un gris medio como bloque de marca se
+ve lavado junto al fondo oscuro de la página.
+
 ## 3. Reglas de uso de color
 
 1. **Nunca escribir variantes `dark:` a mano para colores de tema.** El modo
