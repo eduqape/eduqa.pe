@@ -322,8 +322,8 @@ export default async function Page() {
         {/* Stack */}
         <Seccion titulo="Las herramientas de las clases" ancho="amplio">
           <p className="-mt-4 mb-9 leading-relaxed text-texto-suave">
-            Las mismas herramientas que se usan en proyectos reales, listas para
-            practicar desde la primera sesión.
+            Las mismas herramientas que se usan en entornos de producción, listas
+            para practicar desde la primera sesión.
           </p>
           <Stack />
         </Seccion>

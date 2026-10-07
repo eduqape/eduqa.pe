@@ -29,10 +29,12 @@ import {
   SiLinux,
   SiMedium,
   SiN8N,
+  SiNumpy,
   SiNotebooklm,
   SiOpencv,
   SiOrcid,
   SiPandas,
+  SiPolars,
   SiPostgresql,
   SiPython,
   SiPytorch,
@@ -112,6 +114,8 @@ const MAPA: Record<IconoNombre, ComponentType<{ className?: string }>> = {
   redis: SiRedis,
   sqlite: SiSqlite,
   supabase: SiSupabase,
+  numpy: SiNumpy,
+  polars: SiPolars,
 };
 
 export function Icono({
@@ -176,21 +180,29 @@ export function IconoRed({
 export const stack: { nombre: string; icono: IconoNombre }[] = [
   { nombre: "Python", icono: "python" },
   { nombre: "PyTorch", icono: "pytorch" },
+  { nombre: "Hugging Face", icono: "huggingface" },
+  { nombre: "Gemini", icono: "gemini" },
   { nombre: "OpenCV", icono: "opencv" },
   { nombre: "scikit-learn", icono: "scikitlearn" },
   { nombre: "pandas", icono: "pandas" },
+  { nombre: "NumPy", icono: "numpy" },
+  { nombre: "Polars", icono: "polars" },
   { nombre: "FastAPI", icono: "fastapi" },
   { nombre: "PostgreSQL", icono: "postgresql" },
+  { nombre: "SQLite", icono: "sqlite" },
+  { nombre: "Redis", icono: "redis" },
   { nombre: "Supabase", icono: "supabase" },
   { nombre: "Docker", icono: "docker" },
   { nombre: "GitHub Actions", icono: "githubactions" },
   { nombre: "Linux", icono: "linux" },
+  { nombre: "Bash", icono: "bash" },
+  { nombre: "Fortran", icono: "fortran" },
   { nombre: "n8n", icono: "n8n" },
 ];
 
 export function Stack() {
   return (
-    <ul className="grid grid-cols-3 gap-x-4 gap-y-6 sm:grid-cols-4 md:grid-cols-6">
+    <ul className="grid grid-cols-4 gap-x-4 gap-y-6 sm:grid-cols-5 lg:grid-cols-10">
       {stack.map((t) => (
         <li key={t.nombre} className="flex flex-col items-center gap-2 text-center">
           <Icono nombre={t.icono} className="size-8 text-texto-suave" />

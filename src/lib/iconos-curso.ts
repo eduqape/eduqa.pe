@@ -2,7 +2,7 @@
 export const ICONOS_CURSO = [
   "docker", "fastapi", "fortran", "githubactions", "gemini", "huggingface",
   "pandas", "postgresql", "python", "pytorch", "scikitlearn", "opencv",
-  "linux", "bash", "n8n", "notebooklm", "redis", "sqlite", "supabase",
+  "linux", "bash", "n8n", "notebooklm", "redis", "sqlite", "supabase", "numpy", "polars",
   "libro", "soa", "nube", "datos", "matematicas", "farmacologia", "bioingenieria",
 ] as const;
 
