@@ -515,3 +515,50 @@ input.buscador-cursos[type="search"]::-webkit-search-cancel-button {
     animation: none;
   }
 }
+
+/*
+ * Hero de la portada: la llama de pie se sienta frente a la laptop.
+ *
+ * La de pie baja, se encoge y se difumina; la del escritorio entra solapada
+ * para que la escena nunca quede vacía. Sin movimiento, solo queda la final.
+ */
+@keyframes llama-se-levanta {
+  to {
+    opacity: 0;
+    transform: translateY(24px) scale(0.92);
+    filter: blur(6px);
+  }
+}
+
+@keyframes llama-se-sienta {
+  from {
+    opacity: 0;
+    transform: translateY(32px) scale(0.96);
+    filter: blur(6px);
+  }
+}
+
+.escena-llama > * {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+}
+
+.escena-llama-de-pie {
+  animation: llama-se-levanta 900ms cubic-bezier(0.6, 0, 0.4, 1) 900ms both;
+}
+
+.escena-llama-laptop {
+  animation: llama-se-sienta 900ms cubic-bezier(0.2, 0.8, 0.2, 1) 1250ms both;
+  mask: url("/llama-escritorio.svg") center / contain no-repeat;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .escena-llama-de-pie {
+    display: none;
+  }
+
+  .escena-llama-laptop {
+    animation: none;
+  }
+}

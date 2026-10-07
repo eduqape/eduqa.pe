@@ -133,7 +133,13 @@ export default async function Page() {
                 </p>
               </div>
 
-              <Llama className="hidden h-72 w-auto text-white sm:block lg:h-96" />
+              <div
+                aria-hidden="true"
+                className="escena-llama relative hidden size-72 sm:block lg:size-96"
+              >
+                <Llama className="escena-llama-de-pie h-full w-auto text-white" />
+                <span className="escena-llama-laptop size-full bg-white" />
+              </div>
             </div>
           </div>
         </header>
