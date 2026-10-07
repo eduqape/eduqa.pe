@@ -30,8 +30,10 @@ ahí cada bloque muestra su salida de referencia.
 ## Cómo se ejecuta un bloque
 
 `src/lib/bash-comun.ts` lo define para el navegador y para la verificación:
-el bloque se escribe como `/workspace/script.sh` y se lanza con
-`bash -c 'bash script.sh 2>&1'`, con `HOME=/workspace`, `USER=alumno`,
+el bloque se entrega como `/workspace/.eduqa/script.sh`, se mueve a
+`/tmp/.eduqa` para que no aparezca entre los archivos del alumno y se lanza con
+`bash script.sh 2>&1` precedido, en su misma línea 1, de `cd /workspace;
+unset OLDPWD;`. El entorno lleva `HOME=/workspace`, `USER=alumno`,
 `LANG=C.UTF-8` y `NO_COLOR=1`. Límite de 10 s y 256 KiB de salida.
 
 ## Diferencias conocidas con una terminal Linux
@@ -41,6 +43,18 @@ el bloque se escribe como `/workspace/script.sh` y se lanza con
 - `ls`, `sort`, `wc`, etc. son uutils, no GNU coreutils; sus mensajes de error
   y algún formato difieren. No hay `awk`, `curl`, `jq`, `tar`, `whoami` ni red.
 - `nproc` y la hora reflejan el equipo del alumno: no son deterministas.
+- **Códigos de salida de procesos hijos:** el runtime WASIX convierte el código
+  de salida en un *errno* de WASI, y todo valor de 80 a 255 llega como 79. Un
+  comando inexistente da `$?` = 79 (en Linux, 127); `(exit 130)` también da 79.
+  Las funciones y los builtins (`return 127`, `false`) no se ven afectados. Los
+  bloques que enseñan 126, 127 o 128+n van como `bash !sin-consola`, con la
+  salida de GNU Bash en Linux. Ocurre con `@wasmer/sdk` 0.19.0, la última
+  publicada al fijar estos archivos.
+- `cp -r` copia los directorios, pero escribe un aviso «operation not supported
+  on this platform» por cada uno: el sistema de archivos virtual no admite
+  copiar sus atributos. `ls` escribe en columnas aunque no haya terminal.
+- No están `chmod`, `stat`, `du`, `ps`, `diff`, `less`, `man`, `which`, `tar`
+  ni `awk`.
 
 Comprobación: `npm run test:bash` ejecuta todos los bloques y ejercicios de los
 cursos de Bash con estos mismos bytes, en Node.

@@ -38,7 +38,7 @@ const paquetes = await Promise.all(comun.PAQUETES_BASH.map((n) =>
 async function ejecutar(codigo, { entrada, archivos } = {}) {
   const sandbox = await cliente.sandboxes.create({
     packages: paquetes,
-    files: { ...archivos, [comun.SCRIPT_BASH]: codigo },
+    files: { ...archivos, [comun.SCRIPT_BASH]: comun.prepararScriptBash(codigo) },
     env: comun.ENTORNO_BASH,
   });
   try {
@@ -63,7 +63,7 @@ function reescribir(texto, salidas) {
     const linea = lineas[i];
     fuera.push(linea);
     i++;
-    if (!/^```bash\s*$/.test(linea)) continue;
+    if (!/^```bash\s*$/.test(linea)) continue; // ni !sin-consola ni !variable
     while (i < lineas.length && !/^```\s*$/.test(lineas[i])) fuera.push(lineas[i++]);
     fuera.push(lineas[i++]);
     const salida = salidas[k++];
@@ -111,8 +111,12 @@ for (const carpeta of carpetas) {
       // El reescritor tampoco lo cuenta: solo reconoce vallas «```bash».
       if (b.sinConsola) continue;
       const r = await ejecutar(b.contenido, { entrada: b.entrada, archivos: b.archivos });
-      salidas.push(r.salida);
+      if (!b.salidaVariable) salidas.push(r.salida);
       bloques++;
+      if (b.salidaVariable) {
+        if (b.salida !== null) fallos.push(`${donde}: un bloque !variable no lleva valla salida:\n${b.contenido}`);
+        continue;
+      }
       if (r.motivo !== 'exited') fallos.push(`${donde}: el bloque terminó por ${r.motivo}:\n${b.contenido}`);
       else if (b.salida === null && r.salida !== '') fallos.push(`${donde}: bloque sin valla salida que imprime:\n${b.contenido}\n--- imprime ---\n${r.salida}`);
       else if (b.salida !== null && !escribir && sinFinal(r.salida) !== b.salida) {

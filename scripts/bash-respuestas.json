@@ -1,1 +1,177 @@
-[]
+[
+  {
+    "curso": "bash-nivelacion",
+    "archivo": "sesion-1.md",
+    "seccion": "la-primera-orden-echo",
+    "respuesta": "echo",
+    "incorrecta": "printf"
+  },
+  {
+    "curso": "bash-nivelacion",
+    "archivo": "sesion-1.md",
+    "seccion": "las-comillas-conservan-los-espacios",
+    "respuesta": "\"",
+    "incorrecta": "'"
+  },
+  {
+    "curso": "bash-nivelacion",
+    "archivo": "sesion-1.md",
+    "seccion": "varias-ordenes-seguidas",
+    "respuesta": ";",
+    "incorrecta": "&"
+  },
+  {
+    "curso": "bash-nivelacion",
+    "archivo": "sesion-2.md",
+    "seccion": "saber-que-es-cada-orden-type",
+    "respuesta": "type",
+    "incorrecta": "help"
+  },
+  {
+    "curso": "bash-nivelacion",
+    "archivo": "sesion-2.md",
+    "seccion": "la-ayuda-de-los-builtins-help",
+    "respuesta": "-d",
+    "incorrecta": "-s"
+  },
+  {
+    "curso": "bash-nivelacion",
+    "archivo": "sesion-3.md",
+    "seccion": "el-directorio-de-trabajo-pwd",
+    "respuesta": "pwd",
+    "incorrecta": "ls"
+  },
+  {
+    "curso": "bash-nivelacion",
+    "archivo": "sesion-3.md",
+    "seccion": "crear-un-directorio-mkdir",
+    "respuesta": "mkdir",
+    "incorrecta": "touch"
+  },
+  {
+    "curso": "bash-nivelacion",
+    "archivo": "sesion-3.md",
+    "seccion": "listar-el-contenido-ls",
+    "respuesta": "ls",
+    "incorrecta": "cd"
+  },
+  {
+    "curso": "bash-nivelacion",
+    "archivo": "sesion-3.md",
+    "seccion": "cambiar-de-directorio-cd",
+    "respuesta": "cd",
+    "incorrecta": "ls"
+  },
+  {
+    "curso": "bash-nivelacion",
+    "archivo": "sesion-3.md",
+    "seccion": "subir-un-nivel-cd",
+    "respuesta": "../c",
+    "incorrecta": "c"
+  },
+  {
+    "curso": "bash-nivelacion",
+    "archivo": "sesion-4.md",
+    "seccion": "escribir-en-un-archivo",
+    "respuesta": ">",
+    "incorrecta": "<"
+  },
+  {
+    "curso": "bash-nivelacion",
+    "archivo": "sesion-4.md",
+    "seccion": "mostrar-un-archivo-cat",
+    "respuesta": "cat",
+    "incorrecta": "ls"
+  },
+  {
+    "curso": "bash-nivelacion",
+    "archivo": "sesion-4.md",
+    "seccion": "copiar-un-archivo-cp",
+    "respuesta": "cp",
+    "incorrecta": "touch"
+  },
+  {
+    "curso": "bash-nivelacion",
+    "archivo": "sesion-4.md",
+    "seccion": "mover-y-renombrar-mv",
+    "respuesta": "mv",
+    "incorrecta": "cp"
+  },
+  {
+    "curso": "bash-nivelacion",
+    "archivo": "sesion-5.md",
+    "seccion": "las-primeras-lineas-head",
+    "respuesta": "1",
+    "incorrecta": "2"
+  },
+  {
+    "curso": "bash-nivelacion",
+    "archivo": "sesion-5.md",
+    "seccion": "las-ultimas-lineas-tail",
+    "respuesta": "tail",
+    "incorrecta": "head"
+  },
+  {
+    "curso": "bash-nivelacion",
+    "archivo": "sesion-5.md",
+    "seccion": "contar-lineas-wc-l",
+    "respuesta": "-l",
+    "incorrecta": "-w"
+  },
+  {
+    "curso": "bash-nivelacion",
+    "archivo": "sesion-5.md",
+    "seccion": "ordenar-lineas-sort",
+    "respuesta": "sort",
+    "incorrecta": "cat"
+  },
+  {
+    "curso": "bash-nivelacion",
+    "archivo": "sesion-5.md",
+    "seccion": "contar-repeticiones-uniq-c",
+    "respuesta": "-c",
+    "incorrecta": "-d"
+  },
+  {
+    "curso": "bash-nivelacion",
+    "archivo": "sesion-5.md",
+    "seccion": "buscar-lineas-grep",
+    "respuesta": "grep",
+    "incorrecta": "cat"
+  },
+  {
+    "curso": "bash-nivelacion",
+    "archivo": "sesion-5.md",
+    "seccion": "excluir-lineas-grep-v",
+    "respuesta": "-v",
+    "incorrecta": "-i"
+  },
+  {
+    "curso": "bash-nivelacion",
+    "archivo": "sesion-6.md",
+    "seccion": "tuberias",
+    "respuesta": "|",
+    "incorrecta": ";"
+  },
+  {
+    "curso": "bash-nivelacion",
+    "archivo": "sesion-6.md",
+    "seccion": "anadir-al-final",
+    "respuesta": ">>",
+    "incorrecta": ">"
+  },
+  {
+    "curso": "bash-nivelacion",
+    "archivo": "sesion-6.md",
+    "seccion": "el-estado-de-salida",
+    "respuesta": "$?",
+    "incorrecta": "$#"
+  },
+  {
+    "curso": "bash-nivelacion",
+    "archivo": "sesion-6.md",
+    "seccion": "ejecutar-si-tiene-exito",
+    "respuesta": "&&",
+    "incorrecta": "||"
+  }
+]

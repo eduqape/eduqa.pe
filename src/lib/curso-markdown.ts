@@ -389,6 +389,11 @@ function leerSesion(texto: string, donde: string): ResultadoSesion {
         ...(valla.modificadores.includes("!sin-consola")
           ? { sinConsola: true }
           : {}),
+        // Se ejecuta, pero su salida cambia en cada ejecución (fechas, PID…):
+        // no lleva valla salida y la verificación no la compara.
+        ...(valla.modificadores.includes("!variable")
+          ? { salidaVariable: true }
+          : {}),
       });
       continue;
     }

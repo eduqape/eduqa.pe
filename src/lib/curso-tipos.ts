@@ -40,6 +40,8 @@ export type Bloque =
        * dos veces.
        */
       sinConsola?: boolean;
+      /** La salida no es determinista: se ejecuta, pero no se promete literal. */
+      salidaVariable?: boolean;
       /** Datos de entrada y archivos virtuales de una ejecución Fortran o Bash. */
       entrada?: string;
       archivos?: Record<string, string>;

@@ -444,7 +444,10 @@ nuevo con directorio `/workspace`: no ve variables ni archivos de otro bloque.
   valla va como `bash !sin-consola` y su salida se obtiene en una terminal real.
 - Ejercicio de completado: `ejercicio bash`, con las secciones de siempre. La
   salida debe coincidir exactamente, espacios incluidos.
-- Un bloque sin valla `salida` no debe imprimir nada.
+- Un bloque sin valla `salida` no debe imprimir nada. Si su salida cambia en
+  cada ejecución (fechas, `ls -l`, identificadores de proceso), la valla va
+  como `bash !variable`: se ejecuta en el navegador, no lleva valla `salida`
+  y el texto describe la forma de la salida en lugar de prometerla literal.
 
 Las salidas no se escriben a mano: `node scripts/verificar-bash.mjs
 --curso=<slug> --escribir` las rellena ejecutando cada bloque en el mismo motor

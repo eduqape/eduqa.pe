@@ -8,6 +8,7 @@ import {
   PAQUETES_BASH,
   SCRIPT_BASH,
   limpiarSalidaBash,
+  prepararScriptBash,
 } from "@/lib/bash-comun";
 
 export type ResultadoBash = { salida: string; error: boolean; codigo: number | null };
@@ -124,7 +125,7 @@ export async function ejecutarBash(
   try {
     sandbox = await cliente.sandboxes.create({
       packages: paquetes,
-      files: { ...opciones.archivos, [SCRIPT_BASH]: codigo },
+      files: { ...opciones.archivos, [SCRIPT_BASH]: prepararScriptBash(codigo) },
       env: ENTORNO_BASH,
     });
     if (opciones.signal?.aborted) return { salida: "Ejecución cancelada.", error: true, codigo: null };

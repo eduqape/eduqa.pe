@@ -20,7 +20,16 @@ export const PAQUETES_BASH = [
 ] as const;
 
 export const DIRECTORIO_BASH = "/workspace";
-export const SCRIPT_BASH = "script.sh";
+
+/*
+ * El SDK solo admite archivos dentro de /workspace, pero ahí el script
+ * aparecería en cada `ls` del alumno. Se entrega en `.eduqa/script.sh`, la
+ * orden lo mueve a /tmp/.eduqa y lo ejecuta desde allí. La línea 1 recibe
+ * `cd /workspace; unset OLDPWD; ` delante, en la misma línea, para que los
+ * números de línea de los mensajes de error coincidan con el código visible.
+ */
+export const SCRIPT_BASH = ".eduqa/script.sh";
+export const prepararScriptBash = (codigo: string) => `cd ${DIRECTORIO_BASH}; unset OLDPWD; ${codigo}`;
 
 export const ENTORNO_BASH: Record<string, string> = {
   HOME: DIRECTORIO_BASH,
@@ -40,7 +49,10 @@ export const limpiarSalidaBash = (texto: string) =>
  * estándar. Así los mensajes de error aparecen en el orden en que se emiten y
  * con el mismo prefijo que en una terminal (`script.sh: line 3: …`).
  */
-export const ORDEN_BASH = ["-c", `bash ${SCRIPT_BASH} 2>&1`];
+export const ORDEN_BASH = [
+  "-c",
+  "mkdir -p /tmp/.eduqa && mv .eduqa/script.sh /tmp/.eduqa/ && rmdir .eduqa && cd /tmp/.eduqa && exec bash script.sh 2>&1",
+];
 
 export const LIMITE_MS_BASH = 10000;
 export const LIMITE_SALIDA_BASH = 256 * 1024;
