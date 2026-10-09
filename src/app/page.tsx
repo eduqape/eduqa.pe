@@ -1,11 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
+import type { ReactNode } from "react";
 import {
   ArrowRight,
   Check,
   ChevronDown,
   Mail,
-  Radio,
   UserPlus,
 } from "lucide-react";
 import {
@@ -458,34 +458,24 @@ export default async function Page() {
 
       <footer className="border-t border-borde bg-superficie">
         <div className="mx-auto w-full max-w-5xl px-6 py-10 sm:py-12">
-          <div className="grid grid-cols-2 gap-x-8 gap-y-10 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-10 md:grid-cols-5">
+            {/* La llama dormida ocupa una columna entera: es la ilustración
+                del cierre de la página, no un logotipo junto al nombre. */}
             <div className="col-span-2 md:col-span-1">
-              <Link href="/" className="inline-flex items-center gap-2.5">
-                <Llama className="h-7 w-auto text-rojo-acento" />
-                <span className="text-sm font-bold uppercase tracking-[0.18em] text-texto">
-                  {marca.nombre}
-                </span>
+              <Link href="/" aria-label={`${marca.nombre}, inicio`} className="block max-w-[11rem]">
+                <span
+                  aria-hidden="true"
+                  className="block aspect-[1639/1302] w-full max-w-[11rem] bg-rojo-acento dark:bg-white"
+                  style={{
+                    WebkitMaskImage: "url('/llama-dormida.svg')",
+                    maskImage: "url('/llama-dormida.svg')",
+                    WebkitMaskRepeat: "no-repeat",
+                    maskRepeat: "no-repeat",
+                    WebkitMaskSize: "contain",
+                    maskSize: "contain",
+                  }}
+                />
               </Link>
-              <p className="mt-4 max-w-xs text-sm leading-relaxed text-texto-suave">
-                Formación técnica en vivo, en español y desde Perú.
-              </p>
-              <span className="mt-4 inline-flex items-center gap-1.5 text-xs text-texto-tenue">
-                <Radio size={14} aria-hidden="true" />
-                {marca.ciudad}
-              </span>
-
-              {/* Las redes son de la marca, no un enlace más de navegación. */}
-              <div className="-ml-2 mt-4 flex items-center gap-1">
-                <a
-                  href="https://www.linkedin.com/company/eduqa-pe"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="EDUQA.PE en LinkedIn"
-                  className="flex size-9 items-center justify-center rounded-lg text-texto-suave transition-colors hover:bg-fondo hover:text-rojo-acento"
-                >
-                  <IconoRed nombre="linkedin" className="size-5" />
-                </a>
-              </div>
             </div>
 
             {/* Cada enlace tiene que servirle a quien lo ve. Sin sesión no se
@@ -509,6 +499,21 @@ export default async function Page() {
                   href: `mailto:${plazaLibre.correo}?subject=Quiero dictar en EDUQA.PE`,
                   texto: "Quiero dictar en EDUQA",
                 },
+                {
+                  href: "/reclamaciones",
+                  texto: "Libro de Reclamaciones",
+                  icono: (
+                    <span className="rounded bg-white px-1 py-0.5 ring-1 ring-borde">
+                      <img
+                        src="/libro-de-reclamaciones.svg"
+                        alt=""
+                        width={48}
+                        height={33}
+                        className="h-4 w-auto"
+                      />
+                    </span>
+                  ),
+                },
               ]}
             />
 
@@ -528,12 +533,22 @@ export default async function Page() {
                     ]
               }
             />
+
+            <ColumnaPie
+              titulo="Nuestras redes"
+              enlaces={[
+                {
+                  href: "https://www.linkedin.com/company/eduqa-pe",
+                  texto: "LinkedIn",
+                  icono: <IconoRed nombre="linkedin" className="size-4" />,
+                },
+              ]}
+            />
           </div>
         </div>
 
-        {/* Franja legal: el Libro de Reclamaciones y la política de privacidad
-            son obligaciones del proveedor; van junto al copyright y no entre
-            redes o comunidad. */}
+        {/* Franja legal: la política de privacidad va junto al copyright. El
+            Libro de Reclamaciones está en la columna «Nosotros». */}
         <div className="border-t border-borde bg-fondo/60">
           <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-6 py-5 text-sm text-texto-tenue sm:flex-row sm:items-center sm:justify-between">
             <p>
@@ -542,21 +557,6 @@ export default async function Page() {
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
               <Link href="/privacidad" className="transition-colors hover:text-rojo-acento">
                 Política de privacidad
-              </Link>
-              <Link
-                href="/reclamaciones"
-                className="inline-flex items-center gap-2.5 transition-colors hover:text-rojo-acento"
-              >
-                <span className="rounded bg-white px-1.5 py-1 ring-1 ring-borde">
-                  <img
-                    src="/libro-de-reclamaciones.svg"
-                    alt=""
-                    width={48}
-                    height={33}
-                    className="h-5 w-auto"
-                  />
-                </span>
-                Libro de Reclamaciones
               </Link>
             </div>
           </div>
@@ -571,7 +571,7 @@ function ColumnaPie({
   enlaces,
 }: {
   titulo: string;
-  enlaces: { href: string; texto: string }[];
+  enlaces: { href: string; texto: string; icono?: ReactNode }[];
 }) {
   return (
     <div className="min-w-0">
@@ -579,19 +579,33 @@ function ColumnaPie({
         {titulo}
       </h2>
       <ul className="space-y-3 text-sm text-texto-suave">
-        {enlaces.map((enlace) => (
-          <li key={enlace.href}>
-            {enlace.href.startsWith("mailto:") ? (
-              <a href={enlace.href} className="transition-colors hover:text-rojo-acento">
-                {enlace.texto}
-              </a>
-            ) : (
-              <Link href={enlace.href} className="transition-colors hover:text-rojo-acento">
-                {enlace.texto}
-              </Link>
-            )}
-          </li>
-        ))}
+        {enlaces.map((enlace) => {
+          const clase =
+            "inline-flex items-center gap-2 transition-colors hover:text-rojo-acento";
+          const contenido = (
+            <>
+              {enlace.icono}
+              {enlace.texto}
+            </>
+          );
+          return (
+            <li key={enlace.href}>
+              {enlace.href.startsWith("https://") ? (
+                <a href={enlace.href} target="_blank" rel="noopener noreferrer" className={clase}>
+                  {contenido}
+                </a>
+              ) : enlace.href.startsWith("mailto:") ? (
+                <a href={enlace.href} className={clase}>
+                  {contenido}
+                </a>
+              ) : (
+                <Link href={enlace.href} className={clase}>
+                  {contenido}
+                </Link>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
