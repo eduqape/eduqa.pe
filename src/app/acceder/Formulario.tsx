@@ -82,7 +82,11 @@ export function Formulario({
         {enviandoGoogle ? "Abriendo Google…" : "Continuar con Google"}
       </Boton>
       <p className="mt-2 text-center text-xs leading-relaxed text-texto-tenue">
-        Al continuar aceptas nuestra{" "}
+        Al continuar aceptas los{" "}
+        <Link href="/terminos" className="underline underline-offset-2 hover:text-rojo-acento">
+          Términos del servicio
+        </Link>{" "}
+        y la{" "}
         <Link href="/privacidad" className="underline underline-offset-2 hover:text-rojo-acento">
           Política de privacidad
         </Link>

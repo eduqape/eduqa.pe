@@ -550,7 +550,7 @@ export default async function Page() {
           </div>
         </div>
 
-        {/* Franja legal: la política de privacidad va junto al copyright. El
+        {/* Franja legal: términos y privacidad van junto al copyright. El
             Libro de Reclamaciones está en la columna «Nosotros». */}
         <div className="border-t border-borde bg-fondo/60">
           <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-6 py-5 text-sm text-texto-tenue sm:flex-row sm:items-center sm:justify-between">
@@ -558,6 +558,9 @@ export default async function Page() {
               © {new Date().getFullYear()} {marca.nombre}. Todos los derechos reservados.
             </p>
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+              <Link href="/terminos" className="transition-colors hover:text-rojo-acento">
+                Términos del servicio
+              </Link>
               <Link href="/privacidad" className="transition-colors hover:text-rojo-acento">
                 Política de privacidad
               </Link>
