@@ -8,7 +8,7 @@ export type Paso = { t: number; comando: string; detalle: string };
 export function pasoEn(registro: Paso[], t: number) {
   let i = 0;
   while (i + 1 < registro.length && registro[i + 1].t <= t) i++;
-  return { actual: registro[i], indice: i };
+  return { actual: registro[i] };
 }
 
 const reloj = (t: number) => `0:${Math.floor(t).toString().padStart(2, "0")}`;
@@ -49,13 +49,14 @@ function Digito({ valor }: { valor: string }) {
   );
 }
 
-/** Paso actual, en una sola línea; entra con un desvanecido corto al cambiar. */
-function Paso({ actual, indice }: ReturnType<typeof pasoEn>) {
-  const ref = useEntrada<HTMLParagraphElement>(indice, { opacity: 0, transform: "translateY(6px)" }, 280);
+/**
+ * Lo que está pasando, solo para lectores de pantalla: la barra visible es
+ * únicamente el avance, pero quien no ve la escena necesita que se le cuente.
+ */
+function Narracion({ actual }: ReturnType<typeof pasoEn>) {
   return (
-    <p ref={ref} className="min-w-0 flex-1 truncate text-sm leading-6" title={`${actual.comando} ${actual.detalle}`}>
-      <code className="font-mono font-semibold text-texto">{actual.comando}</code>{" "}
-      <span className="text-texto-suave">{actual.detalle}</span>
+    <p className="sr-only" aria-live="polite">
+      {actual.comando}: {actual.detalle}
     </p>
   );
 }
@@ -122,58 +123,51 @@ export function Reproductor3D({
         )}
       </div>
 
-      {/* Dos líneas a la izquierda (reloj con el paso, y avance con la
-          velocidad) y, a la derecha, el botón de reproducir: cuadrado y del
-          alto de la barra. */}
-      <div className="flex items-stretch gap-3 border-t border-borde bg-fondo px-4 py-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start gap-3">
-            <span className="font-mono text-lg font-bold leading-6 tabular-nums text-rojo-acento" aria-label={`Segundo ${Math.floor(t)}`}>
-              {reloj(t)
-                .split("")
-                .map((c, i) => (
-                  <Digito key={i} valor={c} />
-                ))}
-            </span>
-            <Paso {...paso} />
-          </div>
-          <div className="mt-2 flex items-center gap-3">
-            <input
-              type="range"
-              min={0}
-              max={duracion}
-              step={0.01}
-              value={t}
-              onChange={(e) => {
-                tiempo.current = Number(e.target.value);
-                setT(tiempo.current);
-              }}
-              aria-label="Momento de la animación"
-              className="min-w-0 flex-1 accent-[var(--color-rojo)]"
-            />
-            <select
-              value={velocidad}
-              onChange={(e) => setVelocidad(Number(e.target.value))}
-              aria-label="Velocidad"
-              className="h-8 rounded-lg border border-borde-fuerte bg-fondo px-2 text-xs text-texto"
-            >
-              {[0.5, 1, 2].map((v) => (
-                <option key={v} value={v}>
-                  {v}×
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+      {/* Una sola línea: contador, avance, velocidad y el botón de reproducir,
+          cuadrado y del alto de la línea. */}
+      <div className="flex items-center gap-3 border-t border-borde bg-fondo px-4 py-3">
+        <span className="font-mono text-lg font-bold leading-8 tabular-nums text-rojo-acento" aria-label={`Segundo ${Math.floor(t)}`}>
+          {reloj(t)
+            .split("")
+            .map((c, i) => (
+              <Digito key={i} valor={c} />
+            ))}
+        </span>
+        <input
+          type="range"
+          min={0}
+          max={duracion}
+          step={0.01}
+          value={t}
+          onChange={(e) => {
+            tiempo.current = Number(e.target.value);
+            setT(tiempo.current);
+          }}
+          aria-label="Momento de la animación"
+          className="min-w-0 flex-1 accent-[var(--color-rojo)]"
+        />
+        <select
+          value={velocidad}
+          onChange={(e) => setVelocidad(Number(e.target.value))}
+          aria-label="Velocidad"
+          className="h-8 rounded-lg border border-borde-fuerte bg-fondo px-2 text-xs text-texto"
+        >
+          {[0.5, 1, 2].map((v) => (
+            <option key={v} value={v}>
+              {v}×
+            </option>
+          ))}
+        </select>
         <button
           type="button"
           onClick={() => setPausa((p) => !p)}
           aria-label={pausa ? "Seguir" : "Pausar"}
           title={pausa ? "Seguir" : "Pausar"}
-          className="inline-flex aspect-square shrink-0 items-center justify-center self-stretch rounded-lg bg-rojo text-sobre-rojo transition-colors hover:bg-rojo-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rojo-acento"
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-rojo text-sobre-rojo transition-colors hover:bg-rojo-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rojo-acento"
         >
-          {pausa ? <Play className="h-6 w-6" aria-hidden /> : <Pause className="h-6 w-6" aria-hidden />}
+          {pausa ? <Play className="h-4 w-4" aria-hidden /> : <Pause className="h-4 w-4" aria-hidden />}
         </button>
+        <Narracion {...paso} />
       </div>
     </div>
   );
