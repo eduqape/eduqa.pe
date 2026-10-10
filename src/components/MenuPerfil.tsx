@@ -55,7 +55,7 @@ export function MenuPerfil({
         aria-haspopup="menu"
         aria-expanded={abierto}
         aria-label="Tu cuenta"
-        className="flex size-10 items-center justify-center overflow-hidden rounded-full border border-borde bg-superficie text-sm font-semibold text-texto-suave transition-colors hover:border-rojo-acento"
+        className="flex size-10 items-center justify-center overflow-hidden rounded-lg border border-borde bg-superficie text-sm font-semibold text-texto-suave transition-colors hover:border-rojo-acento"
       >
         {foto ? (
           // eslint-disable-next-line @next/next/no-img-element

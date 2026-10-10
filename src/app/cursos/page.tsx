@@ -12,6 +12,8 @@ import { contarPorCurso, miProgreso } from "@/lib/progreso";
 import { avisosVisibles } from "@/lib/avisos";
 import { titulosSeccion } from "@/lib/titulos-seccion";
 import { Tablero } from "@/components/Tablero";
+import { MenuPerfil } from "@/components/MenuPerfil";
+import { cerrarSesion } from "@/app/acceder/acciones";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import { Migas } from "@/components/Migas";
 import { TituloEditable } from "@/components/TituloEditable";
@@ -94,6 +96,14 @@ export default async function Page() {
           };
         })}
         cabecera={<Tablero avisos={avisos} />}
+        acciones={
+          <MenuPerfil
+            nombre={nombre}
+            correo={usuario.email}
+            foto={perfil?.foto}
+            onSalir={cerrarSesion}
+          />
+        }
         entreBarraYRejilla={
           <>
             <div className="mt-8">
