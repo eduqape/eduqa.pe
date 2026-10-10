@@ -3,6 +3,7 @@ import { construirCurso } from "@/lib/curso-markdown";
 import { agruparEnSecciones } from "@/lib/cursos";
 import { renderSecciones } from "@/components/curso/SeccionesLeccion";
 import { SelectorTema } from "@/components/Tema";
+import { BarraLateral } from "@/components/curso/BarraLateral";
 
 export const metadata: Metadata = {
   title: "Escena en la lección (vista previa)",
@@ -59,13 +60,16 @@ export default function Page() {
   const curso = construirCurso("prueba-escena", new Map([["curso.md", CURSO], ["sesion-1.md", SESION]]));
   const secciones = agruparEnSecciones(curso.lecciones[0].bloques);
   return (
-    <main className="bg-fondo text-texto">
-      <article className="mx-auto w-full max-w-3xl px-6 py-12 lg:px-10">
-        <div className="mb-8 flex justify-end">
-          <SelectorTema />
-        </div>
-        {renderSecciones(secciones)}
-      </article>
-    </main>
+    <div className="flex min-h-dvh bg-fondo text-texto">
+      <BarraLateral curso={curso} actual={curso.lecciones[0]} inicio="/preview/leccion-escena" />
+      <main className="min-w-0 flex-1">
+        <article className="mx-auto w-full max-w-3xl px-6 py-12 lg:px-10">
+          <div className="mb-8 flex justify-end">
+            <SelectorTema />
+          </div>
+          {renderSecciones(secciones)}
+        </article>
+      </main>
+    </div>
   );
 }

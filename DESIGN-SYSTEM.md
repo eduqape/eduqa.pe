@@ -10,8 +10,12 @@ componentes base es `src/components/ui.tsx`.
 ## 1. Identidad
 
 - **Rojo de marca**: `#c70724`. Es identidad, no decoración: **no cambia entre
-  temas**. Un logo o cabecera que cambia de color según el modo del sistema
-  deja de ser marca.
+  claro y oscuro**. Un logo o cabecera que cambia de color según el modo del
+  sistema deja de ser marca. Es el acento por omisión; cada persona puede
+  elegir morado, azul o rosa (ver «Eje de acento»).
+- **Marca tipográfica**: EDUQA.PE en DSEG14 (letra de calculadora,
+  `MarcaCalculadora`), en el acceso y en ambas barras laterales, sin la llama
+  al lado. Al colapsar una barra queda la inicial «E» en la misma letra.
 - **Papel vs tinta**: el rojo juega dos roles distintos y cada uno tiene su token:
   - `rojo` / `rojo-hover`: papel (fondo de botones, banderas). Va siempre con
     texto blanco encima.
@@ -58,6 +62,33 @@ distinguen por icono y palabra, no por color.
 La marca en mono es negra en ambos temas: `#1c1c1f` en claro y negro puro
 (`#000000`, hover `#1c1c1f`) en oscuro. Un gris medio como bloque de marca se
 ve lavado junto al fondo oscuro de la página.
+
+### Eje de acento (`html[data-acento]`)
+
+El acento es otro eje, como el monocromático: se combina con claro y oscuro y
+solo cambia los tokens de marca (`rojo`, `rojo-hover`, `rojo-tenue`,
+`rojo-acento`, `sobre-rojo-suave`). Los neutros, el texto y el éxito no
+dependen de él. Los tokens conservan el nombre `rojo`: designan el papel de
+marca, sea cual sea el tono elegido.
+
+| Acento | `rojo` | `rojo-hover` | `rojo-acento` claro / oscuro | `rojo-tenue` claro / oscuro |
+| ------ | ------ | ------------ | ---------------------------- | --------------------------- |
+| Rojo (omisión) | `#c70724` | `#a3061e` | `#c70724` / `#ff6b7d` | `#fdf2f3` / `#2a1216` |
+| Morado | `#6d28d9` | `#5b21b6` | `#6d28d9` / `#a78bfa` | `#f5f3ff` / `#1c1530` |
+| Azul   | `#1d4ed8` | `#1e40af` | `#1d4ed8` / `#60a5fa` | `#eff6ff` / `#0f1a30` |
+| Rosa   | `#be185d` | `#9d174d` | `#be185d` / `#f472b6` | `#fdf2f8` / `#2a1020` |
+
+- Contraste comprobado: blanco sobre la marca entre 6,0 y 7,1:1; la tinta,
+  entre 5,5 y 7,7:1 sobre el fondo y el tenue de cada tema.
+- El rojo no lleva atributo: es `:root`. Un valor guardado que no esté en la
+  lista se ignora y vuelve al rojo.
+- El monocromático gana al acento; elegir un acento apaga el monocromático.
+- La preferencia vive en `localStorage` (`eduqa:acento`) y la aplica el mismo
+  script de arranque que el monocromático (`src/lib/cromatismo.ts`), antes del
+  primer pintado.
+- Los documentos que salen de la plataforma (certificados, PDF, correos)
+  siguen en el rojo de marca: no dependen de la preferencia de quien los
+  genera.
 
 ## 3. Reglas de uso de color
 

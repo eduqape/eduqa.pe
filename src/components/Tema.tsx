@@ -4,9 +4,14 @@ import { ThemeProvider, useTheme } from "next-themes";
 import { Contrast, Monitor, Moon, Sun } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import {
+  ACENTOS,
+  acentoActivo,
+  acentoEnServidor,
   alternarMonocromo,
+  elegirAcento,
   monocromoActivo,
   monocromoEnServidor,
+  suscribirseCromatismo,
   suscribirseMonocromo,
 } from "@/lib/cromatismo";
 
@@ -64,6 +69,41 @@ function BotonMonocromo({ className }: { className?: string }) {
     >
       <Contrast size={15} aria-hidden="true" />
     </button>
+  );
+}
+
+/**
+ * Muestras del color de acento. Cada una se pinta con su propio tono, no con
+ * los tokens: tiene que verse aunque no sea el acento activo. En monocromático
+ * ninguna aparece marcada, porque ninguna es la que se ve; pulsar una vuelve
+ * al color con ese acento.
+ */
+function SelectorAcento({ className, boton = "p-1.5" }: { className?: string; boton?: string }) {
+  const acento = useSyncExternalStore(suscribirseCromatismo, acentoActivo, acentoEnServidor);
+  const mono = useSyncExternalStore(suscribirseMonocromo, monocromoActivo, monocromoEnServidor);
+  return (
+    <div role="group" aria-label="Color de acento" className={`inline-flex gap-0.5 ${className ?? ""}`}>
+      {ACENTOS.map(({ id, nombre, muestra }) => {
+        const activo = !mono && acento === id;
+        return (
+          <button
+            key={id}
+            type="button"
+            onClick={() => elegirAcento(id)}
+            aria-label={`Acento ${nombre.toLowerCase()}`}
+            aria-pressed={activo}
+            title={`Acento ${nombre.toLowerCase()}`}
+            className={`rounded-md transition-colors ${boton} ${activo ? "bg-fondo shadow-sm" : "hover:bg-fondo"}`}
+          >
+            <span
+              aria-hidden="true"
+              className={`block size-[15px] rounded-full ${activo ? "ring-2 ring-texto-tenue ring-offset-1 ring-offset-fondo" : ""}`}
+              style={{ backgroundColor: muestra }}
+            />
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -125,6 +165,10 @@ export function SelectorTema({
       <div className={`inline-flex rounded-lg p-0.5 ${marco}`}>
         <BotonMonocromo />
       </div>
+
+      <SelectorAcento
+        className={`rounded-lg p-0.5 ${orientacion === "vertical" ? "flex-col" : "border border-borde bg-superficie"}`}
+      />
     </div>
   );
 }
@@ -203,6 +247,8 @@ export function SelectorTemaCompacto() {
 
           <span className="mx-0.5 w-px self-stretch bg-borde" aria-hidden="true" />
           <BotonMonocromo className="p-2" />
+          <span className="mx-0.5 w-px self-stretch bg-borde" aria-hidden="true" />
+          <SelectorAcento boton="p-2" />
         </div>
       )}
     </div>

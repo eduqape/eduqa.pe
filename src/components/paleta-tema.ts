@@ -27,14 +27,15 @@ export type PaletaTema = Record<(typeof TOKENS)[number], string> & {
   clave: string;
 };
 
-// El tema vive en las clases de <html> (`dark`, `mono`), que gestionan
-// next-themes y `cromatismo.ts`.
+// El tema vive en <html>: las clases `dark` y `mono` y el atributo
+// `data-acento`, que gestionan next-themes y `cromatismo.ts`.
 function suscribir(avisar: () => void) {
   const vigia = new MutationObserver(avisar);
-  vigia.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "style"] });
+  vigia.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "style", "data-acento"] });
   return () => vigia.disconnect();
 }
-const clasesHtml = () => document.documentElement.className;
+const clasesHtml = () =>
+  `${document.documentElement.className} ${document.documentElement.getAttribute("data-acento") ?? ""}`;
 
 export function usePaletaTema(): PaletaTema | null {
   const clases = useSyncExternalStore(suscribir, clasesHtml, () => null);

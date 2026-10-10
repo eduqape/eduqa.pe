@@ -26,6 +26,7 @@ import {
 import { useSyncExternalStore, type ComponentType } from "react";
 import { MarcaInline } from "@/components/LlamaMarca";
 import { MarcaTextoLateral } from "@/components/MarcaTextoLateral";
+import { MarcaCalculadora } from "@/components/MarcaCalculadora";
 import { SelectorTemaCompacto } from "@/components/Tema";
 import { CLAVE_BARRA_LATERAL } from "@/lib/barra-lateral";
 
@@ -78,7 +79,7 @@ export function Isla({
   esAdmin: boolean;
   /** Profesores, gestores, desarrolladores y agentes, además de administradores. */
   esInterno?: boolean;
-  /** SVG personalizado de la marca para la barra lateral; null usa la llama original. */
+  /** SVG personalizado de la marca para la barra lateral; null deja solo el texto. */
   marcaSidebar?: string | null;
 }) {
   const ruta = usePathname();
@@ -162,7 +163,13 @@ export function Isla({
         title={autenticado ? "Cursos" : "Inicio"}
         className="sidebar-marca flex items-center gap-2 border-b border-borde px-6 py-4 transition-colors hover:bg-superficie"
       >
-        <MarcaInline svg={marcaSidebar} className="h-9 w-auto text-rojo-acento" />
+        {/* La marca es el texto. Si un admin subió un SVG propio desde el panel,
+            se respeta; si no, al colapsar queda la inicial en la misma letra. */}
+        {marcaSidebar ? (
+          <MarcaInline svg={marcaSidebar} className="h-9 w-auto text-rojo-acento" />
+        ) : (
+          <MarcaCalculadora texto="E" className="sidebar-icono-colapsado text-lg text-rojo-acento" />
+        )}
         <MarcaTextoLateral ocultarAlColapsar />
       </Link>
 

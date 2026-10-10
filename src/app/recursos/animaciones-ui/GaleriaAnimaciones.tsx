@@ -515,7 +515,7 @@ export function GaleriaAnimaciones() {
           content: "";
           position: absolute;
           inset: 0;
-          background: radial-gradient(70px circle at var(--x, 50%) var(--y, 50%), rgba(199,7,36,.32), transparent 70%);
+          background: radial-gradient(70px circle at var(--x, 50%) var(--y, 50%), color-mix(in srgb, var(--color-rojo) 32%, transparent), transparent 70%);
           opacity: 0;
           transition: opacity .2s ease;
         }

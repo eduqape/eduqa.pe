@@ -5,9 +5,12 @@
 
 @theme {
   /*
-   * Identidad EDUQA.PE. `rojo` es la marca: nunca cambia entre temas, porque
-   * un logo o una cabecera que cambia de color según el modo del sistema deja
-   * de ser identidad. Va siempre con texto blanco encima (6.1:1).
+   * Identidad EDUQA.PE. `rojo` es la marca: no cambia entre claro y oscuro,
+   * porque un logo o una cabecera que cambia de color según el modo del
+   * sistema deja de ser identidad. Va siempre con texto blanco encima (6.1:1).
+   * Es el acento por omisión; quien lo prefiera puede cambiarlo por morado,
+   * azul o rosa (ver «Color de acento» más abajo). El nombre de los tokens se
+   * conserva: `rojo` es el papel de marca, sea cual sea el tono elegido.
    */
   --color-rojo: #c70724;
   --color-rojo-hover: #a3061e;
@@ -58,6 +61,55 @@
   --color-texto-tenue: #85858e;
 
   --color-exito: #4ade80;
+}
+
+/*
+ * Color de acento: `data-acento` en <html> cambia el tono de la marca. El rojo
+ * no lleva atributo, es el valor de `:root`. Solo se tocan los tokens de marca;
+ * los neutros, el texto y el éxito no dependen del acento.
+ *
+ * `html[data-acento]` gana a `:root` y a `.dark` por especificidad, así que el
+ * oscuro tiene su propio bloque con la tinta aclarada y el tenue oscuro. Todos
+ * van antes del monocromático: empatan en especificidad con `html.mono` y
+ * `html.dark.mono`, y el monocromático tiene que ganar por orden.
+ *
+ * Contraste comprobado (WCAG): blanco sobre la marca entre 6,0 y 7,1:1; la
+ * tinta, entre 5,5 y 7,7:1 sobre el fondo y el tenue de cada tema.
+ */
+html[data-acento="morado"] {
+  --color-rojo: #6d28d9;
+  --color-rojo-hover: #5b21b6;
+  --color-rojo-tenue: #f5f3ff;
+  --color-rojo-acento: #6d28d9;
+  --color-sobre-rojo-suave: #ddd6fe;
+}
+html.dark[data-acento="morado"] {
+  --color-rojo-acento: #a78bfa;
+  --color-rojo-tenue: #1c1530;
+}
+
+html[data-acento="azul"] {
+  --color-rojo: #1d4ed8;
+  --color-rojo-hover: #1e40af;
+  --color-rojo-tenue: #eff6ff;
+  --color-rojo-acento: #1d4ed8;
+  --color-sobre-rojo-suave: #bfdbfe;
+}
+html.dark[data-acento="azul"] {
+  --color-rojo-acento: #60a5fa;
+  --color-rojo-tenue: #0f1a30;
+}
+
+html[data-acento="rosa"] {
+  --color-rojo: #be185d;
+  --color-rojo-hover: #9d174d;
+  --color-rojo-tenue: #fdf2f8;
+  --color-rojo-acento: #be185d;
+  --color-sobre-rojo-suave: #fbcfe8;
+}
+html.dark[data-acento="rosa"] {
+  --color-rojo-acento: #f472b6;
+  --color-rojo-tenue: #2a1020;
 }
 
 /*

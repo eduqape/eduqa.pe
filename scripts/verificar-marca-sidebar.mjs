@@ -1,43 +1,43 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { createRequire } from "node:module";
-import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 
 const leer = (ruta) => readFileSync(new URL(`../${ruta}`, import.meta.url), "utf8");
 
-// Se prueba el HTML que produce el componente, no una copia de sus clases.
-const modulo = { exports: {} };
-const javascript = ts.transpileModule(leer("src/components/MarcaTextoLateral.tsx"), {
-  compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS },
-}).outputText;
-new Function("require", "module", "exports", javascript)(
-  createRequire(import.meta.url),
-  modulo,
-  modulo.exports,
+// La marca de ambas barras es EDUQA.PE en la letra de calculadora del acceso
+// (DSEG14), sin la llama al lado. Se comprueba el código: el componente usa
+// `next/font/local`, que no se puede renderizar fuera de Next.
+const marca = ts.createSourceFile(
+  "MarcaTextoLateral.tsx",
+  leer("src/components/MarcaTextoLateral.tsx"),
+  ts.ScriptTarget.Latest,
+  true,
+  ts.ScriptKind.TSX,
 );
-const { MarcaTextoLateral } = modulo.exports;
-
-function clasesRenderizadas(props) {
-  const html = renderToStaticMarkup(createElement(MarcaTextoLateral, props));
-  const coincidencia = html.match(/^<span class="([^"]+)">EDUQA\.PE<\/span>$/);
-  assert.ok(coincidencia, `La marca debe renderizar EDUQA.PE en un span: ${html}`);
-  return coincidencia[1].split(/\s+/).sort();
+const importaCalculadora = marca.statements.some(
+  (s) =>
+    ts.isImportDeclaration(s) &&
+    ts.isStringLiteral(s.moduleSpecifier) &&
+    s.moduleSpecifier.text === "@/components/MarcaCalculadora",
+);
+assert.ok(importaCalculadora, "MarcaTextoLateral debe usar MarcaCalculadora");
+const clasesMarca = [];
+(function recorrer(nodo) {
+  if (ts.isJsxSelfClosingElement(nodo) && nodo.tagName.getText(marca) === "MarcaCalculadora") {
+    clasesMarca.push(nodo.attributes.getText(marca));
+  }
+  ts.forEachChild(nodo, recorrer);
+})(marca);
+assert.equal(clasesMarca.length, 1, "La marca lateral debe dibujar una sola MarcaCalculadora");
+for (const clase of ["text-lg", "tracking-[0.12em]", "text-rojo-acento", "sidebar-etiqueta"]) {
+  assert.ok(clasesMarca[0].includes(clase), `La marca lateral debe llevar ${clase}`);
 }
+assert.doesNotMatch(clasesMarca[0], /texto=/, "La marca lateral debe decir EDUQA.PE, el texto por omisión");
 
-const tipografia = [
-  "text-sm", // 14 px
-  "font-bold", // peso 700
-  "uppercase",
-  "tracking-[0.18em]",
-  "text-rojo-acento",
-].sort();
-assert.deepEqual(clasesRenderizadas({}), tipografia);
-assert.deepEqual(
-  clasesRenderizadas({ ocultarAlColapsar: true }),
-  [...tipografia, "sidebar-etiqueta"].sort(),
-);
+const calculadora = leer("src/components/MarcaCalculadora.tsx");
+assert.match(calculadora, /DSEG14Classic-Bold\.woff2/);
+assert.match(calculadora, /texto = "EDUQA\.PE"/);
+readFileSync(new URL("../src/fonts/dseg/DSEG14Classic-Bold.woff2", import.meta.url));
 
 function usosDeMarca(ruta) {
   const fuente = ts.createSourceFile(ruta, leer(ruta), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
@@ -71,10 +71,15 @@ assert.deepEqual(
 );
 assert.equal(leccion.attributes.properties.length, 0);
 
-// La familia es heredada del layout; una clase local no debe sustituir Inter.
-assert.match(leer("src/app/layout.tsx"), /const inter = Inter\(\{ variable: "--font-inter"/);
-assert.match(leer("src/app/layout.tsx"), /<body className="[^"]*\bfont-sans\b/);
-assert.match(leer("src/app/globals.css"), /--font-sans:\s*var\(--font-inter\)/);
+// Sin la llama junto al título: la marca es el texto. La barra general solo
+// dibuja un SVG si un admin subió uno propio desde el panel.
+const barraLeccion = leer("src/components/curso/BarraLateral.tsx");
+assert.doesNotMatch(barraLeccion, /from "@\/components\/Llama"/, "La barra de la lección no debe dibujar la llama");
+assert.match(
+  leer("src/components/Isla.tsx"),
+  /\{marcaSidebar \? \(\s*<MarcaInline/,
+  "La barra general solo debe dibujar un SVG de marca si hay uno personalizado",
+);
 
 const barraGeneral = leer("src/components/Isla.tsx");
 assert.doesNotMatch(barraGeneral, /Cerrar sesión|LogOut|onSalir/);
@@ -86,4 +91,4 @@ assert.match(
 assert.match(barraGeneral, /hover:bg-superficie/);
 assert.match(barraGeneral, /focus-visible:outline-rojo-acento/);
 
-console.log("Marca lateral: Inter, 14 px, peso 700 y espaciado idénticos en ambas barras.");
+console.log("Marca lateral: EDUQA.PE en letra de calculadora, sin llama, idéntica en ambas barras.");

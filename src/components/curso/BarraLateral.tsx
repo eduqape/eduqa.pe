@@ -14,7 +14,7 @@ import {
   X,
 } from "lucide-react";
 import type { Curso, Leccion } from "@/lib/cursos";
-import { Llama } from "@/components/Llama";
+import { MarcaCalculadora } from "@/components/MarcaCalculadora";
 import { MarcaTextoLateral } from "@/components/MarcaTextoLateral";
 
 export type HerramientaCurso = {
@@ -240,7 +240,6 @@ function Contenido({
         href={inicio}
         className="flex items-center gap-2 border-b border-borde px-4 py-4"
       >
-        <Llama className="h-9 w-auto text-rojo-acento" />
         <MarcaTextoLateral />
       </Link>
 
@@ -395,7 +394,7 @@ export function BarraLateral({
               <PanelLeftOpen size={18} aria-hidden="true" />
             </button>
             <Link href={inicio} aria-label="Volver">
-              <Llama className="h-8 w-auto text-rojo-acento" />
+              <MarcaCalculadora texto="E" className="text-lg text-rojo-acento" />
             </Link>
             {herramientas?.map((herramienta) => {
               const Icono = herramienta.tipo === "sandbox" ? FlaskConical : ListChecks;
