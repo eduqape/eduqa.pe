@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { Llama } from "@/components/Llama";
 import { Formulario } from "./Formulario";
+import { Llama3DPerezosa } from "./Llama3DPerezosa";
 
 export const metadata: Metadata = {
   title: "Acceder — EDUQA.PE",
@@ -24,27 +25,26 @@ export default async function Page({ searchParams }: PageProps<"/acceder">) {
       : undefined;
 
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center px-6 py-12">
-      <div className="absolute right-6 top-6">
-      </div>
-
-      <Link href="/" className="flex items-center gap-3">
-        <Llama className="h-12 w-auto text-rojo-acento" />
-        <span className="text-base font-bold uppercase tracking-[0.2em] text-rojo-acento">
-          EDUQA.PE
-        </span>
-      </Link>
-
-      <div className="mt-10 w-full max-w-sm rounded-2xl border border-borde bg-fondo p-7 shadow-sm">
-        <h1 className="text-xl font-semibold tracking-tight">Acceder</h1>
-        <p className="mt-1.5 text-sm text-texto-suave">
-          Entra para administrar cursos y certificados.
-        </p>
-
-        <div className="mt-6">
-          <Formulario volverA={destino} errorInicial={errorInicial} />
+    <main className="grid min-h-dvh bg-rojo text-white lg:grid-cols-2">
+      <section className="flex flex-col px-6 pt-8 lg:px-12 lg:py-10">
+        <Link href="/" className="flex items-center gap-3 self-center lg:self-start">
+          <Llama className="h-12 w-auto text-white" />
+          <span className="text-base font-bold uppercase tracking-[0.2em]">EDUQA.PE</span>
+        </Link>
+        <div className="hidden min-h-0 flex-1 lg:block" aria-hidden="true">
+          <Llama3DPerezosa />
         </div>
-      </div>
+      </section>
+
+      <section className="flex items-center justify-center px-6 py-10 lg:py-12">
+        <div className="w-full max-w-sm rounded-2xl border border-borde bg-fondo p-7 text-texto shadow-xl">
+          <h1 className="text-xl font-semibold tracking-tight">Acceder</h1>
+
+          <div className="mt-6">
+            <Formulario volverA={destino} errorInicial={errorInicial} />
+          </div>
+        </div>
+      </section>
     </main>
   );
 }
