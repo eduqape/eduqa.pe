@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Llama } from "@/components/Llama";
+import { MarcaCalculadora } from "@/components/MarcaCalculadora";
 import { Formulario } from "./Formulario";
 import { Llama3DPerezosa } from "./Llama3DPerezosa";
 
@@ -28,8 +29,9 @@ export default async function Page({ searchParams }: PageProps<"/acceder">) {
     <main className="grid min-h-dvh bg-rojo text-white lg:grid-cols-2">
       <section className="flex flex-col px-6 pt-8 lg:px-12 lg:py-10">
         <Link href="/" className="flex items-center gap-3 self-center lg:self-start">
-          <Llama className="h-12 w-auto text-white" />
-          <span className="text-base font-bold uppercase tracking-[0.2em]">EDUQA.PE</span>
+          {/* En pantalla ancha la llama 3D ya acompaña al nombre. */}
+          <Llama className="h-16 w-auto text-white lg:hidden" />
+          <MarcaCalculadora className="text-2xl tracking-[0.12em]" />
         </Link>
         <div className="hidden min-h-0 flex-1 lg:block" aria-hidden="true">
           <Llama3DPerezosa />
