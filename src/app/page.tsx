@@ -25,6 +25,7 @@ import { IconoRed, Stack } from "@/components/Iconos";
 import { Llama } from "@/components/Llama";
 import { SelectorTema } from "@/components/Tema";
 import { Boton, Seccion } from "@/components/ui";
+import { CargaAlNavegar } from "@/components/CargaAlNavegar";
 
 /**
  * `ilustracion` es la ruta de un SVG de `public/` que se pinta como máscara:
@@ -108,6 +109,7 @@ export default async function Page() {
                         Ir a mis cursos
                         <ArrowRight size={16} aria-hidden="true" />
                       </Boton>
+                      <CargaAlNavegar />
                     </Link>
                   ) : (
                     <>
@@ -445,6 +447,7 @@ export default async function Page() {
                   {usuario ? "Ir a mis cursos" : "Crear cuenta gratis"}
                   <ArrowRight size={16} aria-hidden="true" />
                 </Boton>
+                {usuario && <CargaAlNavegar />}
               </Link>
               {!usuario && (
                 <Link href="/catalogo">
