@@ -405,6 +405,30 @@ no está en a» no significa nada sin un borde respecto del cual esté fuera. Un
 que no esté en esa lista rompe la carga del curso a propósito, para que no
 salga un diagrama vacío que nadie note. `pie` es opcional.
 
+## Animaciones 3D
+
+Una valla ```escena embebe una animación 3D en el punto donde se escribe,
+normalmente justo después del código que ilustra:
+
+```escena
+escena: variables-definicion
+pie: El nombre señala el valor; no lo guarda
+```
+
+La animación es opcional y no se descarga con el curso. La lección muestra una
+tarjeta con «Ver animación», y three.js y el guion llegan solo cuando el
+alumno la pulsa. Toma los colores del tema (claro, oscuro y monocromático): el
+valor va en el rojo de marca y lo demás en los neutros.
+
+`escena` tiene que ser una de las registradas en `src/lib/escenas.ts`, porque
+cada guion se programa y se revisa aparte. Un nombre desconocido rompe la carga
+del curso, igual que una región de Venn mal escrita. `pie` es opcional.
+
+| Escena | Muestra |
+| ------ | ------- |
+| `variables-definicion` | `producto = "Laptop"`: nace el valor y el `=` le liga el nombre |
+| `variables-reasignacion` | Varias variables, `type()` y un nombre que cambia de valor |
+
 ## Fortran en el navegador
 
 Una valla `fortran` activa el editor y la ejecución mediante LFortran compilado

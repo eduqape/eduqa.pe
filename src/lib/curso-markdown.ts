@@ -2,6 +2,7 @@ import "server-only";
 
 import { parse as parseYaml } from "yaml";
 import { resolverIconoCurso } from "@/lib/iconos-curso";
+import { ESCENAS, esEscena } from "@/lib/escenas";
 import {
   REGIONES_VENN,
   derivarSecciones,
@@ -282,6 +283,21 @@ function leerVenn(texto: string, donde: string): Bloque {
   };
 }
 
+/**
+ * Lee una escena 3D declarada en YAML. Como el Venn, un nombre desconocido
+ * rompe la carga del curso en vez de dejar una tarjeta que no lanza nada.
+ */
+function leerEscena(texto: string, donde: string): Bloque {
+  const datos = (parseYaml(texto) ?? {}) as Record<string, unknown>;
+  const escena = String(datos.escena ?? "").trim();
+  if (!esEscena(escena)) {
+    throw new Error(
+      `Escena «${escena}» desconocida en ${donde}. Las válidas son: ${Object.keys(ESCENAS).join(", ")}.`,
+    );
+  }
+  return { tipo: "escena", escena, ...(datos.pie ? { pie: String(datos.pie) } : {}) };
+}
+
 type ResultadoSesion = {
   bloques: Bloque[];
   ejercicios: Record<string, Ejercicio>;
@@ -342,6 +358,11 @@ function leerSesion(texto: string, donde: string): ResultadoSesion {
 
       if (valla.lenguaje === "venn") {
         bloques.push(leerVenn(valla.contenido, donde));
+        continue;
+      }
+
+      if (valla.lenguaje === "escena") {
+        bloques.push(leerEscena(valla.contenido, donde));
         continue;
       }
 

@@ -5,11 +5,7 @@ import { Valorar } from "./Valorar";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import {
-  agruparEnSecciones,
-  type Ejercicio,
-  type Seccion,
-} from "@/lib/cursos";
+import { agruparEnSecciones } from "@/lib/cursos";
 import { estaMatriculado, perfilActual } from "@/lib/matriculas";
 import { baseImagenesCurso } from "@/lib/imagenes-curso";
 import { codigoDeCurso, esAccesoLibre } from "@/lib/precios";
@@ -25,100 +21,19 @@ import {
   BarraLateral,
   type HerramientaCurso,
 } from "@/components/curso/BarraLateral";
-import { BloqueCodigo } from "@/components/curso/BloqueCodigo";
-import { SeccionPlegable } from "@/components/curso/SeccionPlegable";
 import { Migas } from "@/components/Migas";
 import { SelectorTema } from "@/components/Tema";
-import { Teoria } from "@/components/curso/Teoria";
-import { Venn } from "@/components/curso/Venn";
 import { CargandoCurso } from "@/components/curso/CargandoCurso";
 import { PreparacionFortran } from "@/components/curso/PreparacionFortran";
 import { PreparacionBash } from "@/components/curso/PreparacionBash";
 import { rutaDeCadaCurso } from "@/lib/rutas";
 import { Ejercicios } from "@/components/curso/Ejercicios";
-import { EjercicioPunto } from "@/components/curso/EjercicioPunto";
+import { renderSecciones, type Opciones } from "@/components/curso/SeccionesLeccion";
 import { ejerciciosPython1 } from "@/content/python-ejercicios";
 import { VistaDiapositivas } from "@/components/sqlite/VistaDiapositivas";
 import { SincronizarCurso } from "@/components/curso/SincronizarCurso";
 
 export const dynamic = "force-dynamic";
-
-/** Pinta el árbol de secciones. Las hijas van dentro de la madre, de modo
- *  que plegar un encabezado pliega también todo lo que cuelga de él. */
-/**
- * `ejercicios` trae el ejercicio de cada punto, indexado por el identificador
- * de su sección. Se pinta al final del cuerpo de esa sección, antes de sus
- * hijas, de modo que cierra el punto que acaba de explicarse.
- */
-type Opciones = {
-  ejecutable?: boolean;
-  ejercicios?: Record<string, Ejercicio>;
-  paquetes?: string[];
-  preludio?: string;
-  baseImagenes?: string;
-};
-
-function renderCuerpoSeccion(sec: Seccion, op: Opciones) {
-  const { ejecutable = false, ejercicios } = op;
-  return (
-    <>
-      {sec.bloques.map((b, i) =>
-          b.tipo === "teoria" ? (
-            <Teoria key={i} contenido={b.contenido} docs={b.docs} nota={b.nota} baseImagenes={op.baseImagenes} />
-          ) : b.tipo === "venn" ? (
-            <Venn
-              key={i}
-              izquierda={b.izquierda}
-              derecha={b.derecha}
-              resalta={b.resalta}
-              pie={b.pie}
-            />
-          ) : (
-            <BloqueCodigo
-              key={i}
-              codigo={b.contenido}
-              lenguaje={b.lenguaje}
-              salida={b.salida}
-              docs={b.docs}
-              nota={b.nota}
-              ejecutable={(b.lenguaje === "fortran" || b.lenguaje === "bash" || ejecutable) && !b.sinConsola}
-              entrada={b.entrada}
-              archivos={b.archivos}
-              paquetes={op.paquetes}
-              preludio={op.preludio}
-            />
-          ),
-        )}
-      {ejercicios?.[sec.id] && (
-          <EjercicioPunto
-            ejercicio={ejercicios[sec.id]}
-            paquetes={op.paquetes}
-            preludio={op.preludio}
-          />
-        )}
-    </>
-  );
-}
-
-function renderSecciones(secciones: Seccion[], op: Opciones = {}) {
-  return secciones.map((sec) => {
-    const cuerpo = <>{renderCuerpoSeccion(sec, op)}{renderSecciones(sec.hijas, op)}</>;
-
-    // Los bloques anteriores al primer encabezado no tienen nada que plegar.
-    if (!sec.titulo) return <div key={sec.id}>{cuerpo}</div>;
-
-    return (
-      <SeccionPlegable
-        key={sec.id}
-        id={sec.id}
-        titulo={sec.titulo}
-        nivel={sec.nivel}
-      >
-        {cuerpo}
-      </SeccionPlegable>
-    );
-  });
-}
 
 /*
  * Lecciones que traen consola. Es una prueba acotada a propósito: el

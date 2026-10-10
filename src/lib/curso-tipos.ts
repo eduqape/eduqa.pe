@@ -8,6 +8,7 @@
  */
 
 import type { IconoNombre } from "@/components/Iconos";
+import type { NombreEscena } from "@/lib/escenas";
 /** Referencia a documentación oficial. Regla del curso: casi todo ejemplo cita su fuente. */
 export type Doc = { titulo: string; url: string };
 
@@ -59,6 +60,18 @@ export type Bloque =
       izquierda: string;
       derecha: string;
       resalta: RegionVenn;
+      pie?: string;
+      docs?: Doc[];
+      nota?: string;
+    }
+  | {
+      /**
+       * Animación 3D opcional de un punto. No se descarga con el curso: la
+       * lección muestra una tarjeta y three.js llega solo si el alumno la
+       * lanza. `escena` es un nombre de `src/lib/escenas.ts`.
+       */
+      tipo: "escena";
+      escena: NombreEscena;
       pie?: string;
       docs?: Doc[];
       nota?: string;
