@@ -1,14 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { clienteServidor } from "@/lib/supabase/servidor";
-
-function destinoSeguro(valor: string | null) {
-  return valor?.startsWith("/") && !valor.startsWith("//") ? valor : "/panel";
-}
+import { rutaInterna } from "@/lib/ruta-interna";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const destino = destinoSeguro(searchParams.get("next"));
+  const destino = rutaInterna(searchParams.get("next"));
 
   if (code) {
     const supabase = await clienteServidor();

@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { clienteServidor } from "@/lib/supabase/servidor";
+import { rutaInterna } from "@/lib/ruta-interna";
 
 export type EstadoAcceso = { ok: false; error: string } | { ok: true; aviso: string };
 
@@ -13,18 +14,13 @@ function limpiar(v: FormDataEntryValue | null) {
   return typeof v === "string" ? v.trim() : "";
 }
 
-/** Sanea el destino: solo rutas internas, para no habilitar redirección abierta. */
-function destinoSeguro(valor: string) {
-  return valor.startsWith("/") && !valor.startsWith("//") ? valor : "/panel";
-}
-
 export async function accederConContrasena(
   _prev: EstadoAcceso | null,
   formData: FormData,
 ): Promise<EstadoAcceso> {
   const email = limpiar(formData.get("email")).toLowerCase();
   const password = limpiar(formData.get("password"));
-  const volverA = destinoSeguro(limpiar(formData.get("volverA")));
+  const volverA = rutaInterna(limpiar(formData.get("volverA")));
 
   if (!RE_EMAIL.test(email)) return { ok: false, error: "Ese correo no parece válido." };
   if (!password) return { ok: false, error: "Escribe tu contraseña." };
@@ -76,7 +72,7 @@ export async function verificarCodigoAcceso(
 ): Promise<EstadoAcceso> {
   const email = limpiar(formData.get("email")).toLowerCase();
   const codigo = limpiar(formData.get("codigo"));
-  const volverA = destinoSeguro(limpiar(formData.get("volverA")));
+  const volverA = rutaInterna(limpiar(formData.get("volverA")));
 
   if (!RE_EMAIL.test(email)) return { ok: false, error: "Ese correo no parece válido." };
   if (!RE_CODIGO.test(codigo)) {

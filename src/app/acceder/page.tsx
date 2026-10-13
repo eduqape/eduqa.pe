@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { Llama } from "@/components/Llama";
 import { MarcaCalculadora } from "@/components/MarcaCalculadora";
+import { rutaInterna } from "@/lib/ruta-interna";
 import { Formulario } from "./Formulario";
 import { Llama3DPerezosa } from "./Llama3DPerezosa";
 
@@ -10,16 +11,10 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-function destinoSeguro(valor: string | string[] | undefined) {
-  return typeof valor === "string" && valor.startsWith("/") && !valor.startsWith("//")
-    ? valor
-    : "/panel";
-}
-
 export default async function Page({ searchParams }: PageProps<"/acceder">) {
   // Next 16: searchParams llega como promesa.
   const { volverA, error } = await searchParams;
-  const destino = destinoSeguro(volverA);
+  const destino = rutaInterna(typeof volverA === "string" ? volverA : null);
   const errorInicial =
     error === "oauth_google"
       ? "No pudimos completar el acceso con Google. Intenta de nuevo."
