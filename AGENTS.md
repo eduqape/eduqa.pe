@@ -98,6 +98,8 @@ el Markdown del repositorio no publica nada.
 
 - Todos los cursos deben mostrar un icono, por instrucción del usuario.
 - Fortran usa su logotipo oficial mediante `SiFortran` de `react-icons`.
+- COBOL no tiene logotipo oficial: usa el icono de Devicon
+  (`src/components/icono-cobol.ts`, MIT), con el trazado sin redibujar.
 - Las materias sin logotipo usan un símbolo de Lucide. Nunca se deja el espacio vacío.
 - Una publicación nueva requiere `icono` válido; las fichas antiguas se normalizan
   con `resolverIconoCurso` para conservar su visibilidad.
