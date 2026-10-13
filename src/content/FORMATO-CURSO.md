@@ -11,9 +11,17 @@ sesion-3.md
 sesion-4.md
 ```
 
-Para publicarlo, sube la ficha y las sesiones desde `/panel/cursos` y elige
-el estado correspondiente. El contenido se guarda en Supabase y aparece sin
-modificar TypeScript ni volver a desplegar la aplicación. El icono es obligatorio.
+Hay dos formas de escribirlo, y las dos guardan lo mismo en Supabase:
+
+- **En el panel.** `/panel/cursos/nuevo` crea el curso en borrador con una
+  sesión de ejemplo. Desde su ficha (`/panel/cursos/<slug>`) se abre cada
+  archivo en el editor, con vista previa idéntica a la lección, «Insertar
+  imagen» y validación del curso entero al guardar.
+- **Fuera del panel.** Se escribe la carpeta en local y se sube completa desde
+  `/panel/cursos/importar`. Si el slug ya existe, reemplaza su material.
+
+El contenido aparece sin modificar TypeScript ni volver a desplegar la
+aplicación. El icono es obligatorio.
 
 **Supabase es la única fuente de verdad en runtime.** La aplicación no descubre
 cursos en `src/content`, no utiliza un catálogo local y no hace fallback a
@@ -70,7 +78,7 @@ client = genai.Client(api_key="clave-de-practica")
 | `icono` | sí | Logotipo del producto o símbolo de la materia. Se valida contra `src/lib/iconos-curso.ts`; Fortran usa `fortran` |
 | `paquetes` | no | Paquetes de PyPI que hacen falta para ejecutar el código |
 | `precio` | no | Precio en soles. Al actualizar, si se omite conserva el precio existente; en un curso nuevo usa 20 |
-| `estado` | no | `borrador`, `publico` o `archivado`. Al actualizar, si se omite conserva el estado existente |
+| `estado` | no | `borrador`, `privado`, `publico` o `archivado`. Al actualizar, si se omite conserva el estado existente |
 | `acceso_libre` | no | `true` permite matricularse sin pago; `false` exige compra o acceso administrativo |
 | `orden` | no | Posición del curso en el catálogo; usa 99 por omisión en cursos nuevos |
 | `ruta` | no | Objeto que crea o actualiza una ruta y coloca el curso dentro de ella |
@@ -78,8 +86,8 @@ client = genai.Client(api_key="clave-de-practica")
 Dentro de `ruta`, `slug`, `nombre`, `orden` y `posicion` son obligatorios para
 una ruta nueva. `descripcion` puede omitirse. `requisitos` es una lista de slugs
 de cursos que deben existir antes de publicar esta ficha. Cuando `curso.md`
-declara estos datos, el formulario de `/panel/cursos` actualiza la ficha, la
-ruta, la posición y los prerrequisitos junto con el contenido. No hace falta
+declara estos datos, importarla o guardarla en el editor del panel actualiza la
+ficha, la ruta, la posición y los prerrequisitos junto con el contenido. No hace falta
 editar TypeScript, escribir SQL ni volver a desplegar.
 
 El prefijo `codigo` identifica al curso y no cambia al republicarlo. La base
@@ -368,8 +376,9 @@ Una figura se cita con una ruta relativa a la carpeta `imagenes/` del paquete:
 ![Arquitectura de la red](imagenes/figura-3-arquitectura.png)
 ```
 
-Al publicar desde `/panel/cursos` se arrastran las imágenes junto con
-`curso.md` y las sesiones. Se suben al bucket público `cursos-imagenes`, bajo
+Al importar desde `/panel/cursos/importar` se arrastran las imágenes junto con
+`curso.md` y las sesiones; en el editor, «Insertar imagen» sube una y escribe
+su cita donde está el cursor. Se suben al bucket público `cursos-imagenes`, bajo
 `<slug>/imagenes/`, y la sesión resuelve la ruta relativa contra ese prefijo.
 No se copian a `/public` ni hace falta volver a desplegar.
 

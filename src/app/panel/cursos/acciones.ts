@@ -1,10 +1,21 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { parse as parseYaml } from "yaml";
 import { clienteServidor, usuarioActual } from "@/lib/supabase/servidor";
 import { codigoBaseDeFicha, construirCurso } from "@/lib/curso-markdown";
 import { esIconoCurso } from "@/lib/iconos-curso";
+import { huella } from "@/lib/cursos-panel";
+import {
+  NOMBRE_ARCHIVO,
+  comoAdministrador,
+  comprobarImagenes,
+  materialDe,
+  validarMaterial,
+  type Material,
+  type Supabase,
+} from "./material";
 import {
   BUCKET_IMAGENES_CURSO,
   MAX_BYTES_IMAGEN,
@@ -15,9 +26,13 @@ import {
   tipoImagen,
 } from "@/lib/imagenes-curso";
 
-export type EstadoPublicacion = { ok: boolean; error?: string; detalle?: string };
+export type EstadoPublicacion = { ok: boolean; error?: string; detalle?: string; slug?: string };
 
-type EstadoCurso = "borrador" | "publico" | "archivado";
+export type ResultadoArchivo =
+  | { ok: true; mensaje: string; huella: string; aviso?: string }
+  | { ok: false; error: string; conflicto?: boolean };
+
+type EstadoCurso = "borrador" | "privado" | "publico" | "archivado";
 
 type Publicacion = {
   precio: number;
@@ -70,6 +85,7 @@ function revalidarCursoPublicado(slug: string, ruta?: string) {
   revalidatePath("/sitemap.xml");
   revalidatePath("/panel");
   revalidatePath("/panel/cursos");
+  revalidatePath(`/panel/cursos/${slug}`, "layout");
   revalidatePath("/compras");
   revalidatePath(`/pagar/${slug}`);
   revalidatePath(`/cursos/${slug}`, "layout");
@@ -97,8 +113,8 @@ function leerPublicacion(
   if (accesoLibre === undefined) {
     return { error: "acceso_libre debe ser true o false." };
   }
-  if (!["borrador", "publico", "archivado"].includes(estado)) {
-    return { error: "El estado debe ser borrador, publico o archivado." };
+  if (!["borrador", "privado", "publico", "archivado"].includes(estado)) {
+    return { error: "El estado debe ser borrador, privado, publico o archivado." };
   }
 
   const rutaCruda = ficha.ruta;
@@ -411,6 +427,7 @@ export async function publicarCurso(
 
   return {
     ok: true,
+    slug,
     detalle: `«${curso.titulo}» (${codigoPublicado}): ${curso.lecciones.length} sesiones guardadas${
       imagenes.size > 0 ? ` y ${imagenes.size} imágenes` : ""
     }${
@@ -546,8 +563,255 @@ export async function crearCurso(
 
   revalidarCursoPublicado(slug);
 
+  // Se abre directamente el curso recién creado: quien lo crea viene a
+  // escribirlo, no a volver al listado a buscarlo.
+  redirect(`/panel/cursos/${slug}?creado=1`);
+}
+
+/* ------------------------------------------------------------------------ */
+/* Edición en el navegador, archivo por archivo                              */
+/* ------------------------------------------------------------------------ */
+
+/** Escribe el índice, la revisión y las vistas después de cambiar material. */
+async function cerrarCambio(supabase: Supabase, material: Material) {
+  const { error } = await supabase.rpc("registrar_revision_curso", { p_slug: material.curso.slug });
+  revalidarCursoPublicado(material.curso.slug, material.curso.ruta ?? undefined);
+  return error ? `El cambio se guardó, pero no se pudo registrar la revisión: ${error.message}` : null;
+}
+
+/**
+ * Guarda un solo archivo (la ficha o una sesión) escrito en el editor.
+ *
+ * `base` es la huella del texto que el editor abrió. Si en la base ya hay otro
+ * texto, alguien lo cambió entretanto y se rechaza en lugar de pisarlo.
+ */
+export async function guardarArchivoCurso(
+  slug: string,
+  archivo: string,
+  contenido: string,
+  base: string,
+): Promise<ResultadoArchivo> {
+  const acceso = await comoAdministrador();
+  if ("error" in acceso) return { ok: false, error: acceso.error };
+  const { supabase } = acceso;
+
+  if (!NOMBRE_ARCHIVO.test(archivo)) return { ok: false, error: "El nombre del archivo no es válido." };
+  if (contenido.length > 400_000) return { ok: false, error: "El archivo supera los 400 000 caracteres. Divide la sesión en dos." };
+
+  const material = await materialDe(supabase, slug);
+  if ("error" in material) return { ok: false, error: material.error };
+
+  const anterior = material.archivos.get(archivo);
+  if (anterior === undefined) return { ok: false, error: "Este archivo ya no existe en el curso. Puede que lo hayan eliminado." };
+  if (huella(anterior) !== base) {
+    return {
+      ok: false,
+      conflicto: true,
+      error: "Alguien guardó otra versión de este archivo mientras lo editabas. Copia tus cambios y recarga para no perder ninguno de los dos.",
+    };
+  }
+  if (anterior === contenido) return { ok: true, mensaje: "No había cambios que guardar.", huella: base };
+
+  material.archivos.set(archivo, contenido);
+  const valido = validarMaterial(slug, material.curso.codigo_base, material.archivos);
+  if ("error" in valido) return { ok: false, error: valido.error };
+
+  const faltan = await comprobarImagenes(supabase, slug, archivo, contenido);
+  if (faltan) return { ok: false, error: faltan };
+
+  // La ficha también decide precio, estado y ruta, igual que al importarla.
+  // Se valida antes de escribir nada.
+  let publicacion: Publicacion | undefined;
+  if (archivo === "curso.md") {
+    const { data: existente, error: eExistente } = await supabase
+      .from("cursos")
+      .select("precio, estado, acceso_libre, orden, posicion, requisitos")
+      .eq("id", material.curso.id)
+      .single();
+    if (eExistente) return { ok: false, error: `No se pudo leer la ficha actual: ${eExistente.message}` };
+    const leida = leerPublicacion(frontmatter(contenido), existente);
+    if (!leida.publicacion) return { ok: false, error: leida.error ?? "La ficha no es válida." };
+    publicacion = leida.publicacion;
+  }
+
+  const { error: eContenido } = await supabase
+    .from("curso_contenido")
+    .upsert({ curso_id: material.curso.id, archivo, contenido }, { onConflict: "curso_id,archivo" });
+  if (eContenido) return { ok: false, error: `No se pudo guardar: ${eContenido.message}` };
+
+  let aviso: string | undefined;
+  if (publicacion) {
+    if (publicacion.ruta) {
+      const { error: eRuta } = await supabase.from("rutas").upsert(
+        {
+          slug: publicacion.ruta.slug,
+          nombre: publicacion.ruta.nombre,
+          descripcion: publicacion.ruta.descripcion,
+          orden: publicacion.ruta.orden,
+        },
+        { onConflict: "slug" },
+      );
+      if (eRuta) return { ok: false, error: `El archivo se guardó, pero no la ruta: ${eRuta.message}` };
+    }
+    // Título y resumen de la ficha son los del catálogo: la fila y el
+    // Markdown dicen siempre lo mismo.
+    const { error: eFicha } = await supabase
+      .from("cursos")
+      .update({
+        titulo: valido.curso.titulo,
+        resumen: valido.curso.resumen,
+        precio: publicacion.precio,
+        estado: publicacion.estado,
+        acceso_libre: publicacion.accesoLibre,
+        orden: publicacion.orden,
+        ...(publicacion.ruta
+          ? { ruta: publicacion.ruta.slug, posicion: publicacion.ruta.posicion, requisitos: publicacion.ruta.requisitos }
+          : {}),
+        actualizado_en: new Date().toISOString(),
+      })
+      .eq("id", material.curso.id);
+    if (eFicha) return { ok: false, error: `El archivo se guardó, pero no la ficha: ${eFicha.message}` };
+    material.curso.estado = publicacion.estado;
+    if (publicacion.ruta) material.curso.ruta = publicacion.ruta.slug;
+  } else {
+    const fila = valido.indice.find((f) => f.archivo === archivo)!;
+    const { error: eIndice } = await supabase
+      .from("curso_sesiones")
+      .upsert({ ...fila, curso_id: material.curso.id }, { onConflict: "curso_id,archivo" });
+    if (eIndice) return { ok: false, error: `El archivo se guardó, pero no el temario: ${eIndice.message}` };
+
+    const antes = frontmatter(anterior);
+    const slugAntes = String(antes.slug ?? `sesion-${Number(antes.numero)}`);
+    if (slugAntes !== fila.slug && material.curso.estado === "publico") {
+      aviso = `La sesión cambió de dirección (/${slugAntes} → /${fila.slug}). Los enlaces antiguos y el avance guardado de los alumnos apuntaban a la anterior.`;
+    }
+  }
+
+  const errorRevision = await cerrarCambio(supabase, material);
+  if (errorRevision) return { ok: false, error: errorRevision };
+
   return {
     ok: true,
-    detalle: `Creado en borrador como /${slug}, con una sesión de ejemplo. Edítalo y vuelve a subirlo cuando esté.`,
+    mensaje: material.curso.estado === "publico" ? "Guardado y publicado: los alumnos ya lo ven." : "Guardado.",
+    huella: huella(contenido),
+    aviso,
   };
+}
+
+/** Añade una sesión al final del curso con una plantilla y devuelve su archivo. */
+export async function crearSesion(slug: string): Promise<{ ok: true; archivo: string } | { ok: false; error: string }> {
+  const acceso = await comoAdministrador();
+  if ("error" in acceso) return { ok: false, error: acceso.error };
+  const { supabase } = acceso;
+
+  const material = await materialDe(supabase, slug);
+  if ("error" in material) return { ok: false, error: material.error };
+
+  const numeros = [...material.archivos.entries()]
+    .filter(([archivo]) => archivo !== "curso.md")
+    .map(([, texto]) => Number(frontmatter(texto).numero))
+    .filter(Number.isInteger);
+  const siguiente = Math.max(0, ...numeros) + 1;
+  let archivo = `sesion-${siguiente}.md`;
+  for (let n = 2; material.archivos.has(archivo); n++) archivo = `sesion-${siguiente}-${n}.md`;
+
+  const texto = [
+    "---",
+    `numero: ${siguiente}`,
+    `titulo: "Sesión ${siguiente}"`,
+    "---",
+    "",
+    "# Primer punto",
+    "",
+    "Cada encabezado abre una sección del temario y aparece en el índice lateral.",
+    "",
+  ].join("\n");
+
+  material.archivos.set(archivo, texto);
+  const valido = validarMaterial(slug, material.curso.codigo_base, material.archivos);
+  if ("error" in valido) return { ok: false, error: valido.error };
+
+  const { error: eContenido } = await supabase
+    .from("curso_contenido")
+    .insert({ curso_id: material.curso.id, archivo, contenido: texto });
+  if (eContenido) return { ok: false, error: `No se pudo crear la sesión: ${eContenido.message}` };
+  const fila = valido.indice.find((f) => f.archivo === archivo)!;
+  const { error: eIndice } = await supabase.from("curso_sesiones").insert({ ...fila, curso_id: material.curso.id });
+  if (eIndice) return { ok: false, error: `No se pudo añadir al temario: ${eIndice.message}` };
+
+  const errorRevision = await cerrarCambio(supabase, material);
+  if (errorRevision) return { ok: false, error: errorRevision };
+  return { ok: true, archivo };
+}
+
+/** Quita una sesión. Un curso conserva siempre al menos una. */
+export async function eliminarSesion(slug: string, archivo: string): Promise<{ ok: boolean; error?: string }> {
+  const acceso = await comoAdministrador();
+  if ("error" in acceso) return { ok: false, error: acceso.error };
+  const { supabase } = acceso;
+
+  if (archivo === "curso.md") return { ok: false, error: "La ficha no se elimina: sin ella no hay curso." };
+  const material = await materialDe(supabase, slug);
+  if ("error" in material) return { ok: false, error: material.error };
+  if (!material.archivos.has(archivo)) return { ok: true };
+  const sesiones = [...material.archivos.keys()].filter((a) => a !== "curso.md");
+  if (sesiones.length <= 1) return { ok: false, error: "Es la única sesión del curso. Un curso necesita al menos una." };
+
+  material.archivos.delete(archivo);
+  const valido = validarMaterial(slug, material.curso.codigo_base, material.archivos);
+  if ("error" in valido) return { ok: false, error: valido.error };
+
+  // Primero el índice: si falla lo segundo, la sesión deja de listarse pero su
+  // texto sigue en la base y se puede recuperar.
+  const { error: eIndice } = await supabase
+    .from("curso_sesiones")
+    .delete()
+    .eq("curso_id", material.curso.id)
+    .eq("archivo", archivo);
+  if (eIndice) return { ok: false, error: `No se pudo quitar del temario: ${eIndice.message}` };
+  const { error: eContenido } = await supabase
+    .from("curso_contenido")
+    .delete()
+    .eq("curso_id", material.curso.id)
+    .eq("archivo", archivo);
+  if (eContenido) return { ok: false, error: `No se pudo eliminar el texto: ${eContenido.message}` };
+
+  const errorRevision = await cerrarCambio(supabase, material);
+  if (errorRevision) return { ok: false, error: errorRevision };
+  return { ok: true };
+}
+
+/** Sube una imagen al bucket del curso y devuelve cómo citarla en el Markdown. */
+export async function subirImagenCurso(
+  slug: string,
+  datos: FormData,
+): Promise<{ ok: true; ruta: string } | { ok: false; error: string }> {
+  const acceso = await comoAdministrador();
+  if ("error" in acceso) return { ok: false, error: acceso.error };
+  const { supabase } = acceso;
+
+  const archivo = datos.get("imagen");
+  if (!(archivo instanceof File)) return { ok: false, error: "No llegó ninguna imagen." };
+  const tipo = tipoImagen(archivo.name);
+  if (!tipo) return { ok: false, error: "Solo PNG, JPG, WebP o GIF." };
+  // Un nombre con espacios o tildes no se puede citar sin escaparlo.
+  const nombre = archivo.name
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/[^A-Za-z0-9._-]/g, "")
+    .toLowerCase();
+  if (!nombreImagenValido(nombre)) return { ok: false, error: "El nombre de la imagen no es válido." };
+  if (archivo.size > MAX_BYTES_IMAGEN) return { ok: false, error: "La imagen supera los 2 MB." };
+  const bytes = new Uint8Array(await archivo.arrayBuffer());
+  if (!firmaImagenValida(bytes, tipo)) return { ok: false, error: "El archivo no tiene el formato que indica su extensión." };
+
+  const { data: curso } = await supabase.from("cursos").select("slug").eq("slug", slug).maybeSingle();
+  if (!curso) return { ok: false, error: "Ese curso ya no existe." };
+
+  const { error } = await supabase.storage
+    .from(BUCKET_IMAGENES_CURSO)
+    .upload(`${slug}/imagenes/${nombre}`, bytes, { contentType: tipo, upsert: true });
+  if (error) return { ok: false, error: `No se pudo subir: ${error.message}` };
+  return { ok: true, ruta: `imagenes/${nombre}` };
 }

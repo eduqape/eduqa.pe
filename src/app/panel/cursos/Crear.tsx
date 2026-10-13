@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { Plus } from "lucide-react";
+import { useActionState } from "react";
+import Link from "next/link";
 import { AREAS } from "@/lib/curso-tipos";
 import { ICONOS_CURSO } from "@/lib/iconos-curso";
 import { crearCurso, type EstadoPublicacion } from "./acciones";
@@ -11,29 +11,14 @@ const NIVELES = ["INTRODUCCIÓN", "INTERMEDIO", "AVANZADO", "HARDMODE"];
 /**
  * Alta de un curso nuevo.
  *
- * Va detrás de un botón y no desplegado: crear cursos es lo que menos se hace
- * en esta pantalla, y tenerlo siempre abierto empuja hacia abajo lo que sí se
- * consulta a diario.
+ * Vive en `/panel/cursos/nuevo`: crear es ocasional y no debe empujar hacia
+ * abajo el listado. Al crearse, la acción abre la ficha del curso nuevo.
  */
 export function CrearCurso() {
-  const [abierto, setAbierto] = useState(false);
   const [estado, accion, enviando] = useActionState<EstadoPublicacion | null, FormData>(
     crearCurso,
     null,
   );
-
-  if (!abierto) {
-    return (
-      <button
-        type="button"
-        onClick={() => setAbierto(true)}
-        className="inline-flex items-center gap-2 rounded-lg border border-borde-fuerte bg-fondo px-4 py-2.5 text-sm font-medium transition-colors hover:border-rojo-acento hover:text-rojo-acento"
-      >
-        <Plus size={15} aria-hidden="true" />
-        Crear curso nuevo
-      </button>
-    );
-  }
 
   return (
     <form action={accion} className="rounded-xl border border-borde bg-superficie p-4">
@@ -147,13 +132,9 @@ export function CrearCurso() {
         >
           {enviando ? "Creando…" : "Crear"}
         </button>
-        <button
-          type="button"
-          onClick={() => setAbierto(false)}
-          className="text-sm text-texto-suave hover:text-texto"
-        >
+        <Link href="/panel/cursos" className="text-sm text-texto-suave hover:text-texto">
           Cancelar
-        </button>
+        </Link>
         {estado && (
           <span
             role="status"

@@ -1,9 +1,10 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
-import { FileText, Upload } from "lucide-react";
+import Link from "next/link";
+import { AlertTriangle, ArrowRight, FileText, Upload } from "lucide-react";
 import { publicarCurso, type EstadoPublicacion } from "./acciones";
-import { tipoImagen } from "@/lib/imagenes-curso";
+import { MAX_BYTES_IMAGEN, tipoImagen } from "@/lib/imagenes-curso";
 
 /**
  * Publicación de un curso arrastrando sus archivos.
@@ -20,6 +21,7 @@ export function FormularioCurso() {
     null,
   );
   const [nombres, setNombres] = useState<string[]>([]);
+  const [grandes, setGrandes] = useState<string[]>([]);
   const [encima, setEncima] = useState(false);
   const entrada = useRef<HTMLInputElement>(null);
 
@@ -31,6 +33,7 @@ export function FormularioCurso() {
     for (const f of Array.from(lista)) if (f.name.endsWith(".md") || tipoImagen(f.name)) dt.items.add(f);
     if (entrada.current) entrada.current.files = dt.files;
     setNombres(Array.from(dt.files).map((f) => f.name).sort());
+    setGrandes(Array.from(dt.files).filter((f) => f.size > MAX_BYTES_IMAGEN).map((f) => f.name));
   };
 
   return (
@@ -75,9 +78,18 @@ export function FormularioCurso() {
         </ul>
       )}
 
+      {nombres.length > 0 && (!nombres.includes("curso.md") || grandes.length > 0) && (
+        <p role="alert" className="flex items-start gap-1.5 text-sm text-rojo-acento">
+          <AlertTriangle size={15} className="mt-0.5 shrink-0" aria-hidden="true" />
+          {!nombres.includes("curso.md")
+            ? "Falta curso.md: sin la ficha no se sabe a qué curso pertenecen las sesiones."
+            : `Superan los 2 MB: ${grandes.join(", ")}.`}
+        </p>
+      )}
+
       <button
         type="submit"
-        disabled={pendiente || nombres.length === 0}
+        disabled={pendiente || nombres.length === 0 || !nombres.includes("curso.md") || grandes.length > 0}
         className="inline-flex items-center justify-center gap-2 rounded-lg bg-rojo px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-rojo-hover disabled:cursor-not-allowed disabled:opacity-50"
       >
         {pendiente ? "Publicando…" : "Publicar"}
@@ -89,6 +101,14 @@ export function FormularioCurso() {
           className={`text-sm ${estado.ok ? "text-exito" : "text-rojo-acento"}`}
         >
           {estado.ok ? estado.detalle : estado.error}
+          {estado.ok && estado.slug && (
+            <>
+              {" "}
+              <Link href={`/panel/cursos/${estado.slug}`} className="inline-flex items-center gap-1 font-semibold underline underline-offset-2">
+                Abrir el curso <ArrowRight size={13} aria-hidden="true" />
+              </Link>
+            </>
+          )}
         </p>
       )}
     </form>

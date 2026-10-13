@@ -54,6 +54,7 @@ function stubDeLib() {
 
 for (const [archivo, accion] of [
   ['src/app/panel/acciones.ts', 'guardarCurso'],
+  ['src/app/panel/cursos/acciones.ts', 'publicarCurso'],
   ['src/app/panel/reportes/acciones.ts', 'cambiarEstadoReporte'],
   ['src/app/panel/personas/acciones.ts', 'crearPersona'],
   ['src/app/panel/personas/acciones.ts', 'actualizarPersona'],

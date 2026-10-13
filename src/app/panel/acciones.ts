@@ -1,11 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { parseDocument } from "yaml";
 import { clienteServidor } from "@/lib/supabase/servidor";
 
 export type EstadoGuardado = { ok: boolean; error?: string };
 
-const ESTADOS = ["borrador", "privado", "publico"] as const;
+const ESTADOS = ["borrador", "privado", "publico", "archivado"] as const;
 type EstadoCurso = (typeof ESTADOS)[number];
 
 /**
@@ -57,6 +58,14 @@ export async function guardarCurso(
   // RLS no lanza error cuando deniega: simplemente no afecta ninguna fila.
   if (count === 0) return { ok: false, error: "No tienes permiso para editar cursos." };
 
+  // La ficha en Markdown lleva el mismo título y resumen. Si se quedara con
+  // los antiguos, la siguiente importación del curso los devolvería.
+  const errorFicha = await sincronizarFicha(supabase, slug, { titulo, resumen, estado, precio, acceso_libre: accesoLibre });
+  if (errorFicha) {
+    console.error("[guardarCurso:ficha]", errorFicha);
+    return { ok: false, error: "El curso se guardó, pero no se pudo actualizar su curso.md." };
+  }
+
   // Solo cambia la revisión cuando el título, el resumen o el material son
   // distintos. Precio, acceso y estado comercial no alteran el contenido.
   const { error: errorRevision } = await supabase
@@ -67,7 +76,58 @@ export async function guardarCurso(
   }
 
   revalidatePath("/cursos");
+  revalidatePath("/catalogo");
   revalidatePath("/panel/cursos");
+  revalidatePath(`/panel/cursos/${slug}`, "layout");
+  revalidatePath(`/cursos/${slug}`, "layout");
   revalidatePath("/panel");
   return { ok: true };
+}
+
+/**
+ * Lleva a curso.md lo que se acaba de guardar, conservando el resto del
+ * archivo: comentarios, orden de claves y el cuerpo con el preludio.
+ *
+ * Título y resumen se escriben siempre. Estado, precio y acceso solo si la
+ * ficha ya los declaraba: si no, al importarla se conserva lo de la base.
+ */
+async function sincronizarFicha(
+  supabase: Awaited<ReturnType<typeof clienteServidor>>,
+  slug: string,
+  campos: { titulo: string; resumen: string; estado: string; precio: number; acceso_libre: boolean },
+): Promise<string | null> {
+  const { data: curso } = await supabase.from("cursos").select("id").eq("slug", slug).maybeSingle();
+  if (!curso) return null;
+  const { data: fila, error } = await supabase
+    .from("curso_contenido")
+    .select("contenido")
+    .eq("curso_id", curso.id)
+    .eq("archivo", "curso.md")
+    .maybeSingle();
+  if (error) return error.message;
+  if (!fila) return null;
+
+  const texto = fila.contenido.replace(/^\uFEFF/, "");
+  if (!texto.startsWith("---")) return null;
+  const cierre = texto.indexOf("\n---", 3);
+  if (cierre === -1) return null;
+  const documento = parseDocument(texto.slice(3, cierre));
+  if (documento.errors.length > 0) return null;
+  let cambia = false;
+  for (const [clave, valor] of Object.entries(campos)) {
+    const siempre = clave === "titulo" || clave === "resumen";
+    if ((siempre || documento.has(clave)) && documento.get(clave) !== valor) {
+      documento.set(clave, valor);
+      cambia = true;
+    }
+  }
+  if (!cambia) return null;
+  const nuevo = `---\n${documento.toString().trimEnd()}${texto.slice(cierre)}`;
+
+  const { error: eGuardar } = await supabase
+    .from("curso_contenido")
+    .update({ contenido: nuevo })
+    .eq("curso_id", curso.id)
+    .eq("archivo", "curso.md");
+  return eGuardar?.message ?? null;
 }
