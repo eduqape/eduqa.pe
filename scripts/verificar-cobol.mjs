@@ -102,7 +102,10 @@ function ejecutarNativo(codigo, { entrada = '', archivos = {}, formatoLibre = fa
       if (archivos[nombre] !== undefined && Buffer.from(archivos[nombre]).equals(bytes)) continue;
       escritos[nombre] = comoTexto(new Uint8Array(bytes)).texto;
     }
-    return { compilo: true, salida: fs.readFileSync(destino, 'utf8'), diagnosticos, codigo: r.status, archivos: escritos };
+    // libcob de Debian enlaza una libxml2 más nueva que la instalada y esta
+    // lo avisa al arrancar cada programa; no es salida del programa.
+    const salida = fs.readFileSync(destino, 'utf8').replace(/^Warning: program compiled against libxml \d+ using older \d+\n/gm, '');
+    return { compilo: true, salida, diagnosticos, codigo: r.status, archivos: escritos };
   } finally {
     fs.rmSync(carpeta, { recursive: true, force: true });
   }
@@ -197,11 +200,21 @@ for (const { carpeta, raiz } of carpetas) {
       } else {
         r = await motor.ejecutar(b.contenido, { ...opciones, formato: b.formatoLibre ? 'free' : 'fixed' });
         bloques++;
-        if (cobcNativo && r.compilo) {
+        if (cobcNativo && r.compilo && !b.salidaVariable) {
           const n = ejecutarNativo(b.contenido, opciones);
           nativos++;
           if (sinFinal(n.salida) !== sinFinal(r.salida)) {
             fallos.push(`${donde}: el motor web y ${cobcNativo} difieren.\n${b.contenido}\n--- web ---\n${r.salida}\n--- nativo ---\n${n.salida}`);
+          }
+          // Un archivo binario (RELATIVE) no se compara byte a byte: libcob
+          // antepone a cada registro su longitud como size_t, 4 bytes en
+          // wasm32 y 8 en x86-64 (README.md). Sí se exige que ambos lo escriban.
+          const binario = (texto) => /^[0-9a-f]{8} {2}/.test(texto ?? '');
+          for (const nombre of new Set([...Object.keys(r.archivos), ...Object.keys(n.archivos)])) {
+            if (binario(r.archivos[nombre]) && binario(n.archivos[nombre])) continue;
+            if (sinFinal(r.archivos[nombre] ?? '(no escrito)') !== sinFinal(n.archivos[nombre] ?? '(no escrito)')) {
+              fallos.push(`${donde}: ${nombre} difiere entre el motor web y ${cobcNativo}.\n--- web ---\n${r.archivos[nombre]}\n--- nativo ---\n${n.archivos[nombre]}`);
+            }
           }
         }
       }

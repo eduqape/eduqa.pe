@@ -99,10 +99,17 @@ Además:
   `-debug`, pero lo que se lee en su lugar depende de la disposición de la
   memoria y puede no coincidir con Linux. El temario no se apoya en ese
   comportamiento indefinido.
+- En un archivo `RELATIVE`, libcob antepone a cada registro su longitud como
+  `size_t`: 4 bytes en WebAssembly (wasm32) y 8 en Linux x86-64. Lo que leen
+  los programas es lo mismo; cambia la disposición de los bytes en el archivo,
+  así que su volcado hexadecimal solo vale para este motor.
 - `FUNCTION CURRENT-DATE` y `ACCEPT … FROM DATE` dan la hora del equipo en UTC:
   no son deterministas y sus bloques van como `cobol !variable`.
 
 Comprobación: `npm run test:cobol` ejecuta todos los bloques y ejercicios de
 los cursos de COBOL con estos mismos bytes, en Node. Con `-- --nativo` compila
 además cada bloque con el `cobc` instalado (`sudo apt install gnucobol3`) y
-exige la misma salida.
+exige la misma salida y los mismos archivos de texto. Contrastado con
+GnuCOBOL 3.2.0 de Debian 13: los bloques del paquete de regresión
+(`scripts/fixtures/cobol-motor`) dan la misma salida, incluido `ACCEPT` tras
+el fin de la entrada, `OPEN EXTEND`, `SORT`, copybooks y programas anidados.
