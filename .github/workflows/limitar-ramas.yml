@@ -1,4 +1,8 @@
-name: Mantener ramas de entornos
+name: Eliminar ramas fuera de dev, qa y main
+run-name: >-
+  ${{ github.ref_type != 'branch' && format('Ignorar la etiqueta {0}', github.ref_name)
+  || contains(fromJSON('["main", "dev", "qa"]'), github.ref_name) && format('Conservar la rama {0}', github.ref_name)
+  || format('Eliminar la rama {0}', github.ref_name) }}
 
 on:
   create:
@@ -10,10 +14,11 @@ permissions:
 
 jobs:
   retirar-rama:
+    name: Eliminar la rama ${{ github.ref_name }}
     if: github.ref_type == 'branch' && github.ref_name != 'main' && github.ref_name != 'dev' && github.ref_name != 'qa'
     runs-on: ubuntu-latest
     steps:
-      - name: Retirar rama fuera de los entornos
+      - name: Borrar la rama en GitHub
         env:
           GH_TOKEN: ${{ github.token }}
           RAMA: ${{ github.ref_name }}

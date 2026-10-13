@@ -1,4 +1,4 @@
-name: Promoción dev → qa → main
+name: Validar y promover dev → qa → main
 
 on:
   push:
@@ -16,22 +16,25 @@ concurrency:
 
 jobs:
   dev:
-    name: Validar dev
+    name: dev · commits, lint, tipos y pruebas rápidas
     runs-on: ubuntu-latest
     outputs:
       probar_fortran: ${{ steps.alcance.outputs.fortran }}
       probar_cobol: ${{ steps.alcance.outputs.cobol }}
     steps:
-      - uses: actions/checkout@v7
+      - name: Descargar el commit con su historial
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
-      - uses: actions/setup-node@v7
+      - name: Preparar Node 22
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - name: Validar commits y detectar pruebas necesarias
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Validar mensajes y tickets, y decidir las pruebas de qa
         id: alcance
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -58,35 +61,47 @@ jobs:
           git log --first-parent --format=%s "$BASE_SHA..HEAD" | npx --no -- commitlint
           git log --first-parent --format='%B%x00' "$BASE_SHA..HEAD" | node scripts/validar-tickets-commit.mjs --github
           git diff --name-only "$BASE_SHA" HEAD | node scripts/alcance-ci.mjs "$BASE_SHA" >> "$GITHUB_OUTPUT"
-      - run: node --test scripts/alcance-ci.test.mjs
-      - run: npm run test:tickets
+      - name: Probar qué cambios activan las baterías Fortran y COBOL
+        run: node --test scripts/alcance-ci.test.mjs
+      - name: Probar el validador y el cierre de tickets
+        run: npm run test:tickets
       - name: Seguridad — reglas del código y redirecciones
         run: npm run test:seguridad
       - name: Seguridad — dependencias de producción sin vulnerabilidades altas
         run: npm audit --omit=dev --audit-level=high
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm run test:marca
-      - run: npm run test:catalogo
-      - run: npm run test:cursos:runtime
-      - run: npm run test:panel
-      - run: npm run test:python:tools
+      - name: Lint con ESLint
+        run: npm run lint
+      - name: Tipos con TypeScript
+        run: npm run typecheck
+      - name: Marca EDUQA.PE de las barras laterales
+        run: npm run test:marca
+      - name: Cursos en Markdown — carga y construcción
+        run: npm run test:catalogo
+      - name: Cursos en Supabase — lectura en runtime
+        run: npm run test:cursos:runtime
+      - name: Panel de cursos — server actions
+        run: npm run test:panel
+      - name: Curso de Python — quiz y herramientas
+        run: npm run test:python:tools
 
   qa:
-    name: Compilar y probar para qa
+    name: qa · build, ataques HTTP y cursos Fortran/COBOL
     if: github.event_name == 'push'
     needs: dev
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - name: Descargar el commit
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
-      - uses: actions/setup-node@v7
+      - name: Preparar Node 22
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - name: Compilar
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Compilar la aplicación (next build)
         # Supabase apunta a un puerto cerrado: el build de CI no habla con la
         # base real y las pruebas HTTP atacan la aplicación sin credenciales.
         env:
@@ -98,29 +113,34 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
         run: npm run test:seguridad:http
-      - name: Instalar compiladores para los cursos Fortran
+      - name: Instalar gfortran para los cursos Fortran
         if: needs.dev.outputs.probar_fortran == 'true'
         run: sudo apt-get update && sudo apt-get install -y gfortran build-essential
-      - if: needs.dev.outputs.probar_fortran == 'true'
+      - name: Cursos Fortran compilados con gfortran
+        if: needs.dev.outputs.probar_fortran == 'true'
         run: npm run test:fortran
-      - if: needs.dev.outputs.probar_fortran == 'true'
+      - name: Instalar Chromium para Playwright
+        if: needs.dev.outputs.probar_fortran == 'true'
         run: npx playwright install --with-deps chromium
-      - if: needs.dev.outputs.probar_fortran == 'true'
+      - name: Cursos Fortran en el motor del navegador
+        if: needs.dev.outputs.probar_fortran == 'true'
         run: npm run test:fortran:web
       - name: Cursos COBOL en el motor del navegador
         if: needs.dev.outputs.probar_cobol == 'true'
         run: npm run test:cobol
 
   seguridad-db:
-    name: Seguridad de la base de producción
+    name: qa · RLS y permisos de la base de producción
     if: github.event_name == 'push'
     needs: dev
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - name: Descargar el commit
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
-      - uses: actions/setup-node@v7
+      - name: Preparar Node 22
+        uses: actions/setup-node@v7
         with:
           node-version: 22
       # Solo lee el catálogo (políticas, permisos, funciones). Sin los secretos
@@ -132,14 +152,15 @@ jobs:
         run: npm run test:seguridad:db
 
   promover-qa:
-    name: Promover el commit verificado a qa
+    name: Promover a qa por fast-forward
     if: github.event_name == 'push'
     needs: [qa, seguridad-db]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7
+      - name: Descargar el commit con su historial
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
@@ -152,7 +173,7 @@ jobs:
           git push origin "$CANDIDATE_SHA:refs/heads/qa"
 
   promover-main:
-    name: Promover el mismo commit de qa a main
+    name: Publicar en main y cerrar tickets
     if: github.event_name == 'push'
     needs: promover-qa
     runs-on: ubuntu-latest
@@ -160,7 +181,8 @@ jobs:
       contents: write
       issues: write
     steps:
-      - uses: actions/checkout@v7
+      - name: Descargar el commit con su historial
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
