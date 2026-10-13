@@ -9,14 +9,16 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 
 const versionados = execFileSync("git", ["ls-files", "-z"], { encoding: "utf8" })
   .split("\0")
   .filter(Boolean);
 
 const leer = (ruta) => readFileSync(ruta, "utf8");
-const fuentes = versionados.filter((r) => /^src\/.*\.(ts|tsx|mjs|js)$/.test(r));
+// Un archivo versionado borrado en el árbol de trabajo no se lee: en CI no
+// pasa, y en local es trabajo a medias de otra tarea.
+const fuentes = versionados.filter((r) => /^src\/.*\.(ts|tsx|mjs|js)$/.test(r) && existsSync(r));
 const esCliente = (texto) => /^\s*["']use client["']/m.test(texto.slice(0, 400));
 
 /** Texto de los archivos de texto versionados, sin binarios ni recursos enormes. */
