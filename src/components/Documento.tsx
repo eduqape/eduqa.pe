@@ -56,7 +56,7 @@ export function Documento({ markdown }: { markdown: string }) {
           ),
           td: (p) => <td className="border-b border-borde px-4 py-2 text-texto-suave" {...p} />,
           blockquote: (p) => (
-            <blockquote className="border-l-2 border-rojo-acento pl-4 text-sm italic text-texto-suave" {...p} />
+            <blockquote className="rounded-xl border border-borde bg-fondo px-4 py-3 text-sm italic text-texto-suave" {...p} />
           ),
         }}
       >

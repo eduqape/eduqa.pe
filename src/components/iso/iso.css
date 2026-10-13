@@ -118,9 +118,9 @@
 /* Los tokens que no son color vivían solo en el bloque oscuro del kit. */
 .iso{--anatomy-weight:.6px;--anatomy-ease:cubic-bezier(.32,.72,0,1);--anatomy-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
 .iso,.dark .iso{--anatomy-card:var(--color-fondo);--anatomy-red:var(--color-rojo-acento)}
-.iso .iso-plate{border-radius:.75rem;box-shadow:0 0 0 1px var(--color-borde-fuerte);overflow:hidden}
-.iso .iso-figure{margin:24px 0}
-.iso .iso-legend{color:var(--color-texto-suave)}
+/* La lámina va dentro de la tarjeta de la lección, que pone el borde. */
+.iso .iso-plate{border-radius:0;box-shadow:none;overflow:hidden}
+.iso .iso-legend{margin:0;padding:0 16px 14px;color:var(--color-texto-suave)}
 .iso .iso-plate-corner[data-corner="fig"],.iso .iso-plate-corner[data-corner="readout"]{color:var(--color-texto-suave)}
 .iso .iso-plate-corner[data-corner="title"],.iso .iso-plate-corner[data-corner="hint"]{color:var(--color-texto-tenue)}
 .iso [data-figura-interactiva]{touch-action:pan-y;cursor:ew-resize;outline:none}

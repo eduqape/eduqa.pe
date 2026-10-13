@@ -18,8 +18,16 @@ export function NotaTecnica({ texto }: { texto?: string }) {
         />
         Nota técnica
       </summary>
-      <p className="mt-1.5 border-l-2 border-borde pl-3 text-[0.8125rem] leading-relaxed text-texto-tenue">
-        {texto}
+      <p className="mt-1.5 pl-[17px] text-[0.8125rem] leading-relaxed text-texto-tenue">
+        {texto.split(/`([^`]+)`/).map((trozo, i) =>
+          i % 2 ? (
+            <code key={i} className="rounded bg-superficie px-0.5 font-mono text-[0.9em] text-texto-suave">
+              {trozo}
+            </code>
+          ) : (
+            trozo
+          ),
+        )}
       </p>
     </details>
   );

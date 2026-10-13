@@ -429,6 +429,13 @@ tarjeta con «Ver animación», y three.js y el guion llegan solo cuando el
 alumno la pulsa. Toma los colores del tema (claro, oscuro y monocromático): el
 valor va en el rojo de marca y lo demás en los neutros.
 
+Una animación, como una figura, puede no verse nunca: el alumno no la abre, su
+navegador no tiene WebGL o el fragmento no llega. Si falla, el aviso queda
+dentro de la tarjeta, con «Reintentar», y la lección sigue. Por eso **nada de
+lo que enseña puede estar solo en ella ni en su pie**. El texto de la lección
+explica el concepto completo, y la escena y el pie lo ilustran. El pie se lee
+aunque la tarjeta esté cerrada: describe lo que se vería, no añade datos.
+
 `escena` tiene que ser una de las registradas en `src/lib/escenas.ts`, porque
 cada guion se programa y se revisa aparte. Un nombre desconocido rompe la carga
 del curso, igual que una región de Venn mal escrita. `pie` es opcional.
@@ -451,9 +458,12 @@ pantalla completa con el programa al lado.
 
 Una valla ```figura embebe una figura isométrica interactiva: un objeto físico
 cuyo funcionamiento es el concepto, dibujado con el kit del skill «anatomy»
-(`src/components/iso/`). La figura se genera en el servidor a partir de su
-modelo y solo su movimiento llega al navegador; sigue el tema claro, el oscuro
-y el monocromático.
+(`src/components/iso/`). Es opcional como la animación: la lección muestra una
+tarjeta cerrada con «Ver figura», y la geometría y su movimiento se descargan
+al pulsarla. Sigue el tema claro, el oscuro y el monocromático. Vale la misma
+regla: lo que la figura muestra ya está en el texto (en la sesión 2 de
+Nivelación de COBOL, la tabla de zonas va antes que la tarjeta perforada). La
+leyenda nombra marcas del dibujo y solo aparece con él.
 
 ```figura
 figura: tarjeta-perforada
@@ -463,7 +473,7 @@ pie: Texto que reemplaza el pie propio de la figura
 `figura` tiene que ser una de las registradas en `src/lib/figuras.ts`; un
 nombre desconocido rompe la carga del curso. La tarjeta numera las figuras de
 la sesión («Fig 1», «Fig 2»…) en el orden en que aparecen. `pie` es opcional:
-cada figura trae uno con sus datos verificados.
+cada figura trae en `src/lib/figuras.ts` uno que describe el dibujo.
 
 | Figura | Muestra |
 | ------ | ------- |

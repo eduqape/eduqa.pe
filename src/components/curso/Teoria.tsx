@@ -66,7 +66,7 @@ export function Teoria({
           ),
           blockquote: (p) => (
             <blockquote
-              className="mt-4 border-l-4 border-rojo-acento/40 bg-rojo-tenue py-2 pl-4 text-texto-suave"
+              className="mt-4 rounded-xl border border-borde bg-fondo px-4 py-3 text-texto-suave"
               {...p}
             />
           ),
