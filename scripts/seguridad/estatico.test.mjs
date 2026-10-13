@@ -135,6 +135,7 @@ test("el HTML sin escapar solo aparece donde está justificado", () => {
     "src/components/LlamaMarca.tsx": "SVG de marca validado por validarSvg y escrito solo por admin",
     "src/app/panel/marca/page.tsx": "vista previa del mismo SVG de marca",
     "src/components/blog/MotorBlog.tsx": "HTML del feed de Medium propio; sanearlo está pendiente en #143",
+    "src/components/figuras/tarjeta-perforada/Vivo.tsx": "SVG de la figura, generado en el servidor por su geometría a partir de constantes, sin datos externos",
   };
   const usos = fuentes.filter((r) => /dangerouslySetInnerHTML/.test(leer(r)) && !r.startsWith("src/app/preview/"));
   const sinMotivo = usos.filter((r) => !(r in PERMITIDOS));
