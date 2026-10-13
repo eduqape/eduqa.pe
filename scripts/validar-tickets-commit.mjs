@@ -11,8 +11,15 @@ const mensajes = entrada
 const referencias = new Set();
 const errores = [];
 
+// La firma publicitaria de Claude Code no va en el historial, con o sin el
+// emoji, el enlace o el corchete del Markdown.
+const firmaGenerada = /generated\s+(with|by)\s+\[?\s*claude\s+code/i;
+
 for (const mensaje of mensajes) {
   const cabecera = mensaje.split("\n", 1)[0];
+  if (firmaGenerada.test(mensaje)) {
+    errores.push(`«${cabecera}» lleva la línea «Generated with Claude Code». Quítala del mensaje.`);
+  }
   const lineas = [...mensaje.matchAll(/^(Refs?|Closes?|Fixes?|Resolves?):\s*(.+)$/gim)];
   const tickets = lineas.flatMap((linea) =>
     [...linea[2].matchAll(/#(\d+)/g)].map((coincidencia) => Number(coincidencia[1])),
