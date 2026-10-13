@@ -23,7 +23,7 @@ if (!encontrado) {
   process.exit(2);
 }
 
-const lineas = encontrado[1].split(" || ");
+const lineas = encontrado[1].split(" || ").map((l) => l.replace(/\\+$/, ""));
 for (const linea of lineas) console.log(`${linea.includes("FALLA") ? "✖" : "✔"} ${linea}`);
 const fallas = lineas.filter((l) => l.includes("FALLA") || (l.startsWith("preparación") && l.includes("=false")));
 if (fallas.length > 0) {

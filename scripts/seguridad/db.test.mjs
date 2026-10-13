@@ -78,10 +78,12 @@ prueba("un usuario no se cambia el rol ni se hace admin (#136)", async () => {
 
 /** Columnas de `tabla` que `rol` puede escribir con `privilegio`. */
 const columnasEscribibles = (tabla, privilegio, rol = "authenticated") =>
+  // pg_attribute de la tabla exacta: information_schema mezcla tablas con el
+  // mismo nombre en otros esquemas y has_column_privilege falla con ellas.
   filas(`
-    select column_name from information_schema.columns
-    where table_schema = 'public' and table_name = '${tabla}'
-      and has_column_privilege('${rol}', format('public.%I', table_name), column_name, '${privilegio}')
+    select a.attname::text from pg_attribute a
+    where a.attrelid = 'public.${tabla}'::regclass and a.attnum > 0 and not a.attisdropped
+      and has_column_privilege('${rol}', a.attrelid, a.attnum, '${privilegio}')
     order by 1`);
 
 prueba("el alumno solo escribe en su matrícula lo que le toca (#137)", async () => {
