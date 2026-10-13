@@ -1,3 +1,5 @@
+import "server-only";
+
 import { createClient } from "@supabase/supabase-js";
 
 // Solo servidor. La service role key nunca sale de las server actions.

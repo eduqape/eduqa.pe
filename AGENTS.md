@@ -43,6 +43,23 @@ todavía están en TypeScript. Al tocarlos, conviene pasarlos a Markdown.
 - Si la primera comprobación revela un defecto, la tarea continúa hasta corregirlo y
   verificar nuevamente el resultado completo.
 
+# Seguridad
+
+- Lo que el alumno escribe con su sesión también lo puede escribir por la API
+  REST de Supabase con cualquier payload. Validar en la server action no basta:
+  las columnas que no decide el alumno se protegen en la base (privilegios por
+  columna y triggers `*_campos_protegidos`). Ver SSD §10.5.
+- Una política nueva con `using (true)` o una tabla sin RLS rompe
+  `npm run test:seguridad:db`. Las excepciones se declaran en la prueba con su
+  motivo.
+- Todo destino de redirección que llegue del navegador (`volverA`, `next`) pasa
+  por `rutaInterna()` de `src/lib/ruta-interna.ts`.
+- Una ruta de API nueva se declara en `scripts/seguridad/estatico.test.mjs`
+  con la comprobación que la protege.
+- Después de cambiar permisos en producción, correr
+  `npm run test:seguridad:conducta`: ataca como un alumno dentro de una
+  transacción que se revierte.
+
 # Publicación
 
 - Trabajar en `dev`. Los pull requests se dirigen a `dev`, no a `main`.

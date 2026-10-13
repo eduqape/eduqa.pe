@@ -365,7 +365,7 @@ Las políticas de contenido distinguen ficha, material público, acceso libre, m
 
 ### 10.2. Credenciales de integración
 
-La nueva RPC se define como `SECURITY INVOKER`, con ejecución concedida a `service_role` y revocada para `PUBLIC`, `anon` y `authenticated`. Solo el servidor dispone de esa credencial. Dentro de la RPC se comprueban la clave API, su revocación y el rol vigente del titular.
+En producción, `autorizar_clave_api`, `leer_curso_por_api` y `publicar_curso_por_api` son `SECURITY DEFINER` y las ejecuta `anon`: la ruta de la API llama con la clave publicable y la autorización ocurre dentro de cada función. Reciben el resumen SHA-256 de la clave, comprueban que no esté revocada y leen el rol vigente del titular en `perfiles`; por eso ese rol tiene que estar protegido contra cambios del propio usuario (§10.5). Quien conozca el resumen de una clave puede llamarlas sin la clave; `claves_api` solo deja ver a cada titular sus propios resúmenes.
 
 No se amplía el acceso directo del navegador a las tablas para soportar el CRUD. La nueva función no modifica automáticamente las firmas heredadas de publicación; su revisión y retirada, si corresponde, debe planificarse por separado para preservar integraciones existentes.
 
@@ -388,6 +388,36 @@ La aplicación utiliza Supabase Storage para avatares. El registro de marca obse
 | `MEDIUM_FEED_URL`, `NEXT_PUBLIC_MEDIUM_USERNAME` | Fuente del blog |
 
 El SSD no incluye valores de credenciales ni presupone que una variable esté configurada en producción. La URL de Supabase procede del entorno; no debe deducirse el proyecto correcto por similitud de nombres.
+
+### 10.5. Columnas protegidas y escritura directa por REST
+
+Toda tabla que el alumno puede escribir con su sesión es también escribible desde la API REST de Supabase, con el payload que él elija. Las validaciones de las server actions no bastan: la base debe impedir por sí misma lo que el alumno no puede decidir. La auditoría del 2026-10-12 encontró que no lo hacía (#136 a #139, #144) y la migración `20261012180000_auditoria_seguridad_app.sql` fija estas reglas:
+
+| Tabla | El alumno escribe | Lo fija la base |
+|---|---|---|
+| `perfiles` | `nombre`, `telefono`, `pais`, `foto` | `rol`, `es_admin`, `plan`, `plan_hasta` (trigger `perfil_campos_protegidos`) |
+| `matriculas` | INSERT `usuario_id, curso_id`; UPDATE `estado, completada_en` | `estado = 'activa'`, `pagada = false` y `cohorte_id = null` al insertar; solo curso publicado; único cambio `activa → completada` (trigger `matricula_campos_protegidos`) |
+| `pagos` | INSERT `usuario_id, curso_id, concepto, monto, vence_en`; UPDATE `tag_id, vence_en, crudo` | `monto` = precio del curso publicado y `estado = 'pendiente'` (trigger `pago_campos_protegidos`) |
+
+Los triggers distinguen al alumno por `auth.role()` (`authenticated` o `anon`). El service role, el SQL del panel y las funciones SECURITY DEFINER —el pago confirmado por Niubiz, la certificación— no llevan ese rol y conservan su comportamiento. El rol de una persona se asigna solo desde el panel de Supabase.
+
+Una política `using (true)` solo se admite en tablas cuyo contenido es público (`configuracion`, `marca_recursos`, `rutas`, `catalogo_propuestas`) o en el INSERT anónimo de `reclamaciones`.
+
+Queda pendiente el alta sin verificación de correo (#141): el trigger `auto_confirm_user` confirma toda cuenta nueva, lo que permite registrar un correo ajeno. Corregirlo exige SMTP propio y volver al paso de código del registro.
+
+### 10.6. Pruebas de seguridad
+
+`scripts/seguridad/` agrupa las pruebas y el pipeline las ejecuta en cada push a `dev`:
+
+| Comando | Qué ataca | Dónde corre |
+|---|---|---|
+| `npm run test:seguridad` | Secretos versionados, variables públicas con nombre de secreto, módulos de servidor importados desde el cliente, redirecciones abiertas, `getSession` en el servidor, filtros PostgREST interpolados, HTML sin escapar fuera de la lista justificada y rutas de API sin protección declarada | Job `dev` |
+| `npm audit --omit=dev --audit-level=high` | Vulnerabilidades altas o críticas en dependencias de producción | Job `dev` |
+| `npm run test:seguridad:http` | Contra `next start`: cabeceras, rutas privadas sin sesión, cookie de sesión falsificada, `volverA`/`next` hacia otro dominio, API de cursos sin clave o con JSON manipulado, alertas sin admin, callback de Niubiz desde otra IP y salida de la carpeta pública | Job `qa`, tras el build |
+| `npm run test:seguridad:db` | Catálogo de producción: RLS en todas las tablas, columnas protegidas, políticas abiertas, `search_path` de funciones SECURITY DEFINER, funciones ejecutables por anon y privacidad de `claves_api` | Job `seguridad-db`, con los secretos `SUPABASE_ACCESS_TOKEN` y `SUPABASE_PROJECT_REF`; sin ellos se omite con un aviso |
+| `npm run test:seguridad:conducta` | Los ataques reales como un alumno (ascenso de rol, matrícula pagada o en borrador, cambio de curso de un pago, lectura de regalos) dentro de una transacción que se revierte siempre | A mano, con el CLI de Supabase enlazado, después de cambiar permisos |
+
+`seguridad-db` bloquea la promoción a `qa` igual que el build. Una prueba nueva que necesite una excepción la declara en su lista con el motivo y, si es un fallo conocido, con el número de ticket.
 
 ## 11. Rendimiento y disponibilidad
 

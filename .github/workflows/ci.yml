@@ -59,6 +59,10 @@ jobs:
           git diff --name-only "$BASE_SHA" HEAD | node scripts/alcance-ci.mjs "$BASE_SHA" >> "$GITHUB_OUTPUT"
       - run: node --test scripts/alcance-ci.test.mjs
       - run: npm run test:tickets
+      - name: Seguridad — reglas del código y redirecciones
+        run: npm run test:seguridad
+      - name: Seguridad — dependencias de producción sin vulnerabilidades altas
+        run: npm audit --omit=dev --audit-level=high
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run test:marca
@@ -81,7 +85,18 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build
+      - name: Compilar
+        # Supabase apunta a un puerto cerrado: el build de CI no habla con la
+        # base real y las pruebas HTTP atacan la aplicación sin credenciales.
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci
+          NEXT_PUBLIC_SITIO_URL: http://127.0.0.1:3107
+        run: npm run build
+      - name: Seguridad — ataques HTTP contra el build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+        run: npm run test:seguridad:http
       - name: Instalar compiladores para los cursos Fortran
         if: needs.dev.outputs.probar_fortran == 'true'
         run: sudo apt-get update && sudo apt-get install -y gfortran build-essential
@@ -92,10 +107,30 @@ jobs:
       - if: needs.dev.outputs.probar_fortran == 'true'
         run: npm run test:fortran:web
 
+  seguridad-db:
+    name: Seguridad de la base de producción
+    if: github.event_name == 'push'
+    needs: dev
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      # Solo lee el catálogo (políticas, permisos, funciones). Sin los secretos
+      # las pruebas se omiten con un aviso en el resumen del workflow.
+      - name: RLS, permisos por columna y funciones privilegiadas
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: npm run test:seguridad:db
+
   promover-qa:
     name: Promover el commit verificado a qa
     if: github.event_name == 'push'
-    needs: qa
+    needs: [qa, seguridad-db]
     runs-on: ubuntu-latest
     permissions:
       contents: write

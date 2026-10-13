@@ -119,6 +119,10 @@ npm run dev
 npm run build
 npm run lint
 npm run typecheck
+npm run test:seguridad           # reglas de seguridad del código
+npm run test:seguridad:http      # tras npm run build
+npm run test:seguridad:db        # con el CLI de Supabase enlazado
+npm run test:seguridad:conducta  # ataques reales en una transacción revertida
 ```
 
 ## Convención de commits
@@ -144,10 +148,14 @@ Cada commit debe vincular uno o más tickets reales del repositorio.
 
 ## Integración continua
 
-El workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) se ejecuta en cada push y pull request hacia `main`:
+El workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) se ejecuta en cada push y pull request hacia `dev`:
 
-1. **commits** — valida los mensajes nuevos con commitlint.
-2. **verify** — ejecuta instalación, lint y typecheck.
+1. **dev** — valida mensajes y tickets, reglas de seguridad del código (`npm run test:seguridad`), `npm audit` de dependencias de producción, lint, tipos y pruebas rápidas.
+2. **qa** — compila y ataca el build por HTTP (`npm run test:seguridad:http`); corre las pruebas de Fortran si cambiaron.
+3. **seguridad-db** — revisa RLS y permisos de la base de producción (`npm run test:seguridad:db`). Necesita los secretos `SUPABASE_ACCESS_TOKEN` y `SUPABASE_PROJECT_REF`; sin ellos se omite con un aviso.
+4. **promover-qa** y **promover-main** — si todo pasa, avanzan `qa` y `main` al mismo commit.
+
+El detalle de las pruebas de seguridad está en el [SSD, §10.6](SSD.md).
 
 ## Despliegue
 
