@@ -111,8 +111,21 @@ function leerPartesEjercicio(texto: string) {
     if (actual) partes[actual].push(linea);
   }
   return Object.fromEntries(
-    Object.entries(partes).map(([clave, lineas]) => [clave, lineas.join("\n").trim()]),
+    Object.entries(partes).map(([clave, lineas]) => [clave, sinBordesVacios(lineas)]),
   );
+}
+
+/*
+ * Quita las líneas vacías de los bordes sin tocar la sangría de la primera:
+ * en COBOL de formato fijo las columnas son parte del programa, y una
+ * plantilla que empezara en la columna 1 no compilaría.
+ */
+function sinBordesVacios(lineas: string[]) {
+  let inicio = 0;
+  let fin = lineas.length;
+  while (inicio < fin && !lineas[inicio].trim()) inicio++;
+  while (fin > inicio && !lineas[fin - 1].trim()) fin--;
+  return lineas.slice(inicio, fin).join("\n").trimEnd();
 }
 
 function exigirParte(
@@ -150,7 +163,8 @@ function baseConceptual(texto: string, donde: string) {
 function leerEjercicio(texto: string, donde: string) {
   const partes = leerPartesEjercicio(texto);
   const enunciado = exigirParte(partes, "enunciado", donde);
-  const plantilla = exigirParte(partes, "plantilla", donde);
+  exigirParte(partes, "plantilla", donde);
+  const plantilla = partes.plantilla;
   const esperado = partes.esperado?.trim() ?? "";
   const pista = exigirParte(partes, "pista", donde);
   const huecos = plantilla.match(/___/g)?.length ?? 0;
@@ -335,8 +349,8 @@ function leerSesion(texto: string, donde: string): ResultadoSesion {
 
       if (valla.lenguaje === "entrada" || valla.lenguaje === "archivo") {
         const bloque = ultimo();
-        if (!bloque || bloque.tipo !== "codigo" || !["fortran", "bash"].includes(bloque.lenguaje)) {
-          throw new Error(`Datos de entrada sin programa Fortran o Bash delante, en ${donde}.`);
+        if (!bloque || bloque.tipo !== "codigo" || !["fortran", "bash", "cobol"].includes(bloque.lenguaje)) {
+          throw new Error(`Datos de entrada sin programa Fortran, Bash o COBOL delante, en ${donde}.`);
         }
         if (valla.lenguaje === "entrada") bloque.entrada = valla.contenido + "\n";
         else {
@@ -344,6 +358,17 @@ function leerSesion(texto: string, donde: string): ResultadoSesion {
           if (!nombre || !/^[a-zA-Z0-9_-][a-zA-Z0-9_.-]*$/.test(nombre)) throw new Error(`Nombre de archivo inválido en ${donde}.`);
           bloque.archivos = { ...bloque.archivos, [nombre]: valla.contenido + "\n" };
         }
+        continue;
+      }
+
+      if (valla.lenguaje === "escrito") {
+        const bloque = ultimo();
+        if (!bloque || bloque.tipo !== "codigo" || bloque.lenguaje !== "cobol") {
+          throw new Error(`Un archivo escrito sin programa COBOL delante, en ${donde}.`);
+        }
+        const nombre = valla.modificadores[0];
+        if (!nombre || !/^[a-zA-Z0-9_-][a-zA-Z0-9_.-]*$/.test(nombre)) throw new Error(`Nombre de archivo inválido en ${donde}.`);
+        bloque.escritos = { ...bloque.escritos, [nombre]: valla.contenido + "\n" };
         continue;
       }
 
@@ -394,7 +419,9 @@ function leerSesion(texto: string, donde: string): ResultadoSesion {
               ? { lenguaje: "fortran" as const }
               : valla.modificadores.includes("bash")
                 ? { lenguaje: "bash" as const }
-                : {}),
+                : valla.modificadores.includes("cobol")
+                  ? { lenguaje: "cobol" as const }
+                  : {}),
           };
         }
         continue;
@@ -414,6 +441,11 @@ function leerSesion(texto: string, donde: string): ResultadoSesion {
         // no lleva valla salida y la verificación no la compara.
         ...(valla.modificadores.includes("!variable")
           ? { salidaVariable: true }
+          : {}),
+        // COBOL se escribe en formato fijo, el de cobc por omisión; `!libre`
+        // compila el bloque con -free.
+        ...(valla.lenguaje === "cobol" && valla.modificadores.includes("!libre")
+          ? { formatoLibre: true }
           : {}),
       });
       continue;

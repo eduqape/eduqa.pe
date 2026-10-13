@@ -13,6 +13,21 @@ const rutasFortran = [
   /^next\.config\./,
 ];
 
+// COBOL no depende de paquetes de npm: su motor está fijado en public/vendor.
+// El parser general sí entra, porque lee las vallas propias de COBOL (escrito,
+// la sangría de las plantillas de formato fijo).
+const rutasCobol = [
+  /^src\/content\/[^/]*cobol[^/]*\/(?!curso\.md$)/,
+  /^src\/lib\/(?:cobol-|curso-markdown\.ts$)/,
+  /^src\/components\/curso\/(?:ConsolaCobol|PreparacionCobol|EjercicioPunto|BloqueCodigo)\.tsx$/,
+  /^public\/vendor\/cobol\//,
+  /^scripts\/(?:verificar-cobol\.mjs|cobol-respuestas\.json|vendorizar-cobol\.mjs)$/,
+];
+
+export function requierePruebasCobol(rutas) {
+  return rutas.some((ruta) => rutasCobol.some((patron) => patron.test(ruta)));
+}
+
 const dependenciasFortran = [
   'next', 'react', 'react-dom', 'react-icons', 'playwright', 'typescript',
   'react-markdown', 'remark-gfm', 'yaml', 'shiki',
@@ -48,4 +63,5 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     ? dependenciasDesde(process.argv[2])
     : undefined;
   process.stdout.write(`fortran=${requierePruebasFortran(rutas, dependencias)}\n`);
+  process.stdout.write(`cobol=${requierePruebasCobol(rutas)}\n`);
 }

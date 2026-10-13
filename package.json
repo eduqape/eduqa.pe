@@ -25,7 +25,8 @@
     "memoria:guardar": "node scripts/memoria-redis.mjs --guardar",
     "memoria:recuperar": "node scripts/memoria-redis.mjs --recuperar",
     "memoria:prompt": "node scripts/memoria-redis.mjs --prompt",
-    "test:bash": "node scripts/verificar-bash.mjs"
+    "test:bash": "node scripts/verificar-bash.mjs",
+    "test:cobol": "node scripts/verificar-cobol.mjs"
   },
   "dependencies": {
     "@radix-ui/react-collapsible": "^1.1.20",

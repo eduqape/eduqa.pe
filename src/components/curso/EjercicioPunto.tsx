@@ -20,6 +20,7 @@ import {
 import { ejecutarPython, estadoPython, suscribirsePython } from "@/lib/pyodide";
 import { ejecutarFortran } from "@/lib/fortran-web";
 import { ejecutarBash } from "@/lib/bash-web";
+import { ejecutarCobol } from "@/lib/cobol-web";
 import { Selector } from "@/components/Selector";
 import type {
   Ejercicio,
@@ -31,6 +32,13 @@ import type {
 } from "@/lib/cursos";
 
 const HUECO = "___";
+
+/*
+ * DISPLAY de un campo PIC X imprime también los espacios de relleno hasta su
+ * longitud, y la valla Esperado no los puede mostrar: se comparan las líneas
+ * sin los blancos finales.
+ */
+const sinBlancosFinales = (texto: string) => texto.replace(/[ \t]+$/gm, "").trim();
 
 function CajaEjercicio({ correcto, children }: { correcto?: boolean; children: ReactNode }) {
   return (
@@ -132,7 +140,9 @@ function EjercicioCodigoPunto({
         ? await ejecutarFortran(codigo, { signal: controlador.current.signal })
         : ejercicio.lenguaje === "bash"
           ? await ejecutarBash(codigo, { signal: controlador.current.signal })
-          : await ejecutarPython(codigo, { aislado: true, paquetes, preludio });
+          : ejercicio.lenguaje === "cobol"
+            ? await ejecutarCobol(codigo, { signal: controlador.current.signal })
+            : await ejecutarPython(codigo, { aislado: true, paquetes, preludio });
 
     setComprobando(false);
     setResultado({
@@ -140,7 +150,9 @@ function EjercicioCodigoPunto({
         !error &&
         (ejercicio.lenguaje === "fortran"
           ? salida.trim().replace(/\s+/g, " ") === ejercicio.esperado.trim().replace(/\s+/g, " ")
-          : salida.trim() === ejercicio.esperado.trim()),
+          : ejercicio.lenguaje === "cobol"
+            ? sinBlancosFinales(salida) === sinBlancosFinales(ejercicio.esperado)
+            : salida.trim() === ejercicio.esperado.trim()),
       salida,
     });
   };
@@ -154,6 +166,7 @@ function EjercicioCodigoPunto({
     comprobando &&
     ejercicio.lenguaje !== "fortran" &&
     ejercicio.lenguaje !== "bash" &&
+    ejercicio.lenguaje !== "cobol" &&
     preparacion !== "listo";
 
   return (
@@ -182,7 +195,7 @@ function EjercicioCodigoPunto({
       </pre>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        {comprobando && (ejercicio.lenguaje === "fortran" || ejercicio.lenguaje === "bash") && (
+        {comprobando && (ejercicio.lenguaje === "fortran" || ejercicio.lenguaje === "bash" || ejercicio.lenguaje === "cobol") && (
           <button
             type="button"
             onClick={() => controlador.current?.abort()}

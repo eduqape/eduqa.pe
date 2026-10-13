@@ -478,3 +478,39 @@ Las salidas no se escriben a mano: `node scripts/verificar-bash.mjs
 y `npm run test:bash` comprueba que siguen coincidiendo. Las respuestas
 correcta e incorrecta de cada ejercicio van en `scripts/bash-respuestas.json`.
 Detalles del motor y sus diferencias con Linux: `public/vendor/bash/README.md`.
+
+## COBOL en el navegador
+
+Una valla `cobol` se compila y ejecuta en el navegador con GnuCOBOL 3.2 y
+Clang compilados a WebAssembly, en cualquier curso. El motor se descarga al
+abrir una lección que lo usa (unos 25 MB la primera vez); después cada programa
+compila en décimas de segundo. Cada bloque corre solo, en un directorio vacío.
+
+- El código va en **formato fijo**, el de `cobc` por omisión: columnas 1 a 6
+  libres, 7 de indicador (`*` para comentario), área A desde la 8 y área B
+  desde la 12, hasta la 72. Lo que pasa de la columna 72 se ignora sin aviso,
+  así que la verificación lo rechaza. `cobol !libre` compila con `-free`.
+- Después del bloque pueden ir `entrada` (lo que leerá `ACCEPT`) y
+  `archivo nombre.txt` (un archivo de datos, o un copybook para `COPY`), como
+  en Fortran y Bash.
+- `escrito nombre.txt` declara el contenido que el programa deja en un archivo
+  al terminar. Se obtiene ejecutándolo, igual que `salida`, y la verificación
+  exige declarar todo archivo que el programa cree o modifique. Un archivo que
+  no es texto (`RELATIVE`, campos `COMP`) se presenta como volcado hexadecimal.
+- Lo que el motor no admite —archivos `INDEXED`, `CALL` a un programa hermano,
+  `SCREEN SECTION`— va como `cobol !sin-consola`, con la salida de GnuCOBOL
+  nativo. Un bloque cuya salida cambia en cada ejecución (fechas) va como
+  `cobol !variable`, sin valla `salida`.
+- Ejercicio de completado: `ejercicio cobol`, con las secciones de siempre. La
+  plantilla conserva su sangría, porque en formato fijo las columnas son parte
+  del programa. La salida se compara sin los espacios al final de cada línea,
+  que `DISPLAY` añade al mostrar un campo `PIC X`.
+
+Las salidas no se escriben a mano: `node scripts/verificar-cobol.mjs
+--curso=<slug> --escribir` rellena las vallas `salida` y `escrito` ejecutando
+cada bloque en el mismo motor, y `npm run test:cobol` comprueba que siguen
+coincidiendo, que ningún bloque compila con avisos y que ninguna línea pasa de
+la columna 72. Con `-- --nativo` también compila cada bloque con el `cobc`
+instalado y exige la misma salida. Las respuestas correcta e incorrecta de cada
+ejercicio van en `scripts/cobol-respuestas.json`. Detalles del motor y sus
+diferencias con Linux: `public/vendor/cobol/README.md`.

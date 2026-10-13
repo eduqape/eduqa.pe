@@ -1,0 +1,9 @@
+[
+  {
+    "curso": "cobol-motor",
+    "archivo": "sesion-1.md",
+    "seccion": "ejercicio-de-completado",
+    "respuesta": "DISPLAY",
+    "incorrecta": "PRINT"
+  }
+]

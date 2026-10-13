@@ -46,9 +46,11 @@ function renderCuerpoSeccion(sec: Seccion, op: Opciones) {
               salida={b.salida}
               docs={b.docs}
               nota={b.nota}
-              ejecutable={(b.lenguaje === "fortran" || b.lenguaje === "bash" || ejecutable) && !b.sinConsola}
+              ejecutable={(b.lenguaje === "fortran" || b.lenguaje === "bash" || b.lenguaje === "cobol" || ejecutable) && !b.sinConsola}
               entrada={b.entrada}
               archivos={b.archivos}
+              formatoLibre={b.formatoLibre}
+              escritos={b.escritos}
               paquetes={op.paquetes}
               preludio={op.preludio}
             />

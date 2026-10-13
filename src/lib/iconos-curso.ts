@@ -1,6 +1,6 @@
 /** Registro compartido por servidor, editor y componentes. */
 export const ICONOS_CURSO = [
-  "docker", "fastapi", "fortran", "githubactions", "gemini", "huggingface",
+  "docker", "fastapi", "fortran", "cobol", "githubactions", "gemini", "huggingface",
   "pandas", "postgresql", "python", "pytorch", "scikitlearn", "opencv",
   "linux", "bash", "n8n", "notebooklm", "redis", "sqlite", "supabase", "numpy", "polars",
   "libro", "soa", "nube", "datos", "matematicas", "farmacologia", "bioingenieria",
@@ -16,6 +16,7 @@ export function esIconoCurso(valor: unknown): valor is IconoNombre {
 export function resolverIconoCurso(slug: string, area: string, icono?: unknown): IconoNombre {
   if (esIconoCurso(icono)) return icono;
   if (slug.startsWith("fortran")) return "fortran";
+  if (slug.includes("cobol")) return "cobol";
   if (slug.includes("soa")) return "soa";
   const porArea: Record<string, IconoNombre> = {
     "Matemáticas": "matematicas", "Farmacología": "farmacologia",

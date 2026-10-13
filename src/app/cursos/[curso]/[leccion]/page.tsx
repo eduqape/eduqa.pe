@@ -26,6 +26,7 @@ import { SelectorTema } from "@/components/Tema";
 import { CargandoCurso } from "@/components/curso/CargandoCurso";
 import { PreparacionFortran } from "@/components/curso/PreparacionFortran";
 import { PreparacionBash } from "@/components/curso/PreparacionBash";
+import { PreparacionCobol } from "@/components/curso/PreparacionCobol";
 import { rutaDeCadaCurso } from "@/lib/rutas";
 import { Ejercicios } from "@/components/curso/Ejercicios";
 import { renderSecciones, type Opciones } from "@/components/curso/SeccionesLeccion";
@@ -112,6 +113,9 @@ export default async function Page({
   const esBash =
     leccion.bloques.some((b) => b.tipo === "codigo" && b.lenguaje === "bash" && !b.sinConsola) ||
     Object.values(leccion.ejercicios ?? {}).some((e) => (e.tipo ?? "codigo") === "codigo" && "lenguaje" in e && e.lenguaje === "bash");
+  const esCobol =
+    leccion.bloques.some((b) => b.tipo === "codigo" && b.lenguaje === "cobol" && !b.sinConsola) ||
+    Object.values(leccion.ejercicios ?? {}).some((e) => (e.tipo ?? "codigo") === "codigo" && "lenguaje" in e && e.lenguaje === "cobol");
   const rutaFortran = esFortran ? (await rutaDeCadaCurso()).get(cursoSlug) : undefined;
   const herramientas: HerramientaCurso[] = rutaFortran
     ? [
@@ -188,6 +192,7 @@ export default async function Page({
             </h1>
             {esFortran && <PreparacionFortran />}
             {esBash && <PreparacionBash />}
+            {esCobol && <PreparacionCobol />}
           </header>
 
           <div className="mt-8">

@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       probar_fortran: ${{ steps.alcance.outputs.fortran }}
+      probar_cobol: ${{ steps.alcance.outputs.cobol }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -106,6 +107,9 @@ jobs:
         run: npx playwright install --with-deps chromium
       - if: needs.dev.outputs.probar_fortran == 'true'
         run: npm run test:fortran:web
+      - name: Cursos COBOL en el motor del navegador
+        if: needs.dev.outputs.probar_cobol == 'true'
+        run: npm run test:cobol
 
   seguridad-db:
     name: Seguridad de la base de producción

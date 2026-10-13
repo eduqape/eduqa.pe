@@ -43,9 +43,16 @@ export type Bloque =
       sinConsola?: boolean;
       /** La salida no es determinista: se ejecuta, pero no se promete literal. */
       salidaVariable?: boolean;
-      /** Datos de entrada y archivos virtuales de una ejecución Fortran o Bash. */
+      /** Datos de entrada y archivos virtuales de una ejecución Fortran, Bash o COBOL. */
       entrada?: string;
       archivos?: Record<string, string>;
+      /** COBOL en formato libre (`cobc -free`); sin él, el formato fijo de columnas. */
+      formatoLibre?: boolean;
+      /**
+       * Archivos que el programa COBOL deja escritos al terminar, con su
+       * contenido. Como `salida`, se obtienen ejecutándolo.
+       */
+      escritos?: Record<string, string>;
     }
   | {
       /**
@@ -114,8 +121,8 @@ export const REGIONES_VENN: RegionVenn[] = [
 export type EjercicioCodigo = {
   /** Ausente en cursos antiguos; equivale a `codigo`. */
   tipo?: "codigo";
-  /** Python por omisión; Fortran y Bash se ejecutan en WebAssembly en el navegador. */
-  lenguaje?: "python" | "fortran" | "bash";
+  /** Python por omisión; Fortran, Bash y COBOL se ejecutan en WebAssembly en el navegador. */
+  lenguaje?: "python" | "fortran" | "bash" | "cobol";
   enunciado: string;
   /** Lleva exactamente un hueco marcado con `___`. */
   plantilla: string;

@@ -4,7 +4,7 @@
 // Todo lo que dibuje un logo de marca vive detrás de este archivo.
 
 import type { ComponentType } from "react";
-import { BookOpen, CloudUpload, Database, Globe, Sigma, Pill, Dna } from "lucide-react";
+import { BookOpen, CloudUpload, Database, Globe, Sigma, Pill, Dna, Server } from "lucide-react";
 import { REDES_PERSONA, type RedNombre } from "@/lib/redes";
 import type { IconoNombre } from "@/lib/iconos-curso";
 export type { IconoNombre } from "@/lib/iconos-curso";
@@ -98,6 +98,8 @@ const MAPA: Record<IconoNombre, ComponentType<{ className?: string }>> = {
   docker: SiDocker,
   fastapi: SiFastapi,
   fortran: SiFortran,
+  // COBOL no tiene logotipo oficial; el servidor alude al mainframe.
+  cobol: Server,
   githubactions: SiGithubactions,
   gemini: SiGooglegemini,
   huggingface: SiHuggingface,

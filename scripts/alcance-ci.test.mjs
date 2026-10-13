@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { requierePruebasFortran } from './alcance-ci.mjs';
+import { requierePruebasCobol, requierePruebasFortran } from './alcance-ci.mjs';
 
 test('un cambio visual de las barras no ejecuta la batería Fortran', () => {
   assert.equal(requierePruebasFortran([
@@ -53,4 +53,29 @@ test('la ficha y el parser general se cubren con catálogo sin ejecutar Fortran'
 test('las sesiones y el parser específico conservan la batería Fortran', () => {
   assert.equal(requierePruebasFortran(['src/content/fortran-fundamentos/sesion-1.md']), true);
   assert.equal(requierePruebasFortran(['src/lib/fortran-parser.ts']), true);
+});
+
+test('los cursos de COBOL, su motor y sus vallas ejecutan la batería COBOL', () => {
+  for (const ruta of [
+    'src/content/cobol-nivelacion/sesion-1.md',
+    'src/lib/cobol-web.ts',
+    'src/lib/curso-markdown.ts',
+    'src/components/curso/ConsolaCobol.tsx',
+    'src/components/curso/EjercicioPunto.tsx',
+    'public/vendor/cobol/motor.mjs',
+    'scripts/verificar-cobol.mjs',
+    'scripts/cobol-respuestas.json',
+  ]) {
+    assert.equal(requierePruebasCobol([ruta]), true, ruta);
+  }
+});
+
+test('la ficha de un curso COBOL y el resto del sitio no ejecutan la batería COBOL', () => {
+  assert.equal(requierePruebasCobol([
+    'src/content/cobol-nivelacion/curso.md',
+    'src/content/fortran-fundamentos/sesion-1.md',
+    'src/lib/fortran-web.ts',
+    'src/components/Iconos.tsx',
+    'package-lock.json',
+  ]), false);
 });

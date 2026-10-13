@@ -1,0 +1,184 @@
+import { bindNew } from './apply.js';
+import { AbortError, assert } from './error.js';
+import Memory from './memory.js';
+import { compile } from './wasm.js';
+const ESUCCESS = 0;
+const textEncoder = new TextEncoder();
+const textDecoder = new TextDecoder();
+const emptyBytes = new Uint8Array(0);
+const noopTrace = () => { };
+const previewText = (text) => JSON.stringify(text.length > 96 ? text.slice(0, 93) + '...' : text);
+export default class MemFS {
+    ready;
+    mem = null;
+    hostMem_ = null;
+    stdinStr;
+    stdinBytes = emptyBytes;
+    stdinOffset = 0;
+    stdin;
+    stdout;
+    trace;
+    instance = null;
+    exports;
+    out = true;
+    filePaths = new Set();
+    fileOverlays = new Map();
+    directoryPaths = new Set();
+    constructor(options) {
+        this.stdin = options.stdin;
+        this.stdout = options.stdout;
+        this.stdinStr = options.stdinStr || '';
+        this.trace = options.trace || noopTrace;
+        const env = bindNew(this, 'abort', 'host_write', 'host_read', 'memfs_log', 'copy_in', 'copy_out');
+        this.ready = (options.maxAssetBytes !== undefined
+            ? compile(options.moduleUrl, options.progress, options.signal, options.maxAssetBytes)
+            : options.signal
+                ? compile(options.moduleUrl, options.progress, options.signal)
+                : compile(options.moduleUrl, options.progress))
+            .then((module) => WebAssembly.instantiate(module, {
+            env
+        }))
+            .then((instance) => {
+            this.instance = instance;
+            this.exports = instance.exports;
+            this.mem = new Memory(this.exports.memory);
+            this.exports.init();
+        });
+    }
+    set hostMem(mem) {
+        this.hostMem_ = mem;
+    }
+    setStdinStr(str) {
+        this.stdinStr = str;
+        this.stdinBytes = emptyBytes;
+        this.stdinOffset = 0;
+    }
+    addDirectory(path) {
+        const normalizedPath = this.normalizePath(path);
+        if (this.directoryPaths.has(normalizedPath))
+            return;
+        this.mem.check();
+        this.mem.write(this.exports.GetPathBuf(), path);
+        this.exports.AddDirectoryNode(path.length);
+        this.directoryPaths.add(normalizedPath);
+    }
+    addFile(path, contents) {
+        const length = contents instanceof ArrayBuffer ? contents.byteLength : contents.length;
+        this.mem.check();
+        this.mem.write(this.exports.GetPathBuf(), path);
+        const inode = this.exports.AddFileNode(path.length, length);
+        const addr = this.exports.GetFileNodeAddress(inode);
+        this.mem.check();
+        this.mem.write(addr, contents);
+        this.filePaths.add(this.normalizePath(path));
+    }
+    setFile(path, contents) {
+        const normalizedPath = this.normalizePath(path);
+        this.filePaths.add(normalizedPath);
+        this.fileOverlays.set(normalizedPath, Uint8Array.from(contents));
+    }
+    hasFile(path) {
+        return this.filePaths.has(this.normalizePath(path));
+    }
+    normalizePath(path) {
+        return path.replaceAll('\\', '/').replace(/^\.\//, '').replace(/^\/+/, '');
+    }
+    getFileContents(path) {
+        const overlay = this.fileOverlays.get(this.normalizePath(path));
+        if (overlay)
+            return overlay;
+        this.mem.check();
+        this.mem.write(this.exports.GetPathBuf(), path);
+        const inode = this.exports.FindNode(path.length);
+        const addr = this.exports.GetFileNodeAddress(inode);
+        const size = this.exports.GetFileNodeSize(inode);
+        return new Uint8Array(this.mem.buffer, addr, size);
+    }
+    abort() {
+        this.trace('abort()');
+        throw new AbortError();
+    }
+    host_write(fd, iovs, iovs_len, nwritten_out) {
+        this.hostMem_.check();
+        assert(fd <= 2);
+        let size = 0;
+        let str = '';
+        for (let i = 0; i < iovs_len; ++i) {
+            const buf = this.hostMem_.read32(iovs);
+            iovs += 4;
+            const len = this.hostMem_.read32(iovs);
+            iovs += 4;
+            str += this.hostMem_.readStrR(buf, len);
+            size += len;
+        }
+        this.hostMem_.write32(nwritten_out, size);
+        if (this.trace !== noopTrace) {
+            this.trace(`host_write(fd=${fd}, bytes=${size}, data=${previewText(str)})`);
+        }
+        if (this.out)
+            this.stdout(str);
+        return ESUCCESS;
+    }
+    host_read(fd, iovs, iovs_len, nread) {
+        this.hostMem_.check();
+        assert(fd === 0);
+        let size = 0;
+        for (let i = 0; i < iovs_len; ++i) {
+            const buf = this.hostMem_.read32(iovs);
+            iovs += 4;
+            const len = this.hostMem_.read32(iovs);
+            iovs += 4;
+            // A zero-length iovec must not consume input or request interactive input.
+            if (len === 0)
+                continue;
+            if (this.stdinOffset === this.stdinBytes.length) {
+                const input = this.stdinStr.length ? this.stdinStr : this.stdin();
+                this.stdinStr = '';
+                this.stdinBytes = textEncoder.encode(input);
+                this.stdinOffset = 0;
+            }
+            const lenToWrite = Math.min(len, this.stdinBytes.length - this.stdinOffset);
+            if (lenToWrite === 0)
+                break;
+            const chunk = this.stdinBytes.subarray(this.stdinOffset, this.stdinOffset + lenToWrite);
+            this.hostMem_.write(buf, chunk);
+            this.stdinOffset += lenToWrite;
+            if (this.stdinOffset === this.stdinBytes.length) {
+                // Release the consumed input without copying the unread suffix on each read.
+                this.stdinBytes = emptyBytes;
+                this.stdinOffset = 0;
+            }
+            size += lenToWrite;
+            if (this.trace !== noopTrace) {
+                this.trace(`host_read(fd=${fd}, bytes=${lenToWrite}, data=${previewText(textDecoder.decode(chunk))})`);
+            }
+            if (lenToWrite !== len)
+                break;
+        }
+        this.hostMem_.write32(nread, size);
+        if (size === 0 && this.trace !== noopTrace)
+            this.trace(`host_read(fd=${fd}, bytes=0)`);
+        return ESUCCESS;
+    }
+    memfs_log(buf, len) {
+        if (this.trace === noopTrace)
+            return;
+        this.mem.check();
+        const message = this.mem.readStr(buf, len);
+        this.trace(`memfs_log(${previewText(message)})`);
+    }
+    copy_out(clang_dst, memfs_src, size) {
+        this.hostMem_.check();
+        const dst = new Uint8Array(this.hostMem_.buffer, clang_dst, size);
+        this.mem.check();
+        const src = new Uint8Array(this.mem.buffer, memfs_src, size);
+        dst.set(src);
+    }
+    copy_in(memfs_dst, clang_src, size) {
+        this.mem.check();
+        const dst = new Uint8Array(this.mem.buffer, memfs_dst, size);
+        this.hostMem_.check();
+        const src = new Uint8Array(this.hostMem_.buffer, clang_src, size);
+        dst.set(src);
+    }
+}
