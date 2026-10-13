@@ -2,7 +2,8 @@
 // navegador (los bytes fijados en public/vendor/cobol) y compara su salida con
 // la valla `salida` del temario y cada archivo que deja con su valla
 // `escrito`. También comprueba los ejercicios `ejercicio cobol` con la
-// respuesta correcta y con una incorrecta.
+// respuesta correcta y con una incorrecta, y que los guiones de las escenas 3D
+// de memoria (src/components/guiones-cobol.ts) dicen lo que hace GnuCOBOL.
 //
 //   node scripts/verificar-cobol.mjs                 comprueba todos los cursos
 //   node scripts/verificar-cobol.mjs --curso=slug    solo uno
@@ -275,11 +276,55 @@ for (const { carpeta, raiz } of carpetas) {
   }
 }
 
+// Las escenas 3D de memoria afirman qué queda en cada campo y qué muestra cada
+// DISPLAY: se reconstruye el programa de cada guion y se ejecuta.
+const guiones = cargar(path.resolve('src/components/guiones-cobol.ts'));
+let escenas = 0;
+for (const [nombre, guion] of Object.entries(guiones)) {
+  const sentencias = [];
+  const esperado = [];
+  // DISPLAY de un campo con V escribe el punto decimal (pretty-display de
+  // GnuCOBOL); el guion guarda los dígitos tal como están en memoria.
+  const mostrarCampo = (indice, contenido) => {
+    const { nombre: campo, decimales } = guion.campos[indice];
+    sentencias.push(`DISPLAY "[" ${campo} "]"`);
+    esperado.push(`[${decimales ? `${contenido.slice(0, -decimales)}.${contenido.slice(-decimales)}` : contenido}]`);
+  };
+  guion.campos.forEach((c, i) => c.inicial !== undefined && mostrarCampo(i, c.inicial));
+  const eventos = [
+    ...guion.codigo.map((linea, orden) => ({ t: linea.t, orden, linea })),
+    ...guion.movimientos.map((mov, orden) => ({ t: mov.t, orden: 1000 + orden, mov })),
+  ].sort((a, b) => a.t - b.t || a.orden - b.orden);
+  for (const e of eventos) {
+    if (e.linea && /^(MOVE|DISPLAY)\b/.test(e.linea.linea)) {
+      sentencias.push(e.linea.linea);
+      if (e.linea.salida !== undefined) esperado.push(e.linea.salida);
+    }
+    if (e.mov) mostrarCampo(e.mov.campo, e.mov.valor);
+  }
+  const programa = [
+    '       IDENTIFICATION DIVISION.',
+    '       PROGRAM-ID. ESCENA.',
+    '       DATA DIVISION.',
+    '       WORKING-STORAGE SECTION.',
+    ...guion.datos.map((l) => `       ${l}`),
+    '       PROCEDURE DIVISION.',
+    ...sentencias.map((l) => `           ${l}`),
+    '           STOP RUN.',
+  ].join('\n');
+  const r = await motor.ejecutar(programa);
+  escenas++;
+  const obtenido = r.compilo ? r.salida.replace(/\n$/, '').split('\n') : [r.diagnosticos];
+  if (JSON.stringify(obtenido) !== JSON.stringify(esperado)) {
+    fallos.push(`escena ${nombre}: el guion no coincide con GnuCOBOL.\n${programa}\n--- esperado ---\n${esperado.join('\n')}\n--- obtenido ---\n${obtenido.join('\n')}`);
+  }
+}
+
 if (fallos.length) {
   console.error(fallos.join('\n\n'));
   console.error(`\n${fallos.length} fallos.`);
   process.exit(1);
 }
 const extra = cobcNativo ? `; ${nativos} contrastados con ${cobcNativo}` : '';
-console.log(`${carpetas.length} paquetes de COBOL (el del motor y ${carpetas.filter((c) => c.carpeta !== 'cobol-motor').length} cursos): ${bloques} bloques y ${ejercicios} ejercicios verificados en el motor del navegador${extra}.`);
+console.log(`${carpetas.length} paquetes de COBOL (el del motor y ${carpetas.filter((c) => c.carpeta !== 'cobol-motor').length} cursos) y ${escenas} escenas 3D: ${bloques} bloques y ${ejercicios} ejercicios verificados en el motor del navegador${extra}.`);
 process.exit(0);

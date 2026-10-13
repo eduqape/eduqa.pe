@@ -65,6 +65,8 @@ test('los cursos de COBOL, su motor y sus vallas ejecutan la batería COBOL', ()
     'public/vendor/cobol/motor.mjs',
     'scripts/verificar-cobol.mjs',
     'scripts/cobol-respuestas.json',
+    'src/components/guiones-cobol.ts',
+    'src/components/MemoriaCobol3D.tsx',
   ]) {
     assert.equal(requierePruebasCobol([ruta]), true, ruta);
   }

@@ -20,6 +20,8 @@ const rutasCobol = [
   /^src\/content\/[^/]*cobol[^/]*\/(?!curso\.md$)/,
   /^src\/lib\/(?:cobol-|curso-markdown\.ts$)/,
   /^src\/components\/curso\/(?:ConsolaCobol|PreparacionCobol|EjercicioPunto|BloqueCodigo)\.tsx$/,
+  // Los guiones de las escenas de memoria se comprueban contra GnuCOBOL.
+  /^src\/components\/(?:guiones-cobol\.ts|MemoriaCobol3D\.tsx)$/,
   /^public\/vendor\/cobol\//,
   /^scripts\/(?:verificar-cobol\.mjs|cobol-respuestas\.json|vendorizar-cobol\.mjs)$/,
 ];

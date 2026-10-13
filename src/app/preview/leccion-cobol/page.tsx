@@ -48,6 +48,20 @@ tarjeta perforada.
 figura: tarjeta-perforada
 \`\`\`
 
+# La memoria
+
+\`\`\`escena
+escena: cobol-registro
+\`\`\`
+
+\`\`\`escena
+escena: cobol-move-alfanumerico
+\`\`\`
+
+\`\`\`escena
+escena: cobol-move-numerico
+\`\`\`
+
 # Un programa mínimo
 
 \`\`\`cobol
