@@ -20,6 +20,17 @@ Un curso se autoriza en Markdown, pero en runtime vive únicamente en Supabase. 
 Los cursos antiguos (`python.ts`, `sqlite.ts`, `redis.ts`, `bioingenieria.ts`)
 todavía están en TypeScript. Al tocarlos, conviene pasarlos a Markdown.
 
+Un curso está terminado cuando aparece en producción, no cuando se commitea:
+el Markdown del repositorio no publica nada.
+
+- Su commit vincula el ticket con `Refs:`. `scripts/cerrar-tickets.mjs` no
+  cierra los tickets de commits con contenido de curso aunque digan `Closes:`.
+- Se publica en eduqape.vercel.app por `POST /api/v1/cursos` o desde
+  `/panel/cursos/importar` (carpeta completa).
+- Antes de cerrar el ticket se comprueba en producción que el curso aparece en
+  `/panel/cursos` con su ficha e icono, que cada sesión abre y que sus bloques
+  y ejercicios se ejecutan. El cierre lleva esa evidencia en un comentario.
+
 # Interfaz y cards
 
 - Las cards no usan bordes perimetrales completos para separarse del fondo.

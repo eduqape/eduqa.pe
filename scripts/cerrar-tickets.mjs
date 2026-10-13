@@ -7,6 +7,11 @@
  * de esos pushes: los tickets quedaban abiertos (#135). Este script hace ese
  * trabajo en el job de promoción.
  *
+ * Un commit con contenido de curso (`src/content/<slug>/curso.md` o
+ * `sesion-N.md`) no cierra su ticket: llegar a `main` no publica el curso,
+ * que en runtime vive en Supabase. El ticket queda abierto con un comentario
+ * y se cierra a mano después de publicarlo y verlo en producción (#153).
+ *
  * Uso: node scripts/cerrar-tickets.mjs <main-anterior> <main-nuevo> [--simular]
  * Necesita GITHUB_REPOSITORY y GITHUB_TOKEN (con permiso issues: write), salvo
  * con --simular, que solo lista lo que cerraría.
@@ -27,7 +32,18 @@ export function ticketsQueCierra(mensaje) {
   return [...new Set(tickets)];
 }
 
-/** Commits del rango con los tickets que cierra cada uno, del más antiguo al más nuevo. */
+/** Ficha o sesión de un curso en Markdown; no el formato ni las fixtures. */
+export const esContenidoDeCurso = (ruta) => /^src\/content\/[^/]+\/(?:curso|sesion-\d+)\.md$/.test(ruta);
+
+const archivosDe = (sha) =>
+  execFileSync("git", ["diff-tree", "--no-commit-id", "--name-only", "-r", "--root", sha], { encoding: "utf8" })
+    .split("\n")
+    .filter(Boolean);
+
+/**
+ * Commits del rango con los tickets que cierra cada uno y si traen contenido
+ * de curso, del más antiguo al más nuevo.
+ */
 export function commitsDelRango(desde, hasta) {
   const salida = execFileSync("git", ["log", "--reverse", "--format=%H%x1f%B%x00", `${desde}..${hasta}`], {
     encoding: "utf8",
@@ -38,7 +54,9 @@ export function commitsDelRango(desde, hasta) {
     .filter(Boolean)
     .map((bloque) => {
       const [sha, mensaje] = bloque.split("\x1f");
-      return { sha, cabecera: mensaje.split("\n", 1)[0], tickets: ticketsQueCierra(mensaje) };
+      const tickets = ticketsQueCierra(mensaje);
+      const curso = tickets.length > 0 && archivosDe(sha).some(esContenidoDeCurso);
+      return { sha, cabecera: mensaje.split("\n", 1)[0], tickets, curso };
     });
 }
 
@@ -70,20 +88,27 @@ async function main() {
     process.exit(2);
   }
 
-  // Cada ticket se atribuye al primer commit que lo cierra.
+  // Cada ticket se atribuye al primer commit que lo cierra; basta uno con
+  // contenido de curso para que quede abierto.
   const cierres = new Map();
+  const deCurso = new Map();
   for (const commit of commitsDelRango(desde, hasta)) {
-    for (const ticket of commit.tickets) if (!cierres.has(ticket)) cierres.set(ticket, commit);
+    for (const ticket of commit.tickets) {
+      if (!cierres.has(ticket)) cierres.set(ticket, commit);
+      if (commit.curso && !deCurso.has(ticket)) deCurso.set(ticket, commit);
+    }
   }
   if (cierres.size === 0) {
     console.log("Ningún commit nuevo en main cierra tickets.");
     return;
   }
 
-  for (const [ticket, commit] of cierres) {
+  for (const [ticket, primero] of cierres) {
+    const commit = deCurso.get(ticket) ?? primero;
     const corto = commit.sha.slice(0, 7);
     if (simular) {
-      console.log(`#${ticket} ← ${corto} ${commit.cabecera}`);
+      const nota = deCurso.has(ticket) ? " (contenido de curso: queda abierto)" : "";
+      console.log(`#${ticket} ← ${corto} ${commit.cabecera}${nota}`);
       continue;
     }
     const ticketGithub = await github(`/issues/${ticket}`);
@@ -93,6 +118,20 @@ async function main() {
     }
     if (ticketGithub.state === "closed") {
       console.log(`#${ticket} ya estaba cerrado.`);
+      continue;
+    }
+    if (deCurso.has(ticket)) {
+      await github(`/issues/${ticket}/comments`, {
+        method: "POST",
+        body: JSON.stringify({
+          body:
+            `${commit.sha} llegó a \`main\` con contenido de curso: «${commit.cabecera}». ` +
+            "No se cierra solo porque el repositorio no publica cursos: viven en Supabase. Se cierra a mano " +
+            "después de publicarlo (`/api/v1/cursos` o `/panel/cursos/importar`) y comprobar en producción " +
+            "que aparece en `/panel/cursos` y que sus sesiones abren.",
+        }),
+      });
+      console.log(`#${ticket} queda abierto: ${corto} trae contenido de curso.`);
       continue;
     }
     await github(`/issues/${ticket}/comments`, {
