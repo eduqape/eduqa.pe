@@ -11,6 +11,7 @@ import {
   NOMBRE_ARCHIVO,
   comoAdministrador,
   comprobarImagenes,
+  editarFrontmatter,
   materialDe,
   validarMaterial,
   type Material,
@@ -32,7 +33,8 @@ export type ResultadoArchivo =
   | { ok: true; mensaje: string; huella: string; aviso?: string }
   | { ok: false; error: string; conflicto?: boolean };
 
-type EstadoCurso = "borrador" | "privado" | "publico" | "archivado";
+// Los mismos que admite la restricción `cursos_estado_valido` de la base.
+type EstadoCurso = "borrador" | "privado" | "publico";
 
 type Publicacion = {
   precio: number;
@@ -113,8 +115,8 @@ function leerPublicacion(
   if (accesoLibre === undefined) {
     return { error: "acceso_libre debe ser true o false." };
   }
-  if (!["borrador", "privado", "publico", "archivado"].includes(estado)) {
-    return { error: "El estado debe ser borrador, privado, publico o archivado." };
+  if (!["borrador", "privado", "publico"].includes(estado)) {
+    return { error: "El estado debe ser borrador, privado o publico." };
   }
 
   const rutaCruda = ficha.ruta;
@@ -814,4 +816,77 @@ export async function subirImagenCurso(
     .upload(`${slug}/imagenes/${nombre}`, bytes, { contentType: tipo, upsert: true });
   if (error) return { ok: false, error: `No se pudo subir: ${error.message}` };
   return { ok: true, ruta: `imagenes/${nombre}` };
+}
+
+/**
+ * Cambia el orden de las sesiones. `orden` trae todos los archivos de sesión
+ * en la posición nueva; cada uno pasa a llevar el número de su posición.
+ *
+ * La dirección de una sesión sin `slug` sale de su número. Al moverla se le
+ * fija la que tenía, para que sus enlaces y el avance de los alumnos sigan
+ * apuntando a ella.
+ */
+export async function reordenarSesiones(
+  slug: string,
+  orden: string[],
+): Promise<{ ok: true; mensaje: string } | { ok: false; error: string }> {
+  const acceso = await comoAdministrador();
+  if ("error" in acceso) return { ok: false, error: acceso.error };
+  const { supabase } = acceso;
+
+  const material = await materialDe(supabase, slug);
+  if ("error" in material) return { ok: false, error: material.error };
+
+  const actuales = [...material.archivos.keys()].filter((archivo) => archivo !== "curso.md");
+  const mismoConjunto =
+    orden.length === actuales.length &&
+    new Set(orden).size === orden.length &&
+    orden.every((archivo) => archivo !== "curso.md" && material.archivos.has(archivo));
+  if (!mismoConjunto) {
+    return { ok: false, error: "Las sesiones cambiaron mientras las ordenabas. Recarga la página y vuelve a ordenarlas." };
+  }
+
+  const cambiados: string[] = [];
+  for (const [posicion, archivo] of orden.entries()) {
+    const texto = material.archivos.get(archivo)!;
+    const ficha = frontmatter(texto);
+    const anterior = Number(ficha.numero);
+    if (!Number.isInteger(anterior)) {
+      return { ok: false, error: `${archivo} no declara un número válido. Corrígelo en su editor antes de ordenar.` };
+    }
+    const numero = posicion + 1;
+    if (anterior === numero) continue;
+    const cambios: Record<string, unknown> = { numero };
+    if (ficha.slug === undefined || ficha.slug === null || String(ficha.slug).trim() === "") {
+      cambios.slug = `sesion-${anterior}`;
+    }
+    const nuevo = editarFrontmatter(texto, cambios);
+    if (nuevo === null) return { ok: false, error: `No se pudo leer el encabezado de ${archivo}.` };
+    material.archivos.set(archivo, nuevo);
+    cambiados.push(archivo);
+  }
+  if (cambiados.length === 0) return { ok: true, mensaje: "Las sesiones ya estaban en ese orden." };
+
+  const valido = validarMaterial(slug, material.curso.codigo_base, material.archivos);
+  if ("error" in valido) return { ok: false, error: valido.error };
+
+  const { error: eContenido } = await supabase.from("curso_contenido").upsert(
+    cambiados.map((archivo) => ({ curso_id: material.curso.id, archivo, contenido: material.archivos.get(archivo)! })),
+    { onConflict: "curso_id,archivo" },
+  );
+  if (eContenido) return { ok: false, error: `No se pudo guardar el orden: ${eContenido.message}` };
+
+  const { error: eIndice } = await supabase.from("curso_sesiones").upsert(
+    valido.indice.filter((fila) => cambiados.includes(fila.archivo)).map((fila) => ({ ...fila, curso_id: material.curso.id })),
+    { onConflict: "curso_id,archivo" },
+  );
+  if (eIndice) return { ok: false, error: `El orden se guardó, pero no el temario: ${eIndice.message}` };
+
+  const errorRevision = await cerrarCambio(supabase, material);
+  if (errorRevision) return { ok: false, error: errorRevision };
+
+  return {
+    ok: true,
+    mensaje: `Orden guardado: ${cambiados.length} ${cambiados.length === 1 ? "sesión cambió" : "sesiones cambiaron"} de número. Sus direcciones siguen siendo las mismas.`,
+  };
 }

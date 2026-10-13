@@ -4,7 +4,7 @@ import { usuarioActual } from "@/lib/supabase/servidor";
 import { perfilActual } from "@/lib/matriculas";
 import { cursoDelPanel } from "@/lib/cursos-panel";
 import { Migas } from "@/components/Migas";
-import { crearSesion } from "../acciones";
+import { crearSesion, reordenarSesiones } from "../acciones";
 import { VistaCurso } from "./VistaCurso";
 
 export const dynamic = "force-dynamic";
@@ -39,7 +39,7 @@ export default async function Page({ params, searchParams }: PageProps<"/panel/c
           { texto: curso.titulo },
         ]}
       />
-      <VistaCurso curso={curso} aviso={aviso} crearSesion={crearSesion} />
+      <VistaCurso curso={curso} aviso={aviso} crearSesion={crearSesion} reordenar={reordenarSesiones} />
     </div>
   );
 }

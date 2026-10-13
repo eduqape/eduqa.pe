@@ -11,7 +11,6 @@ const ESTADOS = [
   ["borrador", "Borrador", "Oculto: solo lo ve el equipo."],
   ["privado", "Privado", "Solo con enlace directo o matrícula."],
   ["publico", "Público", "Visible en el catálogo."],
-  ["archivado", "Archivado", "Retirado del catálogo."],
 ] as const;
 
 /** Ficha comercial del curso, con aviso de cambios sin guardar. */
@@ -37,7 +36,7 @@ export function FichaCurso({ curso }: { curso: Datos }) {
       </Campo>
       <fieldset>
         <legend className="mb-1.5 text-sm font-medium text-texto">Visibilidad</legend>
-        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-2 sm:grid-cols-3">
           {ESTADOS.map(([valor, etiqueta, ayuda]) => (
             <label key={valor} className={`cursor-pointer rounded-xl border p-3 transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-rojo-acento ${borrador.estado === valor ? "border-rojo-acento bg-rojo-tenue" : "border-borde bg-fondo hover:border-texto-tenue"}`}>
               <input type="radio" name="estado" value={valor} checked={borrador.estado === valor} onChange={() => setBorrador({ ...borrador, estado: valor })} className="sr-only" />

@@ -6,7 +6,8 @@ import { clienteServidor } from "@/lib/supabase/servidor";
 
 export type EstadoGuardado = { ok: boolean; error?: string };
 
-const ESTADOS = ["borrador", "privado", "publico", "archivado"] as const;
+// Los mismos que admite la restricción `cursos_estado_valido` de la base.
+const ESTADOS = ["borrador", "privado", "publico"] as const;
 type EstadoCurso = (typeof ESTADOS)[number];
 
 /**

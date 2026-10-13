@@ -78,7 +78,7 @@ client = genai.Client(api_key="clave-de-practica")
 | `icono` | sí | Logotipo del producto o símbolo de la materia. Se valida contra `src/lib/iconos-curso.ts`; Fortran usa `fortran` |
 | `paquetes` | no | Paquetes de PyPI que hacen falta para ejecutar el código |
 | `precio` | no | Precio en soles. Al actualizar, si se omite conserva el precio existente; en un curso nuevo usa 20 |
-| `estado` | no | `borrador`, `privado`, `publico` o `archivado`. Al actualizar, si se omite conserva el estado existente |
+| `estado` | no | `borrador`, `privado` o `publico`. Al actualizar, si se omite conserva el estado existente |
 | `acceso_libre` | no | `true` permite matricularse sin pago; `false` exige compra o acceso administrativo |
 | `orden` | no | Posición del curso en el catálogo; usa 99 por omisión en cursos nuevos |
 | `ruta` | no | Objeto que crea o actualiza una ruta y coloca el curso dentro de ella |

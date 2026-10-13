@@ -16,10 +16,12 @@ export function VistaCurso({
   curso,
   aviso,
   crearSesion,
+  reordenar,
 }: {
   curso: DetalleCurso;
   aviso: string | null;
   crearSesion: (slug: string) => Promise<{ ok: true; archivo: string } | { ok: false; error: string }>;
+  reordenar: (slug: string, orden: string[]) => Promise<{ ok: true; mensaje: string } | { ok: false; error: string }>;
 }) {
   const ficha = curso.ficha;
   const datos: [string, string][] = [
@@ -106,7 +108,13 @@ export function VistaCurso({
               />
             </div>
           </section>
-          <SesionesCurso slug={curso.slug} sesiones={curso.sesiones} crearSesion={crearSesion} />
+          <SesionesCurso
+            slug={curso.slug}
+            sesiones={curso.sesiones}
+            publico={curso.estado === "publico"}
+            crearSesion={crearSesion}
+            reordenar={reordenar}
+          />
         </div>
 
         <aside aria-labelledby="titulo-datos" className="lg:sticky lg:top-6 lg:self-start">

@@ -7,7 +7,6 @@ const COLOR_ESTADO: Record<EstadoCurso, string> = {
   borrador: "bg-superficie text-texto-suave ring-borde-fuerte",
   privado: "bg-amber-500/10 text-amber-700 ring-amber-500/30 dark:text-amber-300",
   publico: "bg-exito/10 text-exito ring-exito/30",
-  archivado: "bg-superficie text-texto-tenue ring-borde",
 };
 
 /** Estado del curso: color y palabra, para que se lea también en monocromo. */

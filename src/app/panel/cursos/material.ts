@@ -1,5 +1,6 @@
 import "server-only";
 
+import { parseDocument } from "yaml";
 import { codigoBaseDeFicha, construirCurso } from "@/lib/curso-markdown";
 import type { Curso } from "@/lib/curso-tipos";
 import { frontmatter } from "@/lib/cursos-panel";
@@ -137,3 +138,19 @@ export async function comprobarImagenes(supabase: Supabase, slug: string, archiv
     : null;
 }
 
+
+/**
+ * Cambia claves del encabezado `---` de un Markdown y conserva el resto:
+ * comentarios, orden de las claves y el cuerpo. Devuelve null si el archivo
+ * no tiene encabezado o no se puede leer.
+ */
+export function editarFrontmatter(texto: string, cambios: Record<string, unknown>): string | null {
+  const limpio = texto.replace(/^\uFEFF/, "");
+  if (!limpio.startsWith("---")) return null;
+  const cierre = limpio.indexOf("\n---", 3);
+  if (cierre === -1) return null;
+  const documento = parseDocument(limpio.slice(3, cierre));
+  if (documento.errors.length > 0) return null;
+  for (const [clave, valor] of Object.entries(cambios)) documento.set(clave, valor);
+  return `---\n${documento.toString().trimEnd()}${limpio.slice(cierre)}`;
+}

@@ -6,17 +6,26 @@ import type { Curso } from "@/lib/curso-tipos";
 import { resolverIconoCurso } from "@/lib/iconos-curso";
 import { clienteServidor } from "@/lib/supabase/servidor";
 import { leerTodo } from "@/lib/supabase/paginar";
-import type { FilaPanel } from "@/lib/cursos-panel-filtro";
+import {
+  ESTADOS_CURSO,
+  paginacion,
+  planConsulta,
+  type EstadoCurso,
+  type FilaPanel,
+  type Filtros,
+  type Resultado,
+} from "@/lib/cursos-panel-filtro";
 
 /**
  * Lecturas del panel de cursos.
  *
  * El listado no usa `obtenerCursos()`: ese descarga el Markdown de todas las
  * sesiones de todos los cursos y los construye uno por uno, que es lo que
- * necesita el alumno pero no una tabla de gestión. Con 2000 cursos serían
- * cientos de megabytes por cada visita. Aquí se leen la fila de `cursos` y la
- * ficha (`curso.md`, unos cientos de bytes), y el material completo solo del
- * curso que se abre.
+ * necesita el alumno pero no una tabla de gestión. Aquí la base filtra, busca,
+ * cuenta y pagina sobre las columnas de `cursos` —área, icono y demás las copia
+ * de curso.md un disparador (migración 20261013120000)— y llegan solo las 24
+ * filas de la página. El material completo se lee únicamente del curso que se
+ * abre.
  */
 
 /** Frontmatter de un Markdown, o {} si no lo lleva o no se puede leer. */
@@ -54,55 +63,93 @@ type FilaCurso = {
   precio: number | string;
   acceso_libre: boolean;
   actualizado_en: string | null;
+  area: string | null;
+  nivel: string | null;
+  formato: string | null;
+  horas: number | string | null;
+  icono: string | null;
 };
 
-/** Todas las filas del listado, ligeras. El filtrado y la paginación los hace `filtrarCursos`. */
-export async function filasDelPanel(): Promise<FilaPanel[]> {
-  const supabase = await clienteServidor();
-  const [cursos, fichas] = await Promise.all([
-    leerTodo<FilaCurso>((desde, hasta) =>
-      supabase
-        .from("cursos")
-        .select("id, slug, codigo, titulo, resumen, estado, precio, acceso_libre, actualizado_en")
-        .order("id")
-        .range(desde, hasta),
-    ),
-    leerTodo<{ curso_id: string; contenido: string }>((desde, hasta) =>
-      supabase
-        .from("curso_contenido")
-        .select("curso_id, contenido")
-        .eq("archivo", "curso.md")
-        .order("curso_id")
-        .range(desde, hasta),
-    ),
-  ]);
+const COLUMNAS_LISTADO =
+  "id, slug, codigo, titulo, resumen, estado, precio, acceso_libre, actualizado_en, area, nivel, formato, horas, icono";
 
-  const error = cursos.error ?? fichas.error;
+function aFilaPanel(fila: FilaCurso): FilaPanel {
+  const area = fila.area ?? "";
+  return {
+    id: fila.id,
+    slug: fila.slug,
+    codigo: fila.codigo,
+    titulo: fila.titulo || fila.slug,
+    resumen: fila.resumen ?? "",
+    estado: fila.estado,
+    precio: Number(fila.precio),
+    accesoLibre: fila.acceso_libre,
+    actualizadoEn: fila.actualizado_en,
+    area,
+    nivel: fila.nivel ?? "",
+    formato: fila.formato ?? "curso",
+    horas: Number(fila.horas ?? 0) || 0,
+    icono: resolverIconoCurso(fila.slug, area, fila.icono),
+    // Sin curso.md el disparador deja estas columnas vacías.
+    fichaLegible: Boolean(fila.area || fila.icono || fila.nivel),
+  };
+}
+
+/**
+ * Una página del listado. Los conteos por estado respetan la búsqueda y el
+ * área, no el estado elegido, para que cada pestaña diga cuántos encontraría.
+ */
+export async function listadoDelPanel(filtros: Filtros): Promise<Resultado> {
+  const supabase = await clienteServidor();
+  const plan = planConsulta(filtros);
+
+  // Los mismos filtros para los conteos y para la página. El tipo del
+  // constructor de PostgREST es demasiado profundo para inferirlo aquí; solo
+  // se usan `ilike` y `eq`, que devuelven el mismo constructor.
+  type Filtrable = { ilike(columna: string, patron: string): Filtrable; eq(columna: string, valor: string): Filtrable };
+  const filtrar = <T,>(consulta: T, estado?: EstadoCurso): T => {
+    let c = consulta as unknown as Filtrable;
+    for (const patron of plan.patrones) c = c.ilike("busqueda", patron);
+    if (filtros.area) c = c.eq("area", filtros.area);
+    if (estado) c = c.eq("estado", estado);
+    return c as unknown as T;
+  };
+
+  const conteos = await Promise.all(
+    [undefined, ...ESTADOS_CURSO].map((estado) =>
+      filtrar(supabase.from("cursos").select("id", { count: "exact", head: true }), estado),
+    ),
+  );
+  const fallo = conteos.find((r) => r.error)?.error;
+  if (fallo) throw new Error(`No se pudo contar los cursos: ${fallo.message}`);
+  const porEstado = { todos: conteos[0].count ?? 0 } as Record<EstadoCurso | "todos", number>;
+  ESTADOS_CURSO.forEach((estado, i) => {
+    porEstado[estado] = conteos[i + 1].count ?? 0;
+  });
+
+  const total = porEstado[filtros.estado];
+  const { paginas, pagina, desde, hasta } = paginacion(total, filtros.pagina);
+  const rango = planConsulta(filtros, pagina);
+
+  let consulta = filtrar(
+    supabase.from("cursos").select(COLUMNAS_LISTADO),
+    filtros.estado === "todos" ? undefined : filtros.estado,
+  );
+  for (const { columna, ascendente, nulosPrimero } of plan.orden) {
+    consulta = consulta.order(columna, { ascending: ascendente, nullsFirst: nulosPrimero });
+  }
+  const { data, error } = total === 0 ? { data: [], error: null } : await consulta.range(rango.desde, rango.hasta);
   if (error) throw new Error(`No se pudo leer el listado de cursos: ${error.message}`);
 
-  const fichaPorCurso = new Map(fichas.data.map((fila) => [fila.curso_id, frontmatter(fila.contenido)]));
-
-  return cursos.data.map((fila) => {
-    const ficha = fichaPorCurso.get(fila.id);
-    const area = String(ficha?.area ?? "");
-    return {
-      id: fila.id,
-      slug: fila.slug,
-      codigo: fila.codigo,
-      titulo: fila.titulo || String(ficha?.titulo ?? fila.slug),
-      resumen: fila.resumen ?? "",
-      estado: fila.estado,
-      precio: Number(fila.precio),
-      accesoLibre: fila.acceso_libre,
-      actualizadoEn: fila.actualizado_en,
-      area,
-      nivel: String(ficha?.nivel ?? ""),
-      formato: String(ficha?.formato ?? ficha?.tipo ?? "curso"),
-      horas: Number(ficha?.horas ?? 0) || 0,
-      icono: resolverIconoCurso(fila.slug, area, ficha?.icono),
-      fichaLegible: Boolean(ficha && Object.keys(ficha).length > 0),
-    };
-  });
+  return {
+    filas: ((data ?? []) as FilaCurso[]).map(aFilaPanel),
+    total,
+    paginas,
+    pagina,
+    desde,
+    hasta,
+    porEstado,
+  };
 }
 
 /** Cuántas sesiones tiene cada curso de la página visible. */

@@ -4,8 +4,9 @@ import type { Metadata } from "next";
 import { BookOpen, Plus, Upload } from "lucide-react";
 import { usuarioActual } from "@/lib/supabase/servidor";
 import { perfilActual } from "@/lib/matriculas";
-import { filasDelPanel, sesionesDe } from "@/lib/cursos-panel";
-import { filtrarCursos, leerFiltros } from "@/lib/cursos-panel-filtro";
+import { AREAS } from "@/lib/curso-tipos";
+import { listadoDelPanel, sesionesDe } from "@/lib/cursos-panel";
+import { leerFiltros } from "@/lib/cursos-panel-filtro";
 import { Migas } from "@/components/Migas";
 import { PanelFormacionNav } from "@/components/PanelFormacionNav";
 import { CatalogoPanel } from "./CatalogoPanel";
@@ -33,10 +34,12 @@ export default async function Page({ searchParams }: PageProps<"/panel/cursos">)
   if (!perfil?.es_admin) redirect("/cursos");
 
   const filtros = leerFiltros(await searchParams);
-  const todas = await filasDelPanel();
-  const resultado = filtrarCursos(todas, filtros);
+  const resultado = await listadoDelPanel(filtros);
   // Las sesiones se cuentan solo para la página visible.
   const sesiones = await sesionesDe(resultado.filas.map((fila) => fila.id));
+  const sinFiltros = !filtros.q && !filtros.area && filtros.estado === "todos";
+  // Las áreas del catálogo, más la del filtro si una ficha usa otra.
+  const areas = filtros.area && !(AREAS as readonly string[]).includes(filtros.area) ? [...AREAS, filtros.area] : [...AREAS];
 
   return (
     <div className="mx-auto w-full max-w-5xl px-6 py-10 lg:pl-64 xl:pl-32 2xl:pl-6">
@@ -73,7 +76,7 @@ export default async function Page({ searchParams }: PageProps<"/panel/cursos">)
 
       <PanelFormacionNav activo="cursos" />
 
-      {todas.length === 0 ? (
+      {sinFiltros && resultado.total === 0 ? (
         <div className="mt-10 flex flex-col items-center rounded-xl border border-borde bg-fondo px-6 py-14 text-center">
           <BookOpen size={28} className="text-texto-tenue" aria-hidden="true" />
           <h2 className="mt-3 font-semibold text-texto">Todavía no hay cursos</h2>
@@ -92,7 +95,7 @@ export default async function Page({ searchParams }: PageProps<"/panel/cursos">)
       ) : (
         <CatalogoPanel
           filtros={{ ...filtros, pagina: resultado.pagina }}
-          areas={resultado.areas}
+          areas={areas}
           porEstado={resultado.porEstado}
           total={resultado.total}
           paginas={resultado.paginas}
