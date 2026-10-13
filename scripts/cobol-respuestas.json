@@ -5,5 +5,61 @@
     "seccion": "ejercicio-de-completado",
     "respuesta": "DISPLAY",
     "incorrecta": "PRINT"
+  },
+  {
+    "curso": "cobol-nivelacion",
+    "archivo": "sesion-1.md",
+    "seccion": "el-primer-programa",
+    "respuesta": "DISPLAY",
+    "incorrecta": "PRINT"
+  },
+  {
+    "curso": "cobol-nivelacion",
+    "archivo": "sesion-1.md",
+    "seccion": "display-con-varios-datos",
+    "respuesta": "\"15\"",
+    "incorrecta": "\"16\""
+  },
+  {
+    "curso": "cobol-nivelacion",
+    "archivo": "sesion-2.md",
+    "seccion": "comentarios-con-asterisco-en-la-columna-7",
+    "respuesta": "*",
+    "incorrecta": "X"
+  },
+  {
+    "curso": "cobol-nivelacion",
+    "archivo": "sesion-2.md",
+    "seccion": "continuar-un-literal-en-la-linea-siguiente",
+    "respuesta": "-",
+    "incorrecta": "*"
+  },
+  {
+    "curso": "cobol-nivelacion",
+    "archivo": "sesion-3.md",
+    "seccion": "la-data-division-y-la-working-storage-section",
+    "respuesta": "WORKING-STORAGE",
+    "incorrecta": "LINKAGE"
+  },
+  {
+    "curso": "cobol-nivelacion",
+    "archivo": "sesion-4.md",
+    "seccion": "pic-x-cualquier-caracter",
+    "respuesta": "X(8)",
+    "incorrecta": "X(5)"
+  },
+  {
+    "curso": "cobol-nivelacion",
+    "archivo": "sesion-5.md",
+    "seccion": "char-del-numero-al-caracter",
+    "respuesta": "67",
+    "incorrecta": "66"
+  },
+  {
+    "curso": "cobol-nivelacion",
+    "archivo": "sesion-5.md",
+    "seccion": "fechas-como-numeros",
+    "respuesta": "INTEGER-OF-DATE",
+    "incorrecta": "DATE-OF-INTEGER"
   }
 ]
