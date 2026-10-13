@@ -23,6 +23,25 @@ const nextConfig: NextConfig = {
    */
   async headers() {
     return [
+      /*
+       * Cabeceras de seguridad para todo el sitio. `frame-ancestors` impide
+       * que otra web incruste el acceso o el panel en un iframe invisible y
+       * haga clic por el usuario (clickjacking); `nosniff` evita que el
+       * navegador ejecute como script un archivo servido con otro tipo.
+       */
+      {
+        source: "/:ruta*",
+        headers: [
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=(), payment=()",
+          },
+        ],
+      },
       {
         source: "/vendor/bash/:ruta*",
         headers: [
