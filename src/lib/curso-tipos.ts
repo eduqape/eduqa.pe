@@ -9,6 +9,7 @@
 
 import type { IconoNombre } from "@/components/Iconos";
 import type { NombreEscena } from "@/lib/escenas";
+import type { NombreFigura } from "@/lib/figuras";
 /** Referencia a documentación oficial. Regla del curso: casi todo ejemplo cita su fuente. */
 export type Doc = { titulo: string; url: string };
 
@@ -79,6 +80,20 @@ export type Bloque =
        */
       tipo: "escena";
       escena: NombreEscena;
+      pie?: string;
+      docs?: Doc[];
+      nota?: string;
+    }
+  | {
+      /**
+       * Figura isométrica interactiva: un objeto físico cuyo funcionamiento es
+       * el concepto (skill «anatomy»). Se dibuja en el servidor y solo su
+       * movimiento llega al cliente. `figura` es un nombre de
+       * `src/lib/figuras.ts`; `numero` la cuenta dentro de la sesión.
+       */
+      tipo: "figura";
+      figura: NombreFigura;
+      numero: number;
       pie?: string;
       docs?: Doc[];
       nota?: string;

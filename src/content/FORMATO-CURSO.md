@@ -438,6 +438,34 @@ del curso, igual que una región de Venn mal escrita. `pie` es opcional.
 | `variables-definicion` | `producto = "Laptop"`: nace el valor y el `=` le liga el nombre |
 | `variables-reasignacion` | Varias variables, `type()` y un nombre que cambia de valor |
 
+## Figuras isométricas
+
+Una valla ```figura embebe una figura isométrica interactiva: un objeto físico
+cuyo funcionamiento es el concepto, dibujado con el kit del skill «anatomy»
+(`src/components/iso/`). La figura se genera en el servidor a partir de su
+modelo y solo su movimiento llega al navegador; sigue el tema claro, el oscuro
+y el monocromático.
+
+```figura
+figura: tarjeta-perforada
+pie: Texto que reemplaza el pie propio de la figura
+```
+
+`figura` tiene que ser una de las registradas en `src/lib/figuras.ts`; un
+nombre desconocido rompe la carga del curso. La tarjeta numera las figuras de
+la sesión («Fig 1», «Fig 2»…) en el orden en que aparecen. `pie` es opcional:
+cada figura trae uno con sus datos verificados.
+
+| Figura | Muestra |
+| ------ | ------- |
+| `tarjeta-perforada` | Una tarjeta IBM de 80 columnas con una línea de COBOL perforada en el código de la IBM 029 y un carro que lee columna a columna: las cinco zonas del formato fijo |
+
+Cada figura vive en `src/components/figuras/<nombre>/`: `modelo.ts` con los
+datos que la figura afirma, `geometria.ts` con el dibujo y un componente vivo.
+Antes de publicarla se comprueba en `/preview/leccion-cobol` con las
+herramientas del kit: `lines.mjs` (ninguna línea suelta) y `capture.mjs` en
+claro, oscuro, 390 px y con movimiento reducido.
+
 ## Fortran en el navegador
 
 Una valla `fortran` activa el editor y la ejecución mediante LFortran compilado

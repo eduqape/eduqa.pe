@@ -15,7 +15,8 @@ export const metadata: Metadata = {
  * Comprobación local del motor de COBOL: en local no hay Supabase, así que una
  * sesión de ejemplo pasa por el mismo lector de Markdown y el mismo
  * `renderSecciones` que una lección publicada. Cubre la consola, los datos de
- * entrada, un archivo escrito y un ejercicio de completado.
+ * entrada, un archivo escrito, un ejercicio de completado y la figura de la
+ * tarjeta perforada.
  */
 const CURSO = `---
 slug: prueba-cobol
@@ -37,6 +38,15 @@ const SESION = `---
 numero: 1
 titulo: "El motor de COBOL"
 ---
+
+# El formato de referencia
+
+Cada línea de un programa en formato fijo tiene 80 columnas, las de una
+tarjeta perforada.
+
+\`\`\`figura
+figura: tarjeta-perforada
+\`\`\`
 
 # Un programa mínimo
 

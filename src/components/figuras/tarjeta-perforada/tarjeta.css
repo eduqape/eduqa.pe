@@ -1,0 +1,7 @@
+/*
+ * Las perforaciones dejan ver el lecho del lector a través de la tarjeta. Las
+ * de la columna que se lee van en el tono iluminado, el único acento.
+ */
+.iso .tp-hueco{fill:var(--anatomy-hi);opacity:.42;stroke:none}
+.dark .iso .tp-hueco{fill:#000;opacity:.95}
+.iso .tp-leido{fill:var(--anatomy-lit);stroke:var(--anatomy-lit);stroke-width:.8;stroke-linejoin:round}

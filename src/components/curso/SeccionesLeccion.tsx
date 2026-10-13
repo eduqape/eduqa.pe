@@ -2,6 +2,7 @@ import type { Ejercicio, Seccion } from "@/lib/cursos";
 import { BloqueCodigo } from "@/components/curso/BloqueCodigo";
 import { EjercicioPunto } from "@/components/curso/EjercicioPunto";
 import { EscenaCurso } from "@/components/curso/EscenaCurso";
+import { FiguraCurso } from "@/components/curso/FiguraCurso";
 import { SeccionPlegable } from "@/components/curso/SeccionPlegable";
 import { Teoria } from "@/components/curso/Teoria";
 import { Venn } from "@/components/curso/Venn";
@@ -38,6 +39,8 @@ function renderCuerpoSeccion(sec: Seccion, op: Opciones) {
             />
           ) : b.tipo === "escena" ? (
             <EscenaCurso key={i} escena={b.escena} pie={b.pie} />
+          ) : b.tipo === "figura" ? (
+            <FiguraCurso key={i} figura={b.figura} numero={b.numero} pie={b.pie} />
           ) : (
             <BloqueCodigo
               key={i}

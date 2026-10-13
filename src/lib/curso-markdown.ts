@@ -3,6 +3,7 @@ import "server-only";
 import { parse as parseYaml } from "yaml";
 import { resolverIconoCurso } from "@/lib/iconos-curso";
 import { ESCENAS, esEscena } from "@/lib/escenas";
+import { FIGURAS, esFigura } from "@/lib/figuras";
 import {
   REGIONES_VENN,
   derivarSecciones,
@@ -312,6 +313,18 @@ function leerEscena(texto: string, donde: string): Bloque {
   return { tipo: "escena", escena, ...(datos.pie ? { pie: String(datos.pie) } : {}) };
 }
 
+/** Lee una figura isométrica; como la escena, un nombre desconocido rompe la carga. */
+function leerFigura(texto: string, donde: string, numero: number): Bloque {
+  const datos = (parseYaml(texto) ?? {}) as Record<string, unknown>;
+  const figura = String(datos.figura ?? "").trim();
+  if (!esFigura(figura)) {
+    throw new Error(
+      `Figura «${figura}» desconocida en ${donde}. Las válidas son: ${Object.keys(FIGURAS).join(", ")}.`,
+    );
+  }
+  return { tipo: "figura", figura, numero, ...(datos.pie ? { pie: String(datos.pie) } : {}) };
+}
+
 type ResultadoSesion = {
   bloques: Bloque[];
   ejercicios: Record<string, Ejercicio>;
@@ -388,6 +401,12 @@ function leerSesion(texto: string, donde: string): ResultadoSesion {
 
       if (valla.lenguaje === "escena") {
         bloques.push(leerEscena(valla.contenido, donde));
+        continue;
+      }
+
+      if (valla.lenguaje === "figura") {
+        const numero = bloques.filter((b) => b.tipo === "figura").length + 1;
+        bloques.push(leerFigura(valla.contenido, donde, numero));
         continue;
       }
 
