@@ -21,7 +21,7 @@ import type { FilaPanel } from "@/lib/cursos-panel-filtro";
 
 /** Frontmatter de un Markdown, o {} si no lo lleva o no se puede leer. */
 export function frontmatter(texto: string): Record<string, unknown> {
-  const limpio = texto.replace(/^﻿/, "");
+  const limpio = texto.replace(/^\uFEFF/, "");
   if (!limpio.startsWith("---")) return {};
   const cierre = limpio.indexOf("\n---", 3);
   if (cierre === -1) return {};
@@ -241,7 +241,7 @@ export async function cursoDelPanel(slug: string): Promise<DetalleCurso | null> 
         palabras: contarPalabras(a.contenido),
         secciones: leccion?.secciones.length ?? 0,
         bloquesCodigo: codigo.length,
-        sinSalida: codigo.filter((b) => b.tipo === "codigo" && b.salida === null).length,
+        sinSalida: codigo.filter((b) => b.tipo === "codigo" && b.salida === null && !b.sinConsola).length,
         ejercicios: Object.keys(leccion?.ejercicios ?? {}).length,
       };
     })

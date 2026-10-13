@@ -1,60 +1,110 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
+import { AlertCircle, Loader2 } from "lucide-react";
+import { Icono } from "@/components/Iconos";
+import { claseInput } from "@/components/ui";
 import { AREAS } from "@/lib/curso-tipos";
 import { ICONOS_CURSO } from "@/lib/iconos-curso";
 import { crearCurso, type EstadoPublicacion } from "./acciones";
 
 const NIVELES = ["INTRODUCCIÓN", "INTERMEDIO", "AVANZADO", "HARDMODE"];
 
+/** La misma regla que aplica `crearCurso` en el servidor. */
+function slugDe(titulo: string) {
+  return titulo
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+const etiqueta = "mb-1.5 block text-sm font-medium text-texto";
+const ayuda = "mt-1.5 block text-xs text-texto-tenue";
+
 /**
  * Alta de un curso nuevo.
  *
  * Vive en `/panel/cursos/nuevo`: crear es ocasional y no debe empujar hacia
  * abajo el listado. Al crearse, la acción abre la ficha del curso nuevo.
+ *
+ * Los campos son controlados: React reinicia el formulario al terminar la
+ * acción, y un error del servidor no debe borrar lo que ya se escribió.
  */
 export function CrearCurso() {
   const [estado, accion, enviando] = useActionState<EstadoPublicacion | null, FormData>(
     crearCurso,
     null,
   );
+  const [campos, setCampos] = useState({
+    titulo: "",
+    codigo: "",
+    area: "",
+    nivel: "INTRODUCCIÓN",
+    icono: "",
+    horas: "16",
+    precio: "20",
+  });
+  const cambiar = (clave: keyof typeof campos, valor: string) => setCampos((actual) => ({ ...actual, [clave]: valor }));
+  const slug = slugDe(campos.titulo);
 
   return (
-    <form action={accion} className="rounded-xl border border-borde bg-superficie p-4">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="sm:col-span-2 block text-xs font-medium text-texto-suave">
+    <form action={accion} className="space-y-6">
+      <div>
+        <label htmlFor="titulo" className={etiqueta}>
           Título
-          <input
-            name="titulo"
-            required
-            minLength={4}
-            placeholder="Introducción a Matplotlib"
-            className="mt-1 w-full rounded-lg border border-borde bg-fondo px-3 py-2 text-sm text-texto outline-none focus:border-rojo-acento"
-          />
         </label>
+        <input
+          id="titulo"
+          name="titulo"
+          required
+          minLength={4}
+          value={campos.titulo}
+          onChange={(e) => cambiar("titulo", e.target.value)}
+          placeholder="Introducción a Matplotlib"
+          className={`${claseInput} text-base font-medium`}
+        />
+        <span className={ayuda}>
+          {slug ? (
+            <>
+              Dirección: <span className="font-mono text-texto-suave">/cursos/{slug}</span>. No cambia después.
+            </>
+          ) : (
+            "La dirección del curso sale del título."
+          )}
+        </span>
+      </div>
 
-        <label className="block text-xs font-medium text-texto-suave">
-          Código (4 letras)
+      <div className="grid gap-6 sm:grid-cols-2">
+        <div>
+          <label htmlFor="codigo" className={etiqueta}>
+            Código
+          </label>
           <input
+            id="codigo"
             name="codigo"
             required
             minLength={4}
             maxLength={4}
             pattern="[A-Za-z]{4}"
-            placeholder="INPY"
-            className="mt-1 w-full rounded-lg border border-borde bg-fondo px-3 py-2 font-mono text-sm uppercase tracking-wider text-texto outline-none focus:border-rojo-acento"
+            value={campos.codigo}
+            onChange={(e) => cambiar("codigo", e.target.value.toUpperCase().replace(/[^A-Z]/g, ""))}
+            placeholder="INMP"
+            autoComplete="off"
+            className={`${claseInput} font-mono uppercase tracking-widest`}
           />
-        </label>
+          <span className={ayuda}>
+            Cuatro letras, único. La revisión se suma sola: <span className="whitespace-nowrap">INMP-0001</span>.
+          </span>
+        </div>
 
-        <label className="block text-xs font-medium text-texto-suave">
-          Área
-          <select
-            name="area"
-            required
-            defaultValue=""
-            className="mt-1 w-full rounded-lg border border-borde bg-fondo px-3 py-2 text-sm text-texto outline-none focus:border-rojo-acento"
-          >
+        <div>
+          <label htmlFor="area" className={etiqueta}>
+            Área
+          </label>
+          <select id="area" name="area" required value={campos.area} onChange={(e) => cambiar("area", e.target.value)} className={claseInput}>
             <option value="" disabled>
               Elige una
             </option>
@@ -64,85 +114,88 @@ export function CrearCurso() {
               </option>
             ))}
           </select>
-        </label>
+        </div>
 
-        <label className="block text-xs font-medium text-texto-suave">
-          Nivel
-          <select
-            name="nivel"
-            defaultValue="INTRODUCCIÓN"
-            className="mt-1 w-full rounded-lg border border-borde bg-fondo px-3 py-2 text-sm text-texto outline-none focus:border-rojo-acento"
-          >
+        <div>
+          <label htmlFor="nivel" className={etiqueta}>
+            Nivel
+          </label>
+          <select id="nivel" name="nivel" value={campos.nivel} onChange={(e) => cambiar("nivel", e.target.value)} className={claseInput}>
             {NIVELES.map((n) => (
               <option key={n} value={n}>
                 {n}
               </option>
             ))}
           </select>
-        </label>
+        </div>
 
-        <label className="block text-xs font-medium text-texto-suave">
-          Icono del curso
-          <select
-            name="icono"
-            required
-            defaultValue=""
-            className="mt-1 w-full rounded-lg border border-borde bg-fondo px-3 py-2 text-sm text-texto outline-none focus:border-rojo-acento"
-          >
-            <option value="" disabled>Elige un logotipo o símbolo</option>
-            {ICONOS_CURSO.map((icono) => (
-              <option key={icono} value={icono}>{icono.charAt(0).toUpperCase() + icono.slice(1)}</option>
-            ))}
-          </select>
-        </label>
-
-        <label className="block text-xs font-medium text-texto-suave">
-          Horas
-          <input
-            name="horas"
-            type="number"
-            min={1}
-            defaultValue={16}
-            className="mt-1 w-full rounded-lg border border-borde bg-fondo px-3 py-2 text-sm text-texto outline-none focus:border-rojo-acento"
-          />
-        </label>
-
-        <label className="block text-xs font-medium text-texto-suave">
-          Precio en soles
-          <input
-            name="precio"
-            type="number"
-            min={0}
-            step="0.01"
-            defaultValue={20}
-            className="mt-1 w-full rounded-lg border border-borde bg-fondo px-3 py-2 text-sm text-texto outline-none focus:border-rojo-acento"
-          />
-        </label>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="horas" className={etiqueta}>
+              Horas
+            </label>
+            <input id="horas" name="horas" type="number" min={1} value={campos.horas} onChange={(e) => cambiar("horas", e.target.value)} className={claseInput} />
+          </div>
+          <div>
+            <label htmlFor="precio" className={etiqueta}>
+              Precio (S/)
+            </label>
+            <input id="precio" name="precio" type="number" min={0} step="0.01" value={campos.precio} onChange={(e) => cambiar("precio", e.target.value)} className={claseInput} />
+          </div>
+        </div>
       </div>
 
-      <p className="mt-3 text-xs text-texto-tenue">
-        Nace en borrador, así que no lo verá nadie hasta que lo publiques.
-      </p>
+      <fieldset>
+        <legend className={etiqueta}>Icono</legend>
+        <p className="-mt-1 mb-3 text-xs text-texto-tenue">Obligatorio: el logotipo del producto o el símbolo de la materia.</p>
+        <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-8">
+          {ICONOS_CURSO.map((icono) => {
+            const elegido = campos.icono === icono;
+            return (
+              <label
+                key={icono}
+                title={icono}
+                className={`flex cursor-pointer flex-col items-center gap-1.5 rounded-lg border px-1 py-2.5 transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-rojo-acento ${
+                  elegido ? "border-rojo-acento bg-rojo-tenue text-rojo-acento" : "border-borde text-texto-tenue hover:border-texto-tenue hover:text-texto"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="icono"
+                  value={icono}
+                  required
+                  checked={elegido}
+                  onChange={() => cambiar("icono", icono)}
+                  className="sr-only"
+                />
+                <Icono nombre={icono} className="size-7" />
+                <span className="w-full truncate text-center text-[11px]">{icono}</span>
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
 
-      <div className="mt-3 flex items-center gap-3">
+      {estado && !estado.ok && (
+        <p role="alert" className="flex items-start gap-1.5 text-sm text-rojo-acento">
+          <AlertCircle size={15} className="mt-0.5 shrink-0" aria-hidden="true" />
+          {estado.error}
+        </p>
+      )}
+
+      <div className="flex flex-wrap items-center gap-3 border-t border-borde pt-5">
         <button
           type="submit"
           disabled={enviando}
-          className="rounded-lg bg-rojo px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-rojo-hover disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-lg bg-rojo px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-rojo-hover disabled:opacity-50"
         >
-          {enviando ? "Creando…" : "Crear"}
+          {enviando && <Loader2 size={15} className="animate-spin" aria-hidden="true" />}
+          {enviando ? "Creando…" : "Crear curso"}
         </button>
-        <Link href="/panel/cursos" className="text-sm text-texto-suave hover:text-texto">
+        <Link href="/panel/cursos" className="rounded-lg px-3 py-2.5 text-sm text-texto-suave transition-colors hover:text-texto">
           Cancelar
         </Link>
-        {estado && (
-          <span
-            role="status"
-            className={`text-xs ${estado.ok ? "text-exito" : "text-rojo-acento"}`}
-          >
-            {estado.ok ? estado.detalle : estado.error}
-          </span>
-        )}
+        <span className="text-xs text-texto-tenue">Nace en borrador con una sesión de ejemplo: nadie lo ve hasta que lo publiques.</span>
       </div>
     </form>
   );

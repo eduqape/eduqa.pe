@@ -10,10 +10,12 @@ import { EditorArchivo } from "./EditorArchivo";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Editar curso — Panel de EDUQA.PE",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata({
+  params,
+}: PageProps<"/panel/cursos/[curso]/archivos/[archivo]">): Promise<Metadata> {
+  const { curso, archivo } = await params;
+  return { title: `${decodeURIComponent(archivo)} · ${curso} — EDUQA.PE`, robots: { index: false, follow: false } };
+}
 
 const etiquetaDe = (s: { numero: number; titulo: string }) =>
   Number.isFinite(s.numero) ? `Sesión ${s.numero} · ${s.titulo}` : s.titulo;

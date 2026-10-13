@@ -9,10 +9,10 @@ import { VistaCurso } from "./VistaCurso";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Curso — Panel de EDUQA.PE",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata({ params }: PageProps<"/panel/cursos/[curso]">): Promise<Metadata> {
+  const { curso } = await params;
+  return { title: `${curso} — Gestión de cursos — EDUQA.PE`, robots: { index: false, follow: false } };
+}
 
 /** Ficha de gestión de un curso: aquí se edita, no dentro de la grilla. */
 export default async function Page({ params, searchParams }: PageProps<"/panel/cursos/[curso]">) {

@@ -797,7 +797,7 @@ export async function subirImagenCurso(
   // Un nombre con espacios o tildes no se puede citar sin escaparlo.
   const nombre = archivo.name
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/\s+/g, "-")
     .replace(/[^A-Za-z0-9._-]/g, "")
     .toLowerCase();

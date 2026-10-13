@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition, type MouseEvent } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -222,10 +222,25 @@ export function EditorArchivo({
     return () => window.removeEventListener("beforeunload", avisar);
   }, [sucio]);
 
-  // La navegación interna no dispara beforeunload: se pregunta aquí.
-  const alSalir = (evento: MouseEvent<HTMLAnchorElement>) => {
-    if (sucio && !window.confirm("Tienes cambios sin guardar. ¿Salir sin guardarlos?")) evento.preventDefault();
-  };
+  // La navegación interna no dispara beforeunload. Se escucha en captura
+  // cualquier enlace de la página —migas, barra lateral, sesión vecina— y se
+  // pregunta antes de que el router de Next lo intercepte.
+  useEffect(() => {
+    if (!sucio) return;
+    const alSalir = (evento: MouseEvent) => {
+      if (evento.defaultPrevented || evento.button !== 0 || evento.metaKey || evento.ctrlKey || evento.shiftKey || evento.altKey) return;
+      const enlace = (evento.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!enlace || enlace.target === "_blank" || enlace.hasAttribute("download")) return;
+      const destino = new URL(enlace.href, window.location.href);
+      if (destino.origin !== window.location.origin || destino.pathname === window.location.pathname) return;
+      if (!window.confirm("Tienes cambios sin guardar. ¿Salir sin guardarlos?")) {
+        evento.preventDefault();
+        evento.stopPropagation();
+      }
+    };
+    document.addEventListener("click", alSalir, true);
+    return () => document.removeEventListener("click", alSalir, true);
+  }, [sucio]);
 
   const estadoGuardado = guardando
     ? { texto: "Guardando…", clase: "text-texto-suave" }
@@ -240,7 +255,6 @@ export function EditorArchivo({
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <Link
             href={`/panel/cursos/${slug}`}
-            onClick={alSalir}
             aria-label="Volver al curso"
             className="rounded-lg p-1.5 text-texto-tenue transition-colors hover:bg-superficie hover:text-texto"
           >
@@ -464,7 +478,6 @@ export function EditorArchivo({
         {anterior ? (
           <Link
             href={`/panel/cursos/${slug}/archivos/${anterior.archivo}`}
-            onClick={alSalir}
             className="inline-flex min-w-0 items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-texto-suave transition-colors hover:bg-superficie hover:text-texto"
           >
             <ArrowLeft size={15} className="shrink-0" aria-hidden="true" />
@@ -476,7 +489,6 @@ export function EditorArchivo({
         {siguiente && (
           <Link
             href={`/panel/cursos/${slug}/archivos/${siguiente.archivo}`}
-            onClick={alSalir}
             className="ml-auto inline-flex min-w-0 items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-texto-suave transition-colors hover:bg-superficie hover:text-texto"
           >
             <span className="truncate">{siguiente.etiqueta}</span>

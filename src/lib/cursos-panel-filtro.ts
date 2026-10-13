@@ -122,7 +122,7 @@ export function hrefListado(actuales: Filtros, cambios: Partial<Filtros>): strin
 
 /** Minúsculas y sin tildes: «introduccion» encuentra «Introducción». */
 export function normalizar(texto: string): string {
-  return texto.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
 function coincide(fila: FilaPanel, terminos: string[]): boolean {
@@ -135,7 +135,7 @@ function comparar(orden: Orden) {
   const porTitulo = (a: FilaPanel, b: FilaPanel) => a.titulo.localeCompare(b.titulo, "es");
   return (a: FilaPanel, b: FilaPanel): number => {
     if (orden === "titulo") return porTitulo(a, b);
-    if (orden === "codigo") return (a.codigo ?? "￿").localeCompare(b.codigo ?? "￿") || porTitulo(a, b);
+    if (orden === "codigo") return (a.codigo ?? "\uffff").localeCompare(b.codigo ?? "\uffff") || porTitulo(a, b);
     if (orden === "precio") return b.precio - a.precio || porTitulo(a, b);
     // Sin fecha va al final: no se sabe cuándo se tocó.
     const ta = a.actualizadoEn ? Date.parse(a.actualizadoEn) : 0;
