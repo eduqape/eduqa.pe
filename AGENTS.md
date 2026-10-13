@@ -66,6 +66,9 @@ todavía están en TypeScript. Al tocarlos, conviene pasarlos a Markdown.
 - Cada commit debe vincular uno o más tickets de GitHub en el cuerpo mediante
   `Refs: #<número>`, `Closes: #<número>` o equivalente. El hook local y CI
   rechazan entregas sin ticket o con una referencia que no sea un issue real.
+- Los mensajes no llevan `Co-Authored-By` de Claude ni la línea «Generated with
+  Claude Code». El hook `commit-msg`, el `pre-push` y CI los rechazan
+  (`scripts/validar-tickets-commit.mjs`).
 - El workflow valida mensajes, lint, tipos y pruebas rápidas en `dev`.
   Solo cuando pasa ejecuta en QA el build y las pruebas completas. Si todo pasa,
   promueve exactamente ese commit a `qa` y después de `qa` a `main`. GitHub

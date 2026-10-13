@@ -28,8 +28,21 @@ assert.equal(
   1,
   "La firma se rechaza en cualquier commit del push, no solo en el primero",
 );
+const coautorada = "[feat] (cursos): curso nuevo\n\nRefs: #6\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n";
+assert.equal(validar(coautorada).status, 1);
+assert.match(validar(coautorada).stderr, /Co-Authored-By: Claude/);
 assert.equal(
-  validar("[feat] (cursos): curso nuevo\n\nRefs: #6\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n").status,
+  validar("[fix] (ui): primero\n\nRefs: #6\0[fix] (pdf): segundo\n\nRefs: #7\n\nco-authored-by: Claude Sonnet 5 <noreply@anthropic.com>\n").status,
+  1,
+  "Claude como coautor se rechaza con cualquier modelo y en cualquier commit del push",
+);
+assert.equal(
+  validar("[fix] (ui): corregir buscador\n\nRefs: #6\n\nCo-Authored-By: Asistente <noreply@anthropic.com>\n").status,
+  1,
+  "El correo de Anthropic basta para reconocer al coautor",
+);
+assert.equal(
+  validar("[fix] (ui): corregir buscador\n\nRefs: #6\n\nCo-Authored-By: Ana Pérez <ana@example.com>\n").status,
   0,
-  "Co-Authored-By no es la firma publicitaria",
+  "Un coautor humano sigue permitido",
 );

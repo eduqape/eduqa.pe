@@ -13,7 +13,9 @@ while read -r referencia_local sha_local referencia_remota sha_remoto; do
       ;;
   esac
 
-  case "$referencia_local" in
+  # Se mira la rama de destino: un push desde HEAD separado o un SHA
+  # (git push origin HEAD:dev) también lleva commits a una rama.
+  case "$referencia_remota" in
     refs/heads/*)
       if [ "$sha_local" = "$cero" ]; then
         continue

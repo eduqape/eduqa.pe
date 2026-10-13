@@ -14,11 +14,16 @@ const errores = [];
 // La firma publicitaria de Claude Code no va en el historial, con o sin el
 // emoji, el enlace o el corchete del Markdown.
 const firmaGenerada = /generated\s+(with|by)\s+\[?\s*claude\s+code/i;
+// Tampoco va Claude como coautor, sea cual sea el modelo; un coautor humano sí.
+const coautorClaude = /^co-authored-by:[^\n]*(claude|anthropic\.com)/im;
 
 for (const mensaje of mensajes) {
   const cabecera = mensaje.split("\n", 1)[0];
   if (firmaGenerada.test(mensaje)) {
     errores.push(`«${cabecera}» lleva la línea «Generated with Claude Code». Quítala del mensaje.`);
+  }
+  if (coautorClaude.test(mensaje)) {
+    errores.push(`«${cabecera}» lleva la línea «Co-Authored-By: Claude». Quítala del mensaje.`);
   }
   const lineas = [...mensaje.matchAll(/^(Refs?|Closes?|Fixes?|Resolves?):\s*(.+)$/gim)];
   const tickets = lineas.flatMap((linea) =>
