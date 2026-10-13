@@ -54,6 +54,7 @@ function renderCuerpoSeccion(sec: Seccion, op: Opciones) {
               archivos={b.archivos}
               formatoLibre={b.formatoLibre}
               escritos={b.escritos}
+              errorEsperado={b.errorEsperado}
               paquetes={op.paquetes}
               preludio={op.preludio}
             />

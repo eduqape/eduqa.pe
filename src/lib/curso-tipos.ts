@@ -50,6 +50,11 @@ export type Bloque =
       /** COBOL en formato libre (`cobc -free`); sin él, el formato fijo de columnas. */
       formatoLibre?: boolean;
       /**
+       * El programa COBOL no compila a propósito: enseña un error. `salida`
+       * guarda entonces el diagnóstico de cobc, obtenido compilándolo.
+       */
+      errorEsperado?: boolean;
+      /**
        * Archivos que el programa COBOL deja escritos al terminar, con su
        * contenido. Como `salida`, se obtienen ejecutándolo.
        */

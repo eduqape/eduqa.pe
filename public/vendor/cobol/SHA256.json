@@ -69,7 +69,7 @@
   "licencias/cobol-wasm-THIRD-PARTY-NOTICES.md": "d96db6ffa8ccd91cb253be4cffa8d8e4e9bdbc174bb76fe89517cd461089c04d",
   "licencias/fflate-LICENSE": "0a1df3a083d0c010560aa342e87959c8c1070e6fd54545741f083f22d0c8b551",
   "licencias/llvm-core-LICENSE.llvm.txt": "8d85c1057d742e597985c7d4e6320b015a9139385cff4cbae06ffc0ebe89afee",
-  "motor.mjs": "560e409dd98dfdbcd42f23505646d7ab6f1bc19e257def311593c1121fa19330",
+  "motor.mjs": "1615f217f43696afb7fefd68a8a4189e9c79997a7fad15fb68372f0c139397e3",
   "package.json": "3ca9d4afd21425087cf31893b8f9f63c81b0b8408db5e343ca76e5f8aa26ab9a",
   "worker.mjs": "7edcc6f898363ae307938c722c372b5f96d16308eb5b6c4adbfbe7be53c0a3fd"
 }

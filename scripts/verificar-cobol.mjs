@@ -162,7 +162,11 @@ function reglasDeFormato(b, donde) {
   if (b.formatoLibre) return problemas;
   b.contenido.split('\n').forEach((linea, n) => {
     if (linea.includes('\t')) problemas.push(`${donde}: línea ${n + 1} con tabulador; en formato fijo las columnas deben ser espacios.`);
-    if (linea.length > 72) problemas.push(`${donde}: línea ${n + 1} pasa de la columna 72 (${linea.length}):\n${linea}`);
+    // Un bloque !error puede pasar de la columna 72 a propósito: es el error que
+    // enseña. Una línea con número de secuencia (columnas 1 a 6) es la imagen de
+    // una tarjeta y puede usar el área de identificación, hasta la columna 80.
+    const tarjeta = /^\d{6}/.test(linea) && linea.length <= 80;
+    if (linea.length > 72 && !b.errorEsperado && !tarjeta) problemas.push(`${donde}: línea ${n + 1} pasa de la columna 72 (${linea.length}):\n${linea}`);
   });
   return problemas;
 }
@@ -219,8 +223,17 @@ for (const { carpeta, raiz } of carpetas) {
           }
         }
       }
-      resultados.push(b.salidaVariable ? null : r);
+      resultados.push(b.salidaVariable ? null : b.errorEsperado ? { salida: r.diagnosticos, archivos: {} } : r);
 
+      // `cobol !error` enseña un error: tiene que fallar y su valla salida es
+      // el diagnóstico. El de cobc nativo dice lo mismo con otra ruta de archivo.
+      if (b.errorEsperado) {
+        if (r.compilo) fallos.push(`${donde}: un bloque !error compila.\n${b.contenido}`);
+        else if (!escribir && sinFinal(r.diagnosticos) !== sinFinal(b.salida ?? '')) {
+          fallos.push(`${donde}: el diagnóstico no coincide.\n${b.contenido}\n--- esperado ---\n${b.salida}\n--- obtenido ---\n${r.diagnosticos}`);
+        }
+        continue;
+      }
       if (!r.compilo) {
         fallos.push(`${donde}: el bloque no compila.\n${b.contenido}\n--- diagnóstico ---\n${r.diagnosticos}`);
         continue;

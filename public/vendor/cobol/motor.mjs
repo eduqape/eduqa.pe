@@ -20,6 +20,18 @@ export const RE_ARCHIVO = /^[a-zA-Z0-9_-][a-zA-Z0-9_.-]*$/;
 
 class SalidaExcedida extends Error {}
 
+/*
+ * El sistema de archivos del compilador escribe un texto con `charCodeAt`, un
+ * byte por unidad de UTF-16: la «Ñ» llegaría como el byte D1 de Latin-1 y no
+ * como los dos bytes de UTF-8 que `cobc` lee en Linux. Se le entrega una cadena
+ * cuyos caracteres son ya los bytes UTF-8, que esa copia deja intactos.
+ */
+const comoBytesUtf8 = (texto) => {
+  let binario = '';
+  for (const byte of new TextEncoder().encode(texto)) binario += String.fromCharCode(byte);
+  return binario;
+};
+
 // GnuCOBOL colorea sus diagnósticos y el host compila cada programa en una
 // carpeta `__wasm_cobol_N/` cuyo nombre se filtraría en cada mensaje.
 const limpiarDiagnosticos = (texto) =>
@@ -159,7 +171,7 @@ export async function crearMotorCobol({ base }) {
     const compilado = await compilador.compile({
       // Un bloque del temario llega sin el salto de línea final que tiene
       // cualquier archivo fuente, y cobc avisaría de ello (-Wmissing-newline).
-      code: codigo.endsWith('\n') ? codigo : `${codigo}\n`,
+      code: comoBytesUtf8(codigo.endsWith('\n') ? codigo : `${codigo}\n`),
       fileName: NOMBRE_FUENTE,
       sourceFormat: formato,
       // Sin opciones: las mismas de `cobc -x programa.cob`. Un CALL a un
@@ -168,7 +180,7 @@ export async function crearMotorCobol({ base }) {
       compileArgs: [],
       cCompileArgs: [],
       // Los copybooks se buscan junto al programa: los archivos van también ahí.
-      workspaceFiles: Object.entries(archivos).map(([path, content]) => ({ path, content })),
+      workspaceFiles: Object.entries(archivos).map(([path, content]) => ({ path, content: comoBytesUtf8(content) })),
       log: false,
     });
     const diagnosticos = limpiarDiagnosticos(compilado.stdout || compilado.stderr);

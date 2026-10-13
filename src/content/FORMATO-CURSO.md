@@ -547,6 +547,13 @@ compila en décimas de segundo. Cada bloque corre solo, en un directorio vacío.
   `SCREEN SECTION`— va como `cobol !sin-consola`, con la salida de GnuCOBOL
   nativo. Un bloque cuya salida cambia en cada ejecución (fechas) va como
   `cobol !variable`, sin valla `salida`.
+- Un programa que enseña un error de compilación va como `cobol !error`: la
+  verificación exige que no compile y su valla `salida` guarda el diagnóstico
+  de `cobc`, obtenido compilándolo. Puede pasar de la columna 72 si ese es el
+  error que enseña.
+- Una línea que empieza con un número de secuencia de seis dígitos es la
+  imagen de una tarjeta y puede usar el área de identificación, hasta la
+  columna 80.
 - Ejercicio de completado: `ejercicio cobol`, con las secciones de siempre. La
   plantilla conserva su sangría, porque en formato fijo las columnas son parte
   del programa. La salida se compara sin los espacios al final de cada línea,

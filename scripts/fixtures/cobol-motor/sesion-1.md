@@ -257,6 +257,29 @@ Lima    0300
 Piura   0050
 ```
 
+# Texto UTF-8 en el fuente y en un copybook
+
+```cobol
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. ACENTOS.
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+       COPY "provincia.cpy".
+       PROCEDURE DIVISION.
+           DISPLAY "CAÑETE " FUNCTION LENGTH("CAÑETE")
+           DISPLAY "[" PROVINCIA "] " FUNCTION LENGTH(PROVINCIA)
+           STOP RUN.
+```
+
+```archivo provincia.cpy
+       01  PROVINCIA    PIC X(8) VALUE "HUÁNUCO".
+```
+
+```salida
+CAÑETE 7
+[HUÁNUCO] 8
+```
+
 # Fecha del sistema
 
 ```cobol !variable

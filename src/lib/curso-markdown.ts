@@ -466,6 +466,11 @@ function leerSesion(texto: string, donde: string): ResultadoSesion {
         ...(valla.lenguaje === "cobol" && valla.modificadores.includes("!libre")
           ? { formatoLibre: true }
           : {}),
+        // Un programa que enseña un error de compilación: la verificación
+        // exige que falle y compara el diagnóstico.
+        ...(valla.lenguaje === "cobol" && valla.modificadores.includes("!error")
+          ? { errorEsperado: true }
+          : {}),
       });
       continue;
     }

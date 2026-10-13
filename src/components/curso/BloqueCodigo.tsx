@@ -34,6 +34,7 @@ export async function BloqueCodigo({
   archivos,
   formatoLibre = false,
   escritos,
+  errorEsperado = false,
 }: {
   codigo: string;
   lenguaje: string;
@@ -50,6 +51,8 @@ export async function BloqueCodigo({
   formatoLibre?: boolean;
   /** Archivos que deja escritos un programa COBOL, con su contenido de referencia. */
   escritos?: Record<string, string>;
+  /** El programa enseña un error de compilación: la salida es el diagnóstico. */
+  errorEsperado?: boolean;
 }) {
   // Dos temas a la vez: Shiki emite variables CSS y globals.css decide cuál pinta.
   const html = await codeToHtml(codigo, {
@@ -87,7 +90,7 @@ export async function BloqueCodigo({
           <div className="border-t border-borde bg-superficie">
             <div className="flex items-center gap-1.5 px-4 pt-2.5 text-[11px] uppercase tracking-wide text-texto-tenue">
               <CornerDownRight size={12} aria-hidden="true" />
-              Salida
+              {errorEsperado ? "Error de compilación" : "Salida"}
             </div>
             <pre className="overflow-x-auto px-4 pb-3.5 pt-1.5 font-mono text-[0.78rem] leading-relaxed text-texto-suave">
               {salida}

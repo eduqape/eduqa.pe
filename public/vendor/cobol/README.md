@@ -45,6 +45,10 @@ Comprobado en Chromium. Necesita Workers de módulo (`type: "module"`).
   Se le añade el salto de línea final que tiene cualquier archivo fuente.
 - Las vallas `archivo` se copian en el directorio de trabajo del programa y
   también junto al fuente, donde `COPY` busca los copybooks.
+- El fuente y los copybooks llegan a `cobc` en UTF-8, como en Linux. El
+  sistema de archivos del compilador copia un texto con `charCodeAt`, un byte
+  por unidad de UTF-16, y convertiría la «Ñ» en el byte `D1` de Latin-1:
+  `motor.mjs` le entrega una cadena cuyos caracteres ya son los bytes UTF-8.
 - La entrada estándar (`entrada`) se entrega entera una vez y después llega fin
   de archivo: `ACCEPT` no es interactivo.
 - Las salidas estándar y de error se recogen en el orden en que se escriben.

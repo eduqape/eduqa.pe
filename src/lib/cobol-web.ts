@@ -25,7 +25,7 @@ export type ResultadoCobol = {
   binarios: string[];
 };
 
-const WORKER = "/vendor/cobol/worker.mjs?v=2";
+const WORKER = "/vendor/cobol/worker.mjs?v=3";
 const LIMITE_CARGA_MS = 180000;
 /** La primera compilación con el motor recién cargado tarda algunos segundos. */
 const LIMITE_COMPILACION_MS = 60000;
