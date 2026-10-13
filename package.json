@@ -12,7 +12,7 @@
     "test:catalogo": "node scripts/validar-catalogo-local.mjs",
     "test:cursos:runtime": "node scripts/validar-cursos-runtime.mjs",
     "test:panel": "node scripts/validar-acciones-panel.mjs",
-    "test:tickets": "node --test scripts/validar-tickets-commit.test.mjs",
+    "test:tickets": "node --test scripts/validar-tickets-commit.test.mjs scripts/cerrar-tickets.test.mjs",
     "test:seguridad": "node --experimental-strip-types --test scripts/seguridad/estatico.test.mjs scripts/seguridad/ruta-interna.test.mjs",
     "test:seguridad:http": "node --test scripts/seguridad/http.test.mjs",
     "test:seguridad:db": "node --test scripts/seguridad/db.test.mjs",

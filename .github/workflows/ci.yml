@@ -158,16 +158,27 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      issues: write
     steps:
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
       - name: Promover qa a main sin reescribir historial
+        id: promover
         env:
           CANDIDATE_SHA: ${{ github.sha }}
         run: |
           git fetch origin qa main
           test "$(git rev-parse origin/qa)" = "$CANDIDATE_SHA"
           git merge-base --is-ancestor origin/main origin/qa
+          echo "main_anterior=$(git rev-parse origin/main)" >> "$GITHUB_OUTPUT"
           git push origin origin/qa:refs/heads/main
+      # GitHub no cierra tickets por «Closes:» cuando quien empuja a main es
+      # GITHUB_TOKEN; se cierran aquí, con los commits que acaban de llegar.
+      - name: Cerrar los tickets que declaran los commits nuevos de main
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          MAIN_ANTERIOR: ${{ steps.promover.outputs.main_anterior }}
+          CANDIDATE_SHA: ${{ github.sha }}
+        run: node scripts/cerrar-tickets.mjs "$MAIN_ANTERIOR" "$CANDIDATE_SHA"
