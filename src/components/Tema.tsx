@@ -107,6 +107,59 @@ function SelectorAcento({ className, boton = "p-1.5" }: { className?: string; bo
   );
 }
 
+/**
+ * Color de acento en un solo botón: muestra el tono en uso y despliega los
+ * demás al pulsarlo. Cuatro muestras en fila ocupaban tanto como el tema
+ * entero para una preferencia que se cambia una vez.
+ */
+function SelectorAcentoCompacto() {
+  const acento = useSyncExternalStore(suscribirseCromatismo, acentoActivo, acentoEnServidor);
+  const [abierto, setAbierto] = useState(false);
+  const actual = ACENTOS.find((a) => a.id === acento) ?? ACENTOS[0];
+
+  useEffect(() => {
+    if (!abierto) return;
+    const cerrar = () => setAbierto(false);
+    const tecla = (e: KeyboardEvent) => e.key === "Escape" && cerrar();
+    window.addEventListener("click", cerrar);
+    window.addEventListener("keydown", tecla);
+    return () => {
+      window.removeEventListener("click", cerrar);
+      window.removeEventListener("keydown", tecla);
+    };
+  }, [abierto]);
+
+  return (
+    <div className="relative inline-flex rounded-lg border border-borde bg-superficie p-0.5">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setAbierto((v) => !v);
+        }}
+        aria-label={`Color de acento: ${actual.nombre.toLowerCase()}`}
+        title="Color de acento"
+        aria-expanded={abierto}
+        className="rounded-md p-1.5 transition-colors hover:bg-fondo"
+      >
+        <span aria-hidden="true" className="block size-[15px] rounded-full" style={{ backgroundColor: actual.muestra }} />
+      </button>
+      <div
+        onClick={(e) => {
+          e.stopPropagation();
+          setAbierto(false);
+        }}
+        inert={!abierto}
+        className={`absolute right-0 top-full z-50 mt-2 origin-top-right rounded-lg border border-borde bg-fondo p-0.5 shadow-lg transition-[opacity,transform] duration-150 ease-out ${
+          abierto ? "scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0"
+        }`}
+      >
+        <SelectorAcento />
+      </div>
+    </div>
+  );
+}
+
 export function SelectorTema({
   className,
   orientacion = "horizontal",
@@ -166,9 +219,11 @@ export function SelectorTema({
         <BotonMonocromo />
       </div>
 
-      <SelectorAcento
-        className={`rounded-lg p-0.5 ${orientacion === "vertical" ? "flex-col" : "border border-borde bg-superficie"}`}
-      />
+      {orientacion === "vertical" ? (
+        <SelectorAcento className="flex-col rounded-lg p-0.5" />
+      ) : (
+        <SelectorAcentoCompacto />
+      )}
     </div>
   );
 }
