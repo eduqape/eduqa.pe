@@ -9,6 +9,15 @@ Una imagen construida en tu portátil no le sirve a nadie más. Para que un
 servidor la ejecute hay que subirla a un **registro**, que es el almacén desde
 el que se descargan.
 
+El recorrido completo tiene cuatro pasos: `docker build` arma la imagen en tu
+máquina, `docker push` la sube al registro capa por capa, el servidor la baja con
+`docker pull` y `docker run` arranca el contenedor allí.
+
+```escena
+escena: docker-publicar
+pie: La imagen se arma capa a capa en la PC, viaja al registro y de allí al servidor, donde arranca
+```
+
 Docker Hub es el público; en una empresa suele haber uno propio. Para probar,
 el propio registro se ejecuta como contenedor.
 

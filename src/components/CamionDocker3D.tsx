@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import type { Paso } from "./Reproductor3D";
 import { arbol, caja, material, montarEscena, persona } from "./lowpoly";
+import type { PaletaTema } from "./paleta-tema";
 
 /**
  * Prueba de concepto: un camión de Docker se arma junto a la PC local, capa por
@@ -171,7 +172,7 @@ function rectanguloRedondeado(w: number, h: number, r: number) {
  * bordillo queda por debajo del asfalto de la calle y el asfalto de la
  * explanada tapa el final de la calle, así que la unión no deja costura.
  */
-function explanada(padre: THREE.Object3D, x: number, z: number, w: number, h: number) {
+function explanada(padre: THREE.Object3D, suelo: Suelo, x: number, z: number, w: number, h: number) {
   const capa = (ancho: number, alto: number, y: number, color: number) => {
     const m = new THREE.Mesh(rectanguloRedondeado(ancho, alto, 0.45), material(color, { flatShading: false }));
     m.rotation.x = -Math.PI / 2;
@@ -179,14 +180,25 @@ function explanada(padre: THREE.Object3D, x: number, z: number, w: number, h: nu
     m.receiveShadow = true;
     padre.add(m);
   };
-  capa(w + 0.35, h + 0.35, 0.02, BORDILLO);
-  capa(w, h, 0.04, ASFALTO);
+  capa(w + 0.35, h + 0.35, 0.02, suelo.bordillo);
+  capa(w, h, 0.04, suelo.asfalto);
   const p = new THREE.Vector3();
   return (mundo: THREE.Vector3, margen = 0) => {
     padre.worldToLocal(p.copy(mundo));
     return Math.abs(p.x - x) < w / 2 + margen && Math.abs(p.z - z) < h / 2 + margen;
   };
 }
+
+/** Colores del terreno. En una lección salen del tema; el resto de la escena conserva los suyos. */
+type Suelo = { fondo: number; asfalto: number; bordillo: number; luz: number };
+const SUELO_PROPIO: Suelo = { fondo: FONDO, asfalto: ASFALTO, bordillo: BORDILLO, luz: 0xb7c8b9 };
+const hex = (css: string) => new THREE.Color(css).getHex();
+const sueloDelTema = (p: PaletaTema): Suelo => ({
+  fondo: hex(p.fondo),
+  asfalto: hex(p.borde),
+  bordillo: hex(p["borde-fuerte"]),
+  luz: hex(p.borde),
+});
 
 /** Camión de Docker. Mira hacia +Z; X es el ancho. */
 function crearCamion(colorCabina: number, logo: THREE.Texture) {
@@ -244,7 +256,16 @@ const RANURAS = CAPAS.map(
 );
 const ESCAPE = new THREE.Vector3(0.56, 1.95, 0.66);
 
-export function CamionDocker3D({ tiempo }: { tiempo: React.RefObject<number> }) {
+export function CamionDocker3D({
+  tiempo,
+  paleta,
+  dentroDePagina = false,
+}: {
+  tiempo: React.RefObject<number>;
+  /** En una lección: el terreno toma el fondo y los bordes del tema. */
+  paleta?: PaletaTema;
+  dentroDePagina?: boolean;
+}) {
   const contenedor = useRef<HTMLDivElement>(null);
   const capaEtiquetas = useRef<HTMLDivElement>(null);
 
@@ -252,10 +273,13 @@ export function CamionDocker3D({ tiempo }: { tiempo: React.RefObject<number> }) 
     const raiz = contenedor.current!;
     const capa = capaEtiquetas.current!;
 
+    const suelo = paleta ? sueloDelTema(paleta) : SUELO_PROPIO;
     const { escena, etiqueta, iniciar, destruir } = montarEscena({
       raiz,
       capa,
-      fondo: FONDO,
+      fondo: suelo.fondo,
+      luzSuelo: suelo.luz,
+      dentroDePagina,
       objetivo: new THREE.Vector3(0.2, 1.2, 0.6),
       distancia: 34,
       niebla: [36, 64],
@@ -342,9 +366,9 @@ export function CamionDocker3D({ tiempo }: { tiempo: React.RefObject<number> }) 
     // Bahías de carga: donde se arma A, la explanada del hub (A llega por el
     // oeste, B sale por el este) y la entrada del servidor.
     const plazas = [
-      explanada(escena, -6.6, 2.4, 3.4, 1.9),
-      explanada(escena, 0, 1.55, 7.4, 2.1),
-      explanada(escena, 7.4, 1.0, 3.4, 1.9),
+      explanada(escena, suelo, -6.6, 2.4, 3.4, 1.9),
+      explanada(escena, suelo, 0, 1.55, 7.4, 2.1),
+      explanada(escena, suelo, 7.4, 1.0, 3.4, 1.9),
     ];
 
     // Calles: PC → Docker Hub y Docker Hub → servidor. Empiezan y terminan
@@ -382,8 +406,8 @@ export function CamionDocker3D({ tiempo }: { tiempo: React.RefObject<number> }) 
         m.receiveShadow = true;
         escena.add(m);
       };
-      cinta(1.85, 0.01, BORDILLO);
-      cinta(1.5, 0.03, ASFALTO);
+      cinta(1.85, 0.01, suelo.bordillo);
+      cinta(1.5, 0.03, suelo.asfalto);
       // La raya central se corta antes de entrar a las explanadas.
       for (let s = 0.45; s < largo; s += 0.9) {
         const u = s / largo;
@@ -593,7 +617,7 @@ export function CamionDocker3D({ tiempo }: { tiempo: React.RefObject<number> }) 
 
     iniciar(aplicar, tiempo);
     return destruir;
-  }, [tiempo]);
+  }, [tiempo, paleta, dentroDePagina]);
 
   return (
     <div ref={contenedor} className="relative h-full w-full cursor-grab overflow-hidden active:cursor-grabbing">

@@ -1,7 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import { Pause, Play } from "lucide-react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+  type RefObject,
+} from "react";
+import { Maximize, Minimize, Pause, Play } from "lucide-react";
 
 export type Paso = { t: number; comando: string; detalle: string };
 
@@ -20,7 +27,11 @@ const reloj = (t: number) => `0:${Math.floor(t).toString().padStart(2, "0")}`;
  * depender de keyframes globales, y no hace nada si el sistema pide reducir
  * el movimiento.
  */
-function useEntrada<T extends HTMLElement>(valor: unknown, desde: Keyframe, duracion: number) {
+function useEntrada<T extends HTMLElement>(
+  valor: unknown,
+  desde: Keyframe,
+  duracion: number,
+) {
   const ref = useRef<T>(null);
   const previo = useRef(valor);
   useEffect(() => {
@@ -39,7 +50,11 @@ function useEntrada<T extends HTMLElement>(valor: unknown, desde: Keyframe, dura
 
 /** Un dígito del reloj: al cambiar, el nuevo sube desde abajo, como un contador. */
 function Digito({ valor }: { valor: string }) {
-  const ref = useEntrada<HTMLSpanElement>(valor, { opacity: 0, transform: "translateY(70%)" }, 260);
+  const ref = useEntrada<HTMLSpanElement>(
+    valor,
+    { opacity: 0, transform: "translateY(70%)" },
+    260,
+  );
   return (
     <span className="inline-block overflow-hidden align-bottom">
       <span ref={ref} className="inline-block">
@@ -62,8 +77,63 @@ function Narracion({ actual }: ReturnType<typeof pasoEn>) {
 }
 
 /**
- * Escena 3D con barra de reproducción: pausa, adelantar o rebobinar y
- * velocidad. Ocupa el tamaño de su contenedor. La escena lee el tiempo de
+ * Pantalla completa del reproductor entero, escena y barra. Donde el navegador
+ * no la concede sobre un elemento (Safari de iPhone, un iframe sin permiso) el
+ * reproductor ocupa la ventana con `position: fixed` y Esc lo devuelve. La
+ * escena se reajusta sola porque observa el tamaño de su contenedor.
+ */
+const avisarPantalla = (avisar: () => void) => {
+  document.addEventListener("fullscreenchange", avisar);
+  return () => document.removeEventListener("fullscreenchange", avisar);
+};
+
+function usePantallaCompleta() {
+  const [nodo, setNodo] = useState<HTMLDivElement | null>(null);
+  const [fija, setFija] = useState(false);
+  const enPantalla = useSyncExternalStore(
+    avisarPantalla,
+    () => document.fullscreenElement,
+    () => null,
+  );
+  const nativa = nodo !== null && enPantalla === nodo;
+
+  useEffect(() => {
+    if (!fija) return;
+    if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      nodo?.animate(
+        [
+          { opacity: 0, transform: "scale(0.98)" },
+          { opacity: 1, transform: "none" },
+        ],
+        {
+          duration: 220,
+          easing: "cubic-bezier(0.2, 0.8, 0.2, 1)",
+        },
+      );
+    }
+    const tecla = (e: KeyboardEvent) => e.key === "Escape" && setFija(false);
+    const desborde = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    addEventListener("keydown", tecla);
+    return () => {
+      removeEventListener("keydown", tecla);
+      document.body.style.overflow = desborde;
+    };
+  }, [fija, nodo]);
+
+  const alternar = () => {
+    if (nativa) void document.exitFullscreen();
+    else if (fija) setFija(false);
+    else if (nodo && document.fullscreenEnabled)
+      nodo.requestFullscreen().catch(() => setFija(true));
+    else setFija(true);
+  };
+  return { setNodo, fija, activa: nativa || fija, alternar };
+}
+
+/**
+ * Escena 3D con barra de reproducción: pausa, adelantar o rebobinar,
+ * velocidad y pantalla completa. Ocupa el tamaño de su contenedor. La escena lee el tiempo de
  * `tiempo` en cada cuadro, así que debe ser función pura del tiempo.
  *
  * Los colores son tokens del tema, así que sigue al modo claro, al oscuro y al
@@ -104,9 +174,18 @@ export function Reproductor3D({
   }, [pausa, velocidad, duracion]);
 
   const paso = pasoEn(registro, t);
+  const {
+    setNodo,
+    fija,
+    activa: pantallaActiva,
+    alternar: alternarPantalla,
+  } = usePantallaCompleta();
 
   return (
-    <div className="relative flex h-full w-full flex-col">
+    <div
+      ref={setNodo}
+      className={`flex flex-col bg-fondo ${fija ? "fixed inset-0 z-[100]" : "relative h-full w-full"}`}
+    >
       <div className="relative min-h-0 flex-1">
         {escena(tiempo)}
 
@@ -114,8 +193,14 @@ export function Reproductor3D({
           <div className="pointer-events-none absolute left-3 top-3 flex flex-col gap-2">
             {titulo && (
               <div className="rounded-lg border border-borde bg-fondo px-4 py-2.5 shadow-sm">
-                {antetitulo && <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-texto-tenue">{antetitulo}</p>}
-                <p className="text-sm font-semibold text-texto sm:text-base">{titulo}</p>
+                {antetitulo && (
+                  <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-texto-tenue">
+                    {antetitulo}
+                  </p>
+                )}
+                <p className="text-sm font-semibold text-texto sm:text-base">
+                  {titulo}
+                </p>
               </div>
             )}
             {lateral?.(t)}
@@ -126,7 +211,10 @@ export function Reproductor3D({
       {/* Una sola línea: contador, avance, velocidad y el botón de reproducir,
           cuadrado y del alto de la línea. */}
       <div className="flex items-center gap-3 border-t border-borde bg-fondo px-4 py-3">
-        <span className="font-mono text-lg font-bold leading-8 tabular-nums text-rojo-acento" aria-label={`Segundo ${Math.floor(t)}`}>
+        <span
+          className="font-mono text-lg font-bold leading-8 tabular-nums text-rojo-acento"
+          aria-label={`Segundo ${Math.floor(t)}`}
+        >
           {reloj(t)
             .split("")
             .map((c, i) => (
@@ -165,7 +253,28 @@ export function Reproductor3D({
           title={pausa ? "Seguir" : "Pausar"}
           className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-rojo text-sobre-rojo transition-colors hover:bg-rojo-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rojo-acento"
         >
-          {pausa ? <Play className="h-4 w-4" aria-hidden /> : <Pause className="h-4 w-4" aria-hidden />}
+          {pausa ? (
+            <Play className="h-4 w-4" aria-hidden />
+          ) : (
+            <Pause className="h-4 w-4" aria-hidden />
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={alternarPantalla}
+          aria-label={
+            pantallaActiva ? "Salir de pantalla completa" : "Pantalla completa"
+          }
+          title={
+            pantallaActiva ? "Salir de pantalla completa" : "Pantalla completa"
+          }
+          className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-borde-fuerte text-texto-suave transition-colors hover:border-rojo hover:text-rojo-acento focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rojo-acento"
+        >
+          {pantallaActiva ? (
+            <Minimize className="h-4 w-4" aria-hidden />
+          ) : (
+            <Maximize className="h-4 w-4" aria-hidden />
+          )}
         </button>
         <Narracion {...paso} />
       </div>

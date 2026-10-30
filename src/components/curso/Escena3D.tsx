@@ -3,6 +3,7 @@
 import type { ReactNode, RefObject } from "react";
 import { Reproductor3D } from "@/components/Reproductor3D";
 import type { Paso } from "@/components/Reproductor3D";
+import { CamionDocker3D, DURACION as DURACION_CAMION, REGISTRO as REGISTRO_CAMION } from "@/components/CamionDocker3D";
 import { DEFINICION, RECORRIDO } from "@/components/guiones-variables";
 import { MOVE_ALFANUMERICO, MOVE_NUMERICO, REGISTRO_CLIENTE } from "@/components/guiones-cobol";
 import { MemoriaCobol3D, type GuionMemoria } from "@/components/MemoriaCobol3D";
@@ -21,6 +22,11 @@ const cobol = (guion: GuionMemoria): { montar: Montar; duracion: number; registr
   duracion: guion.duracion,
   registro: guion.registro,
 });
+const camion: { montar: Montar; duracion: number; registro: Paso[] } = {
+  montar: (tiempo, paleta) => <CamionDocker3D key={paleta.clave} tiempo={tiempo} paleta={paleta} dentroDePagina />,
+  duracion: DURACION_CAMION,
+  registro: REGISTRO_CAMION,
+};
 
 const ESCENAS = {
   "variables-definicion": python(DEFINICION),
@@ -28,6 +34,7 @@ const ESCENAS = {
   "cobol-registro": cobol(REGISTRO_CLIENTE),
   "cobol-move-alfanumerico": cobol(MOVE_ALFANUMERICO),
   "cobol-move-numerico": cobol(MOVE_NUMERICO),
+  "docker-publicar": camion,
 } satisfies Record<NombreEscena, unknown>;
 
 /**

@@ -447,6 +447,7 @@ del curso, igual que una región de Venn mal escrita. `pie` es opcional.
 | `cobol-registro` | Un registro de 21 bytes (`CODIGO`, `NOMBRE`, `SALDO PIC 9(5)V99`): cada campo es una bandeja de tamaño fijo y `DISPLAY` del grupo muestra sus bytes seguidos |
 | `cobol-move-alfanumerico` | `MOVE` a un `PIC X(8)`: relleno con espacios a la derecha y corte de lo que no cabe |
 | `cobol-move-numerico` | `MOVE` a un `PIC 9(5)V99`: alineación por la coma decimal, relleno con ceros y corte por los dos extremos |
+| `docker-publicar` | `docker build`, `push` a un registro, `pull` desde el servidor y `run`: la imagen viaja por capas de la PC al servidor |
 
 Los guiones de COBOL (`src/components/guiones-cobol.ts`) se comprueban con
 `npm run test:cobol`: cada valor que muestran y cada salida de `DISPLAY` se
